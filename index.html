@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_16.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_17.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./Z_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./x_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -35,6 +35,16 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .header{background:#1B3A9E;border-bottom:3px solid #FFC400;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .header-left{display:flex;align-items:center;gap:10px}
 .header-icon{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}.header-icon .hi-text{color:#1B3A9E;font-size:11.5px;font-weight:600;font-style:italic;letter-spacing:-0.4px;line-height:1}
+.pay-today{background:#fff;border:1px solid rgba(226,30,30,0.25);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.pay-today .pt-ico{width:38px;height:38px;border-radius:10px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pay-today .pt-ico i{font-size:20px;color:#E21E1E}
+.pay-today .pt-mid{flex:1;min-width:0}
+.pay-today .pt-ttl{font-size:13px;font-weight:600;color:#16267A;line-height:1.2}
+.pay-today .pt-sub{font-size:11.5px;color:#888780;margin-top:2px}
+.pay-today .pt-val{font-size:17px;font-weight:700;color:#E21E1E;flex-shrink:0}
+.pay-7d{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
+.pay-7d .p7-lab{font-size:13px;color:#5F5E5A}
+.pay-7d .p7-val{font-size:15px;font-weight:600;color:#BA7517}
 .header-icon i{font-size:18px;color:#fff}
 .header-store{font-size:14px;font-weight:500;color:#fff}
 .header-user{font-size:11px;color:rgba(255,255,255,0.75)}
@@ -407,8 +417,12 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="row-card"><div><div class="row-label">Crédito parcelado (D+2)</div><div class="row-sub" id="p-parc-src">—</div></div><div class="row-value green" id="p-parc">—</div></div>
       <div class="row-card"><div><div class="row-label">PIX (D+0)</div><div class="row-sub">já caiu hoje</div></div><div class="row-value green" id="p-pix">—</div></div>
       <div class="section-label"><i class="ti ti-arrow-up-circle"></i> Contas a pagar</div>
-      <div class="row-card"><div><div class="row-label">Boletos hoje</div><div class="row-sub" id="p-data-hoje"></div></div><div class="row-value red" id="p-cp-hoje">—</div></div>
-      <div class="row-card"><div><div class="row-label">Próximos 7 dias</div></div><div class="row-value orange" id="p-cp-7d">—</div></div>
+      <div class="pay-today">
+        <div class="pt-ico"><i class="ti ti-cash-banknote"></i></div>
+        <div class="pt-mid"><div class="pt-ttl">Contas a pagar hoje</div><div class="pt-sub" id="p-cp-hoje-sub">—</div></div>
+        <div class="pt-val" id="p-cp-hoje">—</div>
+      </div>
+      <div class="pay-7d"><span class="p7-lab">Próximos 7 dias</span><span class="p7-val" id="p-cp-7d">—</span></div>
     </div>
 
     <!-- LANÇAR -->
@@ -1064,6 +1078,7 @@ function renderizarPainel() {
   const hjStr = `${String(agora.getDate()).padStart(2,'0')}/${String(agora.getMonth()+1).padStart(2,'0')}/${agora.getFullYear()}`;
   const hjCurto = hjStr.slice(0,5); // DD/MM
   const cpHoje = dadosContas.filter(b=>!b.pago&&(b.venc===hjStr||b.venc===hjCurto)).reduce((s,b)=>s+b.valor,0);
+  const cpHojeQtd = dadosContas.filter(b=>!b.pago&&(b.venc===hjStr||b.venc===hjCurto)).length;
   const cp7 = dadosContas.filter(b=>{
     if(b.pago)return false;
     const d=diasAte(b.venc); return d>=0&&d<=7;
@@ -1072,7 +1087,7 @@ function renderizarPainel() {
   document.getElementById('p-cp-hoje').textContent  = brl(cpHoje);
   document.getElementById('p-cp-7d').textContent    = brl(cp7);
   document.getElementById('p-sai').textContent = brl(cpHoje);
-  document.getElementById('p-data-hoje').textContent = agora.toLocaleDateString('pt-BR');
+  document.getElementById('p-cp-hoje-sub').textContent = cpHojeQtd>0 ? `${cpHojeQtd} boleto${cpHojeQtd>1?'s':''} · vencendo em ${hjCurto}` : 'nenhum boleto vence hoje';
 
   const saldo = totRec-cpHoje;
   document.getElementById('p-saldo').textContent = (saldo<0?'- ':'+ ')+brl(Math.abs(saldo));
