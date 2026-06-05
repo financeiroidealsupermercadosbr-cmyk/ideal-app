@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_7.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_11.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="./Ideal Supermercadossasasasa_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -214,7 +214,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 <div class="screen active" id="s-login">
   <div class="login2">
     <div class="login2-photo">
-      <img src="img/fachada.jpg" alt="Ideal Supermercados" onerror="this.style.display='none'">
+      <img src="file:///C:/Users/USUARIO1/Downloads/img/fachada.jpg" alt="Ideal Supermercados" onerror="this.style.display=&#39;none&#39;" style="display: none;">
       <div class="login2-photo-tint"></div>
     </div>
     <div class="login2-card">
@@ -682,8 +682,8 @@ function trocarLoja(btn,nome,id) {
 // GOOGLE SHEETS — LEITURA
 // ══════════════════════════════════════════════════════
 async function fetchRange(range) {
-  const url = `${BASE_URL}/${encodeURIComponent(range)}?key=${API_KEY}`;
-  const res = await fetch(url);
+  const url = `${BASE_URL}/${encodeURIComponent(range)}?key=${API_KEY}&_=${Date.now()}`;
+  const res = await fetch(url, {cache:'no-store'});
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const j = await res.json();
   return j.values || [];
@@ -788,14 +788,14 @@ function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
 // DASHBOARD DE VENDAS (comparação vs ontem + gráfico 7 dias)
 // ══════════════════════════════════════════════════════
 function renderVendas(dH, dO, ds) {
-  // ordena por data e considera só dias com data válida
-  const ord = dadosVendas.slice().filter(r => parseDataBR(r.data)).sort((a,b) => parseDataBR(a.data) - parseDataBR(b.data));
+  // considera só dias com data válida E com venda (>0), em ordem cronológica
+  const ord = dadosVendas.slice().filter(r => parseDataBR(r.data) && Number(r.total) > 0).sort((a,b) => parseDataBR(a.data) - parseDataBR(b.data));
   const ag = new Date();
   const hoje = String(ag.getDate()).padStart(2,'0') + '/' + String(ag.getMonth()+1).padStart(2,'0') + '/' + ag.getFullYear();
 
-  // dia exibido: hoje se já tiver dados, senão o último dia com dados
-  let dispIdx = dH ? ord.findIndex(r => r.data === hoje) : ord.length - 1;
-  if (dispIdx < 0) dispIdx = ord.length - 1;
+  // dia exibido: hoje se já teve venda, senão o último dia com venda
+  const idxHoje = ord.findIndex(r => r.data === hoje);
+  let dispIdx = idxHoje >= 0 ? idxHoje : ord.length - 1;
   const dD = dispIdx >= 0 ? ord[dispIdx] : null;
   const dP = dispIdx > 0 ? ord[dispIdx - 1] : null;
   const ehHoje = !!(dD && dD.data === hoje);
@@ -1100,7 +1100,7 @@ async function confirmarBaixa() {
     await salvarBaixaSheets(boletoCurrent.linha, dataPag, banco, obs);
     toast('✓ Baixa registrada com sucesso!');
   } catch(e) {
-    toast('⚠ Salvo localmente — configure o Apps Script para gravar no Sheets');
+    toast('⚠ Não gravou no Google ('+(e.message||'erro de conexão')+') — ficou só local');
     console.error(e);
   }
   fecharModal(); filtrar(); renderizarPainel();
@@ -1189,4 +1189,5 @@ const iv = setInterval(()=>{
 </script>
 
 
-</div></body></html>
+</div>
+</body></html>
