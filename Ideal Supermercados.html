@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_4.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ideal Supermercados</title>
+<link rel="stylesheet" href="./Ideal Supermercados_files/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
+.app{max-width:380px;width:100%;font-family:Arial,sans-serif}
+.screen{display:none}.screen.active{display:block}
+
+.splash{background:#E8650A;min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.splash-logo{width:72px;height:72px;background:rgba(255,255,255,0.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.splash-logo i{font-size:36px;color:#fff}
+.splash-title{font-size:22px;font-weight:500;color:#fff;margin-bottom:6px}
+.splash-sub{font-size:13px;color:rgba(255,255,255,0.75)}
+.splash-bar{width:120px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;margin-top:32px;overflow:hidden}
+.splash-progress{height:100%;width:0;background:#fff;border-radius:2px;transition:width 0.1s linear}
+
+.login-wrap{background:#fff;border-radius:16px;padding:24px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.login-header{text-align:center;margin-bottom:28px}
+.login-logo{width:52px;height:52px;background:#E8650A;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.login-logo i{font-size:26px;color:#fff}
+.login-title{font-size:18px;font-weight:500;color:#1a1a1a}
+.login-sub{font-size:13px;color:#888;margin-top:4px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:#666;margin-bottom:5px}
+.field input,.field select{width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:14px;font-family:Arial,sans-serif}
+.btn-login{width:100%;padding:12px;background:#E8650A;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif}
+.login-error{background:#FCEBEB;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px;display:none;align-items:center;gap:6px}
+
+.app-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.header{background:#E8650A;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-icon{width:34px;height:34px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.header-icon i{font-size:18px;color:#fff}
+.header-store{font-size:14px;font-weight:500;color:#fff}
+.header-user{font-size:11px;color:rgba(255,255,255,0.75)}
+.header-logout{background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#fff;font-size:12px;display:flex;align-items:center;gap:4px;font-family:Arial,sans-serif}
+
+.sync-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;font-size:11px;border-bottom:1px solid #eee}
+.sync-bar.ok{background:#F0FAF5;color:#0F6E56}
+.sync-bar.erro{background:#FEF3F2;color:#A32D2D}
+.sync-bar.carregando{background:#FFF8F0;color:#E8650A}
+.sync-bar.offline{background:#f8f8f8;color:#888}
+.sync-bar button{font-size:10px;padding:3px 9px;background:#E8650A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif}
+
+.loja-sel{display:flex;gap:8px;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #eee}
+.loja-btn{flex:1;padding:8px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#666;font-size:12px;cursor:pointer;text-align:center;font-family:Arial,sans-serif}
+.loja-btn.active{background:#E8650A;color:#fff;border-color:#E8650A}
+
+.nav{display:flex;background:#f8f8f8;border-bottom:1px solid #eee}
+.nav-btn{flex:1;padding:9px 4px 7px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:#999;font-size:9px;border-bottom:2px solid transparent;font-family:Arial,sans-serif}
+.nav-btn.active{color:#E8650A;border-bottom-color:#E8650A}
+.nav-btn i{font-size:19px}
+
+.content{padding:14px}
+.section-label{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.metric{background:#f8f8f8;border-radius:10px;padding:12px}
+.metric-label{font-size:11px;color:#999;margin-bottom:3px}
+.metric-value{font-size:17px;font-weight:500;color:#1a1a1a}
+.metric-value.green{color:#0F6E56}.metric-value.red{color:#A32D2D}.metric-value.orange{color:#E8650A}
+.metric-sub{font-size:10px;color:#999;margin-top:2px}
+
+.row-card{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f8f8f8;border-radius:10px;margin-bottom:6px}
+.row-label{font-size:13px;color:#1a1a1a}
+.row-sub{font-size:10px;color:#999}
+.row-value{font-size:13px;font-weight:500}
+.row-value.green{color:#0F6E56}.row-value.red{color:#A32D2D}.row-value.orange{color:#E8650A}
+
+.total-bar{border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.total-bar.green{background:#E1F5EE}.total-bar.red{background:#FCEBEB}
+.total-label{font-size:12px;font-weight:500}
+.total-label.green{color:#085041}.total-label.red{color:#791F1F}
+.total-value{font-size:16px;font-weight:500}
+.total-value.green{color:#0F6E56}.total-value.red{color:#A32D2D}
+
+.saldo-card{border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #eee}
+.saldo-lbl{font-size:12px;color:#999;margin-bottom:6px}
+.saldo-val{font-size:28px;font-weight:500}
+.saldo-val.green{color:#0F6E56}.saldo-val.red{color:#A32D2D}
+
+.badge{display:inline-flex;align-items:center;font-size:10px;padding:3px 7px;border-radius:20px;font-weight:500}
+.badge.ok{background:#EAF3DE;color:#27500A}
+.badge.warn{background:#FAEEDA;color:#633806}
+.badge.alert{background:#FCEBEB;color:#791F1F}
+.badge.pend{background:#E6F1FB;color:#0C447C}
+
+.boleto{background:#f8f8f8;border-radius:10px;padding:10px 12px;margin-bottom:6px}
+.boleto-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.boleto-forn{font-size:13px;font-weight:500;color:#1a1a1a}
+.boleto-doc{font-size:10px;color:#999}
+.boleto-valor{font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap;margin-left:8px}
+.boleto-bot{display:flex;justify-content:space-between;align-items:center}
+.boleto-data{font-size:11px;color:#999}
+.btn-baixa{font-size:10px;padding:3px 9px;background:#E8650A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif}
+.btn-baixa:disabled{background:#ddd;color:#aaa;cursor:default}
+
+.search-row{display:flex;gap:8px;margin-bottom:10px}
+.search-row input{flex:1;padding:9px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:13px;font-family:Arial,sans-serif}
+.search-row select{padding:9px 8px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif}
+
+/* Barra de ações em massa */
+.bulk-bar{background:#FFF8F0;border:1px solid #fdd8b0;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.bulk-bar label{display:flex;align-items:center;gap:6px;font-size:12px;color:#633806;cursor:pointer}
+.bulk-bar input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#E8650A}
+.btn-bulk{font-size:11px;padding:5px 10px;background:#E8650A;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap}
+.btn-bulk:disabled{background:#ddd;color:#aaa;cursor:default}
+
+.resumo-row{display:flex;justify-content:space-between;padding:9px 12px;background:#f8f8f8;border-radius:10px;margin-bottom:6px}
+.resumo-lbl{font-size:13px;color:#1a1a1a}
+.resumo-val{font-size:13px;font-weight:500}
+.resumo-val.orange{color:#E8650A}.resumo-val.red{color:#A32D2D}.resumo-val.green{color:#0F6E56}
+.divider{height:1px;background:#eee;margin:12px 0}
+
+.tab-row{display:flex;gap:6px;margin-bottom:14px}
+.tab{padding:7px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #e0e0e0;background:#f8f8f8;color:#666;font-family:Arial,sans-serif}
+.tab.active{background:#E8650A;color:#fff;border-color:#E8650A}
+.field-group{margin-bottom:12px}
+.field-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+.field-group input,.field-group select,.field-group textarea{width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:13px;font-family:Arial,sans-serif}
+.btn-primary{width:100%;padding:11px;background:#E8650A;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif}
+.btn-primary:disabled{background:#ddd;color:#aaa;cursor:default}
+.btn-sec{width:100%;padding:11px;background:#f8f8f8;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px;font-family:Arial,sans-serif}
+
+.alert-box{background:#FAEEDA;border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px}
+.alert-box i{color:#854F0B;font-size:16px;margin-top:1px;flex-shrink:0}
+.alert-box span{font-size:12px;color:#633806;line-height:1.4}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal-card{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:400px}
+.modal-title{font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:16px;font-family:Arial,sans-serif}
+.modal-info{background:#f8f8f8;border-radius:10px;padding:12px;margin-bottom:16px}
+.modal-info-row{display:flex;justify-content:space-between;font-size:13px;color:#1a1a1a;margin-bottom:6px}
+.modal-info-row:last-child{margin-bottom:0}
+.modal-info-row span:first-child{color:#999}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:Arial,sans-serif;border:none}
+.btn-cancelar{background:#f8f8f8;color:#1a1a1a;border:1px solid #e0e0e0!important}
+.btn-confirmar{background:#0F6E56;color:#fff}
+.btn-confirmar:disabled{background:#ddd;color:#aaa}
+
+/* Apps Script status */
+.script-notice{background:#E6F1FB;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:11px;color:#0C447C;line-height:1.5}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-family:Arial,sans-serif;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SPLASH -->
+<div class="screen" id="s-splash">
+  <div class="splash">
+    <div class="splash-logo"><i class="ti ti-building-store"></i></div>
+    <div class="splash-title">Ideal Supermercados</div>
+    <div class="splash-sub">Sistema de gestão financeira</div>
+    <div class="splash-bar"><div class="splash-progress" id="prog" style="width: 100%;"></div></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="screen active" id="s-login">
+  <div class="login-wrap">
+    <div class="login-header">
+      <div class="login-logo"><i class="ti ti-building-store"></i></div>
+      <div class="login-title">Bem-vindo</div>
+      <div class="login-sub">Ideal Supermercados</div>
+    </div>
+    <div class="field"><label>Usuário</label><input type="text" id="login-user" placeholder="seu.usuario" autocomplete="username"></div>
+    <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••" autocomplete="current-password"></div>
+    <div class="field"><label>Loja</label>
+      <select id="login-loja">
+        <option value="">Selecione a loja...</option>
+        <option value="l2">Loja 2 — Melhor QS8</option>
+        <option value="l1">Loja 1 — Areal QS11</option>
+        <option value="all">Todas as lojas (gestor)</option>
+      </select>
+    </div>
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="login-error" id="login-err"><i class="ti ti-alert-circle"></i><span id="login-err-txt">Erro</span></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="screen" id="s-app">
+  <div class="app-wrap">
+    <div class="header">
+      <div class="header-left">
+        <div class="header-icon"><i class="ti ti-building-store"></i></div>
+        <div>
+          <div class="header-store" id="h-store">Loja 2 — Melhor QS8</div>
+          <div class="header-user" id="h-user">Gilberto · Gestor</div>
+        </div>
+      </div>
+      <button class="header-logout" onclick="fazerLogout()"><i class="ti ti-logout" style="font-size:14px"></i> Sair</button>
+    </div>
+
+    <div class="sync-bar offline" id="sync-bar">
+      <span id="sync-txt">Aguardando...</span>
+      <button onclick="carregarSheets()">↻ Atualizar</button>
+    </div>
+
+    <div class="loja-sel" id="loja-sel">
+      <button class="loja-btn active" onclick="trocarLoja(this,&#39;Loja 2 — Melhor QS8&#39;,&#39;l2&#39;)">Loja 2</button>
+      <button class="loja-btn" onclick="trocarLoja(this,&#39;Loja 1 — Areal QS11&#39;,&#39;l1&#39;)">Loja 1</button>
+      <button class="loja-btn" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;l2&#39;)">Todas</button>
+    </div>
+
+    <div class="nav">
+      <button class="nav-btn active" onclick="showTab(&#39;painel&#39;,this)"><i class="ti ti-layout-dashboard"></i>Painel</button>
+      <button class="nav-btn" onclick="showTab(&#39;lancar&#39;,this)"><i class="ti ti-upload"></i>Lançar</button>
+      <button class="nav-btn" onclick="showTab(&#39;contas&#39;,this)"><i class="ti ti-file-invoice"></i>Contas</button>
+      <button class="nav-btn" onclick="showTab(&#39;resumo&#39;,this)"><i class="ti ti-chart-bar"></i>Resumo</button>
+      <button class="nav-btn" onclick="showTab(&#39;config&#39;,this)"><i class="ti ti-settings"></i>Config</button>
+    </div>
+
+    <!-- PAINEL -->
+    <div id="tab-painel" class="content">
+      <div id="alerta-vencido" class="alert-box" style="display:none">
+        <i class="ti ti-alert-triangle"></i><span id="alerta-txt"></span>
+      </div>
+      <div class="section-label"><i class="ti ti-currency-dollar"></i> Vendas do dia</div>
+      <div class="grid2">
+        <div class="metric"><div class="metric-label">Hoje (parcial)</div><div class="metric-value orange" id="p-hoje">—</div><div class="metric-sub" id="p-hoje-d"></div></div>
+        <div class="metric"><div class="metric-label">Ontem</div><div class="metric-value" id="p-ontem">—</div></div>
+        <div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value" id="p-ticket">—</div></div>
+        <div class="metric"><div class="metric-label">Cupons hoje</div><div class="metric-value" id="p-cupons">—</div></div>
+      </div>
+      <div class="section-label"><i class="ti ti-arrow-down-circle"></i> Recebimentos esperados</div>
+      <div class="row-card"><div><div class="row-label">Débito (D+1)</div><div class="row-sub">de ontem</div></div><div class="row-value green" id="p-deb">—</div></div>
+      <div class="row-card"><div><div class="row-label">Crédito à vista (D+2)</div><div class="row-sub">de anteontem</div></div><div class="row-value green" id="p-cred">—</div></div>
+      <div class="row-card"><div><div class="row-label">Crédito parcelado (D+2)</div><div class="row-sub">de anteontem</div></div><div class="row-value green" id="p-parc">—</div></div>
+      <div class="row-card"><div><div class="row-label">PIX (D+0)</div><div class="row-sub">já caiu hoje</div></div><div class="row-value green" id="p-pix">—</div></div>
+      <div class="total-bar green"><div class="total-label green">Total esperado hoje</div><div class="total-value green" id="p-tot-rec">—</div></div>
+      <div class="section-label"><i class="ti ti-arrow-up-circle"></i> Contas a pagar</div>
+      <div class="row-card"><div><div class="row-label">Boletos hoje</div><div class="row-sub" id="p-data-hoje"></div></div><div class="row-value red" id="p-cp-hoje">—</div></div>
+      <div class="row-card"><div><div class="row-label">Próximos 7 dias</div></div><div class="row-value orange" id="p-cp-7d">—</div></div>
+      <div class="total-bar red"><div class="total-label red">A pagar hoje</div><div class="total-value red" id="p-tot-pag">—</div></div>
+      <div class="section-label"><i class="ti ti-scale"></i> Saldo projetado</div>
+      <div class="saldo-card"><div class="saldo-lbl">Recebimento — contas a pagar</div><div class="saldo-val" id="p-saldo">—</div></div>
+    </div>
+
+    <!-- LANÇAR -->
+    <div id="tab-lancar" class="content" style="display:none">
+      <div class="tab-row">
+        <div class="tab active" onclick="setSubTab(this,&#39;sub-importar&#39;)">Importar</div>
+        <div class="tab" onclick="setSubTab(this,&#39;sub-manual&#39;)">Manual</div>
+        <div class="tab" onclick="setSubTab(this,&#39;sub-despesa&#39;)">Despesa caixa</div>
+      </div>
+      <div id="sub-importar">
+        <div class="section-label"><i class="ti ti-upload"></i> Como importar dados</div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:12px;color:#444;line-height:1.8">
+          <strong>1.</strong> Exporte os relatórios no ADIPRON<br>
+          <strong>2.</strong> Salve em <code style="background:#fff;padding:1px 5px;border-radius:4px">C:\Ideal\relatorios\</code><br>
+          <strong>3.</strong> Execute <code style="background:#fff;padding:1px 5px;border-radius:4px">rodar.bat</code> no PC da loja<br>
+          <strong>4.</strong> Clique em "Atualizar" no topo do app
+        </div>
+        <button class="btn-primary" style="margin-top:12px" onclick="carregarSheets()">↻ Atualizar dados agora</button>
+      </div>
+      <div id="sub-manual" style="display:none">
+        <div class="section-label"><i class="ti ti-edit"></i> Lançar recebimento manual</div>
+        <div class="field-group"><label>Data</label><input type="date" id="man-data"></div>
+        <div class="field-group"><label>Modalidade</label>
+          <select id="man-modal">
+            <option>Débito (D+1)</option><option>Crédito à vista (D+2)</option>
+            <option>Crédito parcelado (D+2)</option><option>PIX (D+0)</option>
+            <option>Dinheiro</option><option>Alimentação/Vale</option>
+          </select>
+        </div>
+        <div class="field-group"><label>Valor (R$)</label><input type="number" id="man-valor" placeholder="0,00" step="0.01"></div>
+        <div class="field-group"><label>Banco</label>
+          <select id="man-banco"><option>Tribanco</option><option>Bradesco</option><option>Itaú</option></select>
+        </div>
+        <div class="field-group"><label>Observação</label><input type="text" id="man-obs" placeholder="Opcional"></div>
+        <button class="btn-primary" onclick="salvarManual()">Salvar recebimento</button>
+      </div>
+      <div id="sub-despesa" style="display:none">
+        <div class="section-label"><i class="ti ti-wallet"></i> Despesa do caixa físico</div>
+        <div class="field-group"><label>Data</label><input type="date" id="desp-data"></div>
+        <div class="field-group"><label>Categoria</label>
+          <select id="desp-cat" onchange="document.getElementById(&#39;desp-novacat&#39;).style.display=this.value===&#39;nova&#39;?&#39;block&#39;:&#39;none&#39;">
+            <option>Combustível</option><option>Manutenção</option><option>Água / Luz</option>
+            <option>Internet</option><option>Uso/Consumo Padaria</option><option>Uso/Consumo Restaurante</option>
+            <option>Uso/Consumo Açougue</option><option>Folhagem</option><option>Cartão corporativo</option>
+            <option>Outros</option><option value="nova">+ Nova categoria...</option>
+          </select>
+        </div>
+        <div class="field-group" id="desp-novacat" style="display:none">
+          <label>Nova categoria</label><input type="text" id="desp-novacat-txt" placeholder="Ex: Uso/Consumo Peixaria">
+        </div>
+        <div class="field-group"><label>Descrição</label><input type="text" id="desp-desc" placeholder="Descreva a despesa..."></div>
+        <div class="field-group"><label>Valor (R$)</label><input type="number" id="desp-valor" placeholder="0,00" step="0.01"></div>
+        <div class="field-group"><label>Responsável</label><input type="text" id="desp-resp" placeholder="Nome de quem retirou"></div>
+        <button class="btn-primary" id="btn-desp" onclick="salvarDespesa()">Registrar despesa</button>
+        <div class="script-notice" id="script-notice-desp">
+          ⚠ Para salvar no Google Sheets, configure o Apps Script.<br>
+          Veja instruções na aba <strong>Config</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTAS -->
+    <div id="tab-contas" class="content" style="display:none">
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="metric"><div class="metric-label">Hoje</div><div class="metric-value red" id="c-hoje">—</div></div>
+        <div class="metric"><div class="metric-label">Total mês</div><div class="metric-value" id="c-mes">—</div></div>
+      </div>
+
+      <!-- BARRA DE SELEÇÃO EM MASSA -->
+      <div class="bulk-bar">
+        <label>
+          <input type="checkbox" id="chk-select-all" onchange="toggleSelecionarTodos(this.checked)">
+          Selecionar vencidos até hoje
+        </label>
+        <button class="btn-bulk" id="btn-baixa-massa" onclick="baixaEmMassa()" disabled="">
+          Dar baixa (<span id="qtd-selecionados">0</span>)
+        </button>
+      </div>
+
+      <div class="search-row">
+        <input type="text" placeholder="Buscar fornecedor..." id="busca" oninput="filtrar()">
+        <select id="filtro-status" onchange="filtrar()">
+          <option value="">Todos</option>
+          <option value="hoje">Hoje</option>
+          <option value="vencido">Vencidos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="pago">Pagos</option>
+        </select>
+      </div>
+      <div id="lista-boletos"><div style="text-align:center;padding:30px;color:#999;font-size:13px">Carregando...</div></div>
+    </div>
+
+    <!-- RESUMO -->
+    <div id="tab-resumo" class="content" style="display:none">
+      <div class="section-label"><i class="ti ti-calendar-stats"></i> Junho 2026 — até hoje</div>
+      <div class="resumo-row"><div class="resumo-lbl">Total vendido</div><div class="resumo-val orange" id="r-total">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Cupons (clientes)</div><div class="resumo-val" id="r-cupons">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Ticket médio</div><div class="resumo-val orange" id="r-ticket">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Vl. perdidos</div><div class="resumo-val red" id="r-perd">—</div></div>
+      <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-chart-pie"></i> Composição</div>
+      <div class="resumo-row"><div class="resumo-lbl">Cartão débito</div><div class="resumo-val" id="r-deb">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Cartão crédito</div><div class="resumo-val" id="r-cred">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">PIX</div><div class="resumo-val" id="r-pix">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Dinheiro</div><div class="resumo-val" id="r-din">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Alimentação</div><div class="resumo-val" id="r-tick">—</div></div>
+      <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-file-invoice"></i> Contas a pagar</div>
+      <div class="resumo-row"><div class="resumo-lbl">Total do mês</div><div class="resumo-val" id="r-cp-tot">—</div></div>
+      <div class="resumo-row" style="margin-top:6px"><div class="resumo-lbl">Pendentes</div><div class="resumo-val orange" id="r-cp-pend">—</div></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="tab-config" class="content" style="display:none">
+      <div class="section-label"><i class="ti ti-users"></i> Usuários</div>
+      <div class="row-card"><div><div class="row-label">Gilberto Arruda</div><div class="row-sub">Gestor · todas as lojas</div></div><span class="badge ok">Ativo</span></div>
+      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Fiscal Loja 2</div><div class="row-sub">Fiscal · somente despesas</div></div><span class="badge pend">Pendente</span></div>
+      <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
+      <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
+      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">A configurar</div></div><span class="badge warn">Config</span></div>
+      <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-refresh"></i> Sincronização</div>
+      <div class="row-card"><div><div class="row-label">Última atualização</div><div class="row-sub" id="cfg-ultima">—</div></div><i class="ti ti-circle-check" style="color:#0F6E56;font-size:18px"></i></div>
+      <button class="btn-primary" style="margin-top:12px" onclick="carregarSheets()">Sincronizar agora</button>
+      <div class="divider"></div>
+
+      <!-- INSTRUÇÃO APPS SCRIPT -->
+      <div class="section-label"><i class="ti ti-brand-google"></i> Apps Script — Escrita no Sheets</div>
+      <div style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:12px;color:#444;line-height:1.8">
+        Para salvar baixas e despesas no Google Sheets, siga:<br><br>
+        <strong>1.</strong> Abra a planilha do Google Sheets<br>
+        <strong>2.</strong> Menu: <strong>Extensões → Apps Script</strong><br>
+        <strong>3.</strong> Apague o código existente e cole o código abaixo<br>
+        <strong>4.</strong> Clique em <strong>Implantar → Nova implantação</strong><br>
+        <strong>5.</strong> Tipo: <strong>App da Web</strong>, acesso: <strong>Qualquer pessoa</strong><br>
+        <strong>6.</strong> Copie a URL gerada e cole no campo abaixo
+      </div>
+      <div class="field-group" style="margin-top:10px">
+        <label>URL do Apps Script (cole aqui após configurar)</label>
+        <input type="text" id="cfg-script-url" placeholder="https://script.google.com/macros/s/..." oninput="salvarScriptUrl()">
+      </div>
+      <div style="background:#1a1a1a;border-radius:10px;padding:12px;margin-top:4px;font-size:10px;color:#a8ff78;font-family:monospace;line-height:1.6;overflow-x:auto;white-space:pre">
+function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  var ss = SpreadsheetApp.openById(
+    '1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4');
+  var out = ContentService
+    .createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  if (d.acao === 'baixa') {
+    var ws = ss.getSheetByName('Contas_Pagar');
+    var row = parseInt(d.linha);
+    ws.getRange(row, 4).setValue(d.dataPag);
+    ws.getRange(row, 11).setValue('PAGO');
+    ws.getRange(row, 12).setValue(d.banco);
+  }
+
+  if (d.acao === 'despesa') {
+    var ws2 = ss.getSheetByName('Despesas_Caixa');
+    if (!ws2) ws2 = ss.insertSheet('Despesas_Caixa');
+    ws2.appendRow([d.data, d.loja, d.categoria,
+      d.desc, d.valor, d.resp,
+      new Date().toLocaleString('pt-BR')]);
+  }
+
+  return out;
+}</div>
+      <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.1 — Sheets + Baixa + Despesa</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DAR BAIXA INDIVIDUAL -->
+<div class="modal-bg" id="modal-baixa">
+  <div class="modal-card">
+    <div class="modal-title">Dar baixa no boleto</div>
+    <div class="modal-info" id="modal-info"></div>
+    <div class="field-group"><label>Data do pagamento</label><input type="date" id="modal-data-pag"></div>
+    <div class="field-group"><label>Banco usado</label>
+      <select id="modal-banco"><option>Tribanco</option><option>Bradesco</option><option>Itaú</option></select>
+    </div>
+    <div class="field-group"><label>Observação</label><input type="text" id="modal-obs" placeholder="Opcional"></div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirmar" id="btn-confirmar-baixa" onclick="confirmarBaixa()">✓ Confirmar baixa</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BAIXA EM MASSA -->
+<div class="modal-bg" id="modal-massa">
+  <div class="modal-card">
+    <div class="modal-title">Dar baixa em massa</div>
+    <div class="modal-info" id="modal-massa-info"></div>
+    <div class="field-group"><label>Data do pagamento</label><input type="date" id="massa-data-pag"></div>
+    <div class="field-group"><label>Banco usado</label>
+      <select id="massa-banco"><option>Tribanco</option><option>Bradesco</option><option>Itaú</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModalMassa()">Cancelar</button>
+      <button class="btn-confirmar" id="btn-confirmar-massa" onclick="confirmarBaixaMassa()">✓ Confirmar todos</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// CONFIGURAÇÃO
+// ══════════════════════════════════════════════════════
+const SHEET_ID  = '1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4';
+const API_KEY   = 'AIzaSyCgN7C50SDOe5iNwyD84xn5ERN1ivZWDiw';
+const BASE_URL  = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values`;
+
+// URL do Apps Script — salva no localStorage entre sessões
+let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url') || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+
+// ══════════════════════════════════════════════════════
+// MAPEAMENTO CORRETO DAS COLUNAS (baseado no sincronizar_sheets.py)
+// Lancamento_Diario:
+//   [0]=DATA [1]=DIA_SEMANA [2]=TOTAL_VENDAS [3]=DINHEIRO
+//   [4]=DEBITO [5]=CREDITO_VISTA [6]=PIX [7]=ALIMENTACAO
+//   [8]=VL_PERDIDOS [9]=CREDITO_PARCELADO [10]=TOTAL_CLIENTES
+//   [11]=RECEB_DEBITO_D1 [12]=RECEB_CRED_D2 [13]=RECEB_PIX [14]=CONTAS_PAGAR_DIA
+// Contas_Pagar:
+//   [0]=NUM [1]=DT_EMISSAO [2]=DT_VENCTO [3]=DT_PAGTO
+//   [4]=FORNECEDOR [5]=DOCUMENTO [6]=VALOR [7]=MUL_JUR
+//   [8]=DESCONTO [9]=TOTAL_PAGO [10]=STATUS [11]=BANCO [12]=LOJA
+// ══════════════════════════════════════════════════════
+
+const USUARIOS = {
+  'gilberto': {senha:'ideal123', nome:'Gilberto Arruda', nivel:'gestor', loja:'all'},
+  'fiscal2':  {senha:'loja2',    nome:'Fiscal Loja 2',   nivel:'fiscal', loja:'l2'},
+};
+
+let lojaAtual     = 'l2';
+let userAtual     = null;
+let dadosVendas   = [];
+let dadosContas   = [];
+let boletoCurrent = null;
+let selecionados  = new Set(); // índices selecionados para baixa em massa
+
+// ══════════════════════════════════════════════════════
+// UTILITÁRIOS
+// ══════════════════════════════════════════════════════
+const brl = v => 'R$ ' + Math.abs(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const N   = v => { const n = parseFloat(String(v||'').replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; };
+
+function diasAte(venc) {
+  // venc pode ser "DD/MM/YYYY" ou "DD/MM"
+  const p = venc.split('/');
+  if (p.length < 2) return 999;
+  const ano = p.length === 3 ? parseInt(p[2]) : new Date().getFullYear();
+  const dv = new Date(ano, parseInt(p[1])-1, parseInt(p[0]));
+  const dh = new Date(); dh.setHours(0,0,0,0);
+  return Math.round((dv-dh)/86400000);
+}
+
+function statusB(b) {
+  if (b.pago) return 'pago';
+  const d = diasAte(b.venc);
+  if (d < 0)  return 'vencido';
+  if (d === 0) return 'hoje';
+  return 'pendente';
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showTab(name, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function setSubTab(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['sub-importar','sub-manual','sub-despesa'].forEach(s => {
+    const e = document.getElementById(s);
+    if (e) e.style.display = s===id?'block':'none';
+  });
+}
+function toast(msg, dur=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function setSyncBar(tipo, msg) {
+  document.getElementById('sync-bar').className = 'sync-bar ' + tipo;
+  document.getElementById('sync-txt').innerHTML = msg;
+}
+function salvarScriptUrl() {
+  APPS_SCRIPT_URL = document.getElementById('cfg-script-url').value.trim();
+  localStorage.setItem('apps_script_url', APPS_SCRIPT_URL);
+}
+
+// ══════════════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════════════
+function fazerLogin() {
+  const u   = document.getElementById('login-user').value.trim().toLowerCase();
+  const p   = document.getElementById('login-pass').value;
+  const l   = document.getElementById('login-loja').value;
+  const err = document.getElementById('login-err');
+  const etx = document.getElementById('login-err-txt');
+  if (!u||!p||!l) { err.style.display='flex'; etx.textContent='Preencha todos os campos.'; return; }
+  const usr = USUARIOS[u];
+  if (!usr||usr.senha!==p) { err.style.display='flex'; etx.textContent='Usuário ou senha incorretos.'; return; }
+  if (usr.nivel==='fiscal'&&l!==usr.loja) { err.style.display='flex'; etx.textContent='Acesso não permitido.'; return; }
+  err.style.display='none';
+  userAtual = usr; lojaAtual = l==='all'?'l2':l;
+  document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.nivel==='gestor'?'Gestor':'Fiscal');
+  document.getElementById('h-store').textContent = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':'Todas as lojas';
+  document.getElementById('loja-sel').style.display = usr.nivel==='fiscal'?'none':'flex';
+  if (usr.nivel==='fiscal') {
+    document.querySelectorAll('.nav-btn').forEach((b,i)=>{ b.style.display=i===1?'flex':'none'; });
+    showTab('lancar',document.querySelectorAll('.nav-btn')[1]);
+    setSubTab(document.querySelectorAll('.tab')[2],'sub-despesa');
+  }
+  // Restaurar URL do Apps Script
+  const savedUrl = localStorage.getItem('apps_script_url')||'';
+  document.getElementById('cfg-script-url').value = savedUrl || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+  APPS_SCRIPT_URL = savedUrl;
+  // Pré-preencher datas
+  const hj = new Date().toISOString().split('T')[0];
+  document.getElementById('desp-data').value = hj;
+  document.getElementById('man-data').value  = hj;
+  document.getElementById('modal-data-pag').value = hj;
+  document.getElementById('massa-data-pag').value = hj;
+  show('s-app');
+  carregarSheets();
+}
+function fazerLogout() {
+  userAtual=null;
+  ['login-user','login-pass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('login-loja').value='';
+  document.querySelectorAll('.nav-btn').forEach(b=>b.style.display='');
+  show('s-login');
+}
+function trocarLoja(btn,nome,id) {
+  document.querySelectorAll('.loja-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); lojaAtual=id;
+  document.getElementById('h-store').textContent=nome;
+  renderizarPainel(); filtrar();
+}
+
+// ══════════════════════════════════════════════════════
+// GOOGLE SHEETS — LEITURA
+// ══════════════════════════════════════════════════════
+async function fetchRange(range) {
+  const url = `${BASE_URL}/${encodeURIComponent(range)}?key=${API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const j = await res.json();
+  return j.values || [];
+}
+
+async function carregarSheets() {
+  setSyncBar('carregando','↻ Carregando dados...');
+  try {
+    const [vendas, contas, meta] = await Promise.all([
+      fetchRange('Lancamento_Diario!A:P'),
+      fetchRange('Contas_Pagar!A:M'),
+      fetchRange('Metadados!A:B'),
+    ]);
+
+    // ── VENDAS — índices corretos conforme sincronizar_sheets.py ──
+    // [0]=DATA [1]=DIA_SEM [2]=TOTAL [3]=DINHEIRO [4]=DEBITO
+    // [5]=CRED_VISTA [6]=PIX [7]=ALIMENTACAO [8]=PERDIDOS
+    // [9]=PARCELADO [10]=CLIENTES [11]=RECEB_DEB [12]=RECEB_CRED
+    // [13]=RECEB_PIX [14]=CONTAS_DIA
+    dadosVendas = vendas.slice(1).filter(r=>r[0]).map(r=>({
+      data:      r[0]||'',
+      total:     N(r[2]),
+      dinheiro:  N(r[3]),
+      debito:    N(r[4]),
+      credito:   N(r[5]),
+      pix:       N(r[6]),
+      aliment:   N(r[7]),
+      perdidos:  N(r[8]),
+      parcelado: N(r[9]),
+      clientes:  N(r[10]),
+    }));
+
+    // ── CONTAS — índices corretos ──
+    // [0]=NUM [1]=DT_EMIS [2]=DT_VENCTO [3]=DT_PAGTO
+    // [4]=FORNECEDOR [5]=DOCUMENTO [6]=VALOR [10]=STATUS [11]=BANCO
+    dadosContas = contas.slice(1).filter(r=>r[4]).map((r,i)=>({
+      idx:   i,
+      linha: i+2,       // linha real no Sheets (cabeçalho=1)
+      forn:  r[4]||'—',
+      doc:   r[5]||'',
+      venc:  r[2]||'',  // DT_VENCTO = coluna C = índice 2
+      valor: N(r[6]),   // VALOR = coluna G = índice 6
+      pago:  !!(r[10]&&r[10].toString().toUpperCase().includes('PAGO')),
+      banco: r[11]||'',
+    }));
+
+    // ── METADADOS ──
+    const mm={};
+    (meta||[]).forEach(r=>{if(r[0]&&r[1])mm[r[0]]=r[1];});
+    const ult = mm['ultima_atualizacao']||'—';
+    document.getElementById('cfg-ultima').textContent = ult;
+    setSyncBar('ok',`✓ Atualizado — ${ult}`);
+
+    renderizarPainel();
+    filtrar();
+    atualizarContadorSelecionados();
+
+  } catch(e) {
+    console.error(e);
+    setSyncBar('erro',`✗ Erro: ${e.message.slice(0,50)}`);
+    toast('Erro ao carregar — verifique a conexão');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// PAINEL
+// ══════════════════════════════════════════════════════
+function getDia(offset) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  const fmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  return dadosVendas.find(r=>r.data===fmt)||null;
+}
+
+function renderizarPainel() {
+  const dH=getDia(0), dO=getDia(-1), dA=getDia(-2);
+  const ds=['dom','seg','ter','qua','qui','sex','sáb'];
+  const agora=new Date();
+
+  document.getElementById('p-hoje').textContent   = dH?brl(dH.total):'—';
+  document.getElementById('p-hoje-d').textContent = ds[agora.getDay()]+' '+agora.getDate()+'/'+(agora.getMonth()+1);
+  document.getElementById('p-ontem').textContent  = dO?brl(dO.total):'—';
+  document.getElementById('p-ticket').textContent = dH&&dH.clientes>0?'R$ '+(dH.total/dH.clientes).toFixed(2).replace('.',','):'—';
+  document.getElementById('p-cupons').textContent = dH?dH.clientes.toLocaleString('pt-BR'):'—';
+
+  // Recebimentos: usa colunas calculadas do Sheets se disponíveis, senão calcula
+  const rDeb  = dO?dO.debito:0;
+  const rCred = dA?dA.credito:0;
+  const rParc = dA?dA.parcelado:0;
+  const rPix  = dH?dH.pix:0;
+  const totRec = rDeb+rCred+rParc+rPix;
+
+  document.getElementById('p-deb').textContent     = brl(rDeb);
+  document.getElementById('p-cred').textContent    = brl(rCred);
+  document.getElementById('p-parc').textContent    = brl(rParc);
+  document.getElementById('p-pix').textContent     = brl(rPix);
+  document.getElementById('p-tot-rec').textContent = brl(totRec);
+
+  // Contas a pagar
+  const hjStr = `${String(agora.getDate()).padStart(2,'0')}/${String(agora.getMonth()+1).padStart(2,'0')}/${agora.getFullYear()}`;
+  const hjCurto = hjStr.slice(0,5); // DD/MM
+  const cpHoje = dadosContas.filter(b=>!b.pago&&(b.venc===hjStr||b.venc===hjCurto)).reduce((s,b)=>s+b.valor,0);
+  const cp7 = dadosContas.filter(b=>{
+    if(b.pago)return false;
+    const d=diasAte(b.venc); return d>=0&&d<=7;
+  }).reduce((s,b)=>s+b.valor,0);
+
+  document.getElementById('p-cp-hoje').textContent  = brl(cpHoje);
+  document.getElementById('p-cp-7d').textContent    = brl(cp7);
+  document.getElementById('p-tot-pag').textContent  = brl(cpHoje);
+  document.getElementById('p-data-hoje').textContent = agora.toLocaleDateString('pt-BR');
+
+  const saldo = totRec-cpHoje;
+  const sel = document.getElementById('p-saldo');
+  sel.textContent = (saldo<0?'- ':'')+brl(Math.abs(saldo));
+  sel.className = 'saldo-val '+(saldo>=0?'green':'red');
+
+  const nVenc = dadosContas.filter(b=>!b.pago&&statusB(b)==='vencido').length;
+  const av = document.getElementById('alerta-vencido');
+  if(nVenc>0){av.style.display='flex';document.getElementById('alerta-txt').textContent=`${nVenc} boleto(s) vencido(s) em aberto — verifique a aba Contas.`;}
+  else av.style.display='none';
+
+  document.getElementById('c-hoje').textContent = brl(cpHoje);
+  document.getElementById('c-mes').textContent  = brl(dadosContas.reduce((s,b)=>s+b.valor,0));
+
+  const totV=dadosVendas.reduce((s,r)=>s+r.total,0);
+  const totCu=dadosVendas.reduce((s,r)=>s+r.clientes,0);
+  document.getElementById('r-total').textContent  = brl(totV);
+  document.getElementById('r-cupons').textContent = totCu.toLocaleString('pt-BR');
+  document.getElementById('r-ticket').textContent = totCu>0?'R$ '+(totV/totCu).toFixed(2).replace('.',','): '—';
+  document.getElementById('r-perd').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.perdidos,0));
+  document.getElementById('r-deb').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.debito,0));
+  document.getElementById('r-cred').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.credito,0));
+  document.getElementById('r-pix').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.pix,0));
+  document.getElementById('r-din').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.dinheiro,0));
+  document.getElementById('r-tick').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.aliment,0));
+  document.getElementById('r-cp-tot').textContent  = brl(dadosContas.reduce((s,b)=>s+b.valor,0));
+  document.getElementById('r-cp-pend').textContent = brl(dadosContas.filter(b=>!b.pago).reduce((s,b)=>s+b.valor,0));
+}
+
+// ══════════════════════════════════════════════════════
+// CONTAS — LISTAR
+// ══════════════════════════════════════════════════════
+function filtrar() {
+  const q   = (document.getElementById('busca')||{value:''}).value.toLowerCase();
+  const sel = (document.getElementById('filtro-status')||{value:''}).value;
+  const lista = document.getElementById('lista-boletos');
+  if(!lista) return;
+
+  const items = dadosContas.filter(b=>{
+    const st = statusB(b);
+    if(q&&!b.forn.toLowerCase().includes(q)) return false;
+    if(sel&&st!==sel) return false;
+    return true;
+  });
+
+  if(!items.length){
+    lista.innerHTML='<div style="text-align:center;padding:20px;color:#999;font-size:13px">Nenhum resultado</div>';
+    return;
+  }
+
+  lista.innerHTML = items.map(b=>{
+    const st = statusB(b);
+    const badge = st==='pago'    ?'<span class="badge ok">Pago</span>'
+                : st==='vencido' ?'<span class="badge alert">Vencido</span>'
+                : st==='hoje'    ?'<span class="badge warn">Hoje</span>'
+                :                 '<span class="badge pend">Pendente</span>';
+
+    const chk = (st==='vencido'||st==='hoje') && !b.pago
+      ? `<input type="checkbox" style="width:15px;height:15px;accent-color:#E8650A;cursor:pointer;margin-right:4px"
+           ${selecionados.has(b.idx)?'checked':''}
+           onchange="toggleSelecionado(${b.idx},this.checked)">`
+      : '';
+
+    const btnBaixa = b.pago
+      ? '<button class="btn-baixa" disabled>✓ Pago</button>'
+      : `<button class="btn-baixa" onclick="abrirModalBaixa(${b.idx})">Dar baixa</button>`;
+
+    return `
+      <div class="boleto" id="bol-${b.idx}">
+        <div class="boleto-top">
+          <div><div class="boleto-forn">${b.forn}</div><div class="boleto-doc">${b.doc}</div></div>
+          <div class="boleto-valor">${brl(b.valor)}</div>
+        </div>
+        <div class="boleto-bot">
+          <div class="boleto-data"><i class="ti ti-calendar" style="font-size:12px;vertical-align:-1px"></i> ${b.venc}</div>
+          <div style="display:flex;gap:5px;align-items:center">${chk}${badge}${btnBaixa}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// SELEÇÃO EM MASSA
+// ══════════════════════════════════════════════════════
+function toggleSelecionado(idx, checked) {
+  if(checked) selecionados.add(idx);
+  else selecionados.delete(idx);
+  atualizarContadorSelecionados();
+}
+
+function toggleSelecionarTodos(checked) {
+  selecionados.clear();
+  if(checked) {
+    // Seleciona todos vencidos (incluindo hoje) não pagos
+    dadosContas.forEach(b=>{
+      const st=statusB(b);
+      if(!b.pago&&(st==='vencido'||st==='hoje')) selecionados.add(b.idx);
+    });
+  }
+  atualizarContadorSelecionados();
+  filtrar(); // re-renderiza checkboxes
+}
+
+function atualizarContadorSelecionados() {
+  const n = selecionados.size;
+  document.getElementById('qtd-selecionados').textContent = n;
+  document.getElementById('btn-baixa-massa').disabled = n===0;
+}
+
+function baixaEmMassa() {
+  if(selecionados.size===0) return;
+  const total = [...selecionados].reduce((s,idx)=>{
+    const b=dadosContas.find(x=>x.idx===idx);
+    return s+(b?b.valor:0);
+  },0);
+  document.getElementById('modal-massa-info').innerHTML = `
+    <div class="modal-info-row"><span>Boletos selecionados</span><span><strong>${selecionados.size}</strong></span></div>
+    <div class="modal-info-row"><span>Total</span><span><strong style="color:#E8650A">${brl(total)}</strong></span></div>
+    <div class="modal-info-row"><span>Status</span><span>Vencidos / Hoje</span></div>
+  `;
+  document.getElementById('massa-data-pag').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-massa').classList.add('open');
+}
+
+async function confirmarBaixaMassa() {
+  const btn = document.getElementById('btn-confirmar-massa');
+  btn.disabled=true; btn.textContent='Salvando...';
+  const dataPag = document.getElementById('massa-data-pag').value;
+  const banco   = document.getElementById('massa-banco').value;
+
+  const indices = [...selecionados];
+  let salvos=0, erros=0;
+
+  for(const idx of indices) {
+    const b = dadosContas.find(x=>x.idx===idx);
+    if(!b) continue;
+    b.pago=true;
+    try {
+      await salvarBaixaSheets(b.linha, dataPag, banco, 'Baixa em massa');
+      salvos++;
+    } catch(e) { erros++; }
+  }
+
+  selecionados.clear();
+  document.getElementById('chk-select-all').checked=false;
+  fecharModalMassa();
+  filtrar();
+  renderizarPainel();
+  atualizarContadorSelecionados();
+
+  if(erros===0) toast(`✓ ${salvos} boleto(s) marcado(s) como pago!`);
+  else toast(`✓ ${salvos} pagos | ⚠ ${erros} não salvos no Sheets`);
+
+  btn.disabled=false; btn.textContent='✓ Confirmar todos';
+}
+
+// ══════════════════════════════════════════════════════
+// BAIXA INDIVIDUAL
+// ══════════════════════════════════════════════════════
+function abrirModalBaixa(idx) {
+  boletoCurrent = dadosContas.find(b=>b.idx===idx);
+  if(!boletoCurrent) return;
+  document.getElementById('modal-info').innerHTML = `
+    <div class="modal-info-row"><span>Fornecedor</span><span><strong>${boletoCurrent.forn}</strong></span></div>
+    <div class="modal-info-row"><span>Documento</span><span>${boletoCurrent.doc}</span></div>
+    <div class="modal-info-row"><span>Vencimento</span><span>${boletoCurrent.venc}</span></div>
+    <div class="modal-info-row"><span>Valor</span><span><strong style="color:#E8650A">${brl(boletoCurrent.valor)}</strong></span></div>
+  `;
+  document.getElementById('modal-data-pag').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-obs').value='';
+  document.getElementById('btn-confirmar-baixa').disabled=false;
+  document.getElementById('modal-baixa').classList.add('open');
+}
+
+function fecharModal() { document.getElementById('modal-baixa').classList.remove('open'); boletoCurrent=null; }
+function fecharModalMassa() { document.getElementById('modal-massa').classList.remove('open'); }
+
+async function confirmarBaixa() {
+  if(!boletoCurrent) return;
+  const btn = document.getElementById('btn-confirmar-baixa');
+  btn.disabled=true; btn.textContent='Salvando...';
+  const dataPag = document.getElementById('modal-data-pag').value;
+  const banco   = document.getElementById('modal-banco').value;
+  const obs     = document.getElementById('modal-obs').value;
+
+  boletoCurrent.pago=true;
+  try {
+    await salvarBaixaSheets(boletoCurrent.linha, dataPag, banco, obs);
+    toast('✓ Baixa registrada com sucesso!');
+  } catch(e) {
+    toast('⚠ Salvo localmente — configure o Apps Script para gravar no Sheets');
+    console.error(e);
+  }
+  fecharModal(); filtrar(); renderizarPainel();
+  btn.disabled=false; btn.textContent='✓ Confirmar baixa';
+}
+
+// ══════════════════════════════════════════════════════
+// APPS SCRIPT — ESCRITA NO SHEETS
+// ══════════════════════════════════════════════════════
+async function salvarBaixaSheets(linha, dataPag, banco, obs) {
+  if(!APPS_SCRIPT_URL) return; // sem URL = só local
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({acao:'baixa', linha, dataPag, banco, obs, sheetId:SHEET_ID})
+  });
+  if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
+}
+
+async function salvarDespesaSheets(dados) {
+  if(!APPS_SCRIPT_URL) return;
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({acao:'despesa', ...dados, sheetId:SHEET_ID})
+  });
+  if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
+}
+
+// ══════════════════════════════════════════════════════
+// DESPESA DE CAIXA
+// ══════════════════════════════════════════════════════
+async function salvarDespesa() {
+  const cat   = document.getElementById('desp-cat').value;
+  const catF  = cat==='nova'?document.getElementById('desp-novacat-txt').value.trim():cat;
+  const desc  = document.getElementById('desp-desc').value.trim();
+  const valor = parseFloat(document.getElementById('desp-valor').value);
+  const resp  = document.getElementById('desp-resp').value.trim();
+  const data  = document.getElementById('desp-data').value;
+  if(!catF)          { toast('⚠ Informe a categoria'); return; }
+  if(!desc)          { toast('⚠ Informe a descrição'); return; }
+  if(!valor||valor<=0){ toast('⚠ Informe um valor válido'); return; }
+  if(!resp)          { toast('⚠ Informe o responsável'); return; }
+  const btn = document.getElementById('btn-desp');
+  btn.disabled=true; btn.textContent='Salvando...';
+  try {
+    await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp});
+    toast('✓ Despesa registrada'+(APPS_SCRIPT_URL?' no Sheets!':' localmente!'));
+    document.getElementById('desp-desc').value='';
+    document.getElementById('desp-valor').value='';
+    document.getElementById('desp-resp').value='';
+  } catch(e) {
+    toast('⚠ Salvo localmente — configure o Apps Script');
+    console.error(e);
+  }
+  btn.disabled=false; btn.textContent='Registrar despesa';
+}
+
+// ══════════════════════════════════════════════════════
+// RECEBIMENTO MANUAL
+// ══════════════════════════════════════════════════════
+function salvarManual() {
+  const valor = parseFloat(document.getElementById('man-valor').value);
+  if(!valor||valor<=0) { toast('⚠ Informe um valor válido'); return; }
+  toast('✓ Recebimento salvo localmente');
+  document.getElementById('man-valor').value='';
+  document.getElementById('man-obs').value='';
+}
+
+// ══════════════════════════════════════════════════════
+// SPLASH
+// ══════════════════════════════════════════════════════
+const prog = document.getElementById('prog');
+let w=0;
+const iv = setInterval(()=>{
+  w+=2; prog.style.width=Math.min(w,100)+'%';
+  if(w>=100){ clearInterval(iv); setTimeout(()=>show('s-login'),300); }
+},30);
+
+// Fechar modais clicando fora
+['modal-baixa','modal-massa'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){
+    if(e.target===this) this.classList.remove('open');
+  });
+});
+</script>
+
+
+</div></body></html>
