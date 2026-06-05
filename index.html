@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_16.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_17.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./Supermefffdsvddrcados_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./Ideal Supermertrtttt_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -40,8 +40,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .header-user{font-size:11px;color:rgba(255,255,255,0.75)}
 .header-logout{background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#fff;font-size:12px;display:flex;align-items:center;gap:4px;font-family:Arial,sans-serif}
 
-.sync-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;font-size:11px;border-bottom:1px solid #eee}
-.sync-bar.ok{background:#F0FAF5;color:#0F6E56}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:11px;border-bottom:1px solid #eee}
+.sync-bar i{font-size:15px;vertical-align:-2px;margin-right:5px}
+.sync-bar.ok{background:#E6F1FB;color:#185FA5}
 .sync-bar.erro{background:#FEF3F2;color:#A32D2D}
 .sync-bar.carregando{background:#EEF2FC;color:#1B3A9E}
 .sync-bar.offline{background:#f8f8f8;color:#888}
@@ -299,7 +300,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div class="sync-bar offline" id="sync-bar">
-      <span id="sync-txt">Aguardando...</span>
+      <span id="sync-txt"><i class="ti ti-cloud"></i>Aguardando...</span>
       <button onclick="carregarSheets()">↻ Atualizar</button>
     </div>
 
@@ -715,6 +716,12 @@ function setSyncBar(tipo, msg) {
   document.getElementById('sync-bar').className = 'sync-bar ' + tipo;
   document.getElementById('sync-txt').innerHTML = msg;
 }
+// "DD/MM/YYYY HH:MM:SS" -> "DD/MM HH:MM" (sem os segundos). Se não casar, devolve como veio.
+function fmtSync(ult) {
+  if (!ult) return '—';
+  const m = String(ult).match(/(\d{2})\/(\d{2})\/\d{4}\s+(\d{2}):(\d{2})/);
+  return m ? (m[1] + '/' + m[2] + ' ' + m[3] + ':' + m[4]) : String(ult);
+}
 function salvarScriptUrl() {
   APPS_SCRIPT_URL = document.getElementById('cfg-script-url').value.trim();
   localStorage.setItem('apps_script_url', APPS_SCRIPT_URL);
@@ -787,7 +794,7 @@ async function fetchRange(range) {
 }
 
 async function carregarSheets() {
-  setSyncBar('carregando','↻ Carregando dados...');
+  setSyncBar('carregando','<i class="ti ti-refresh"></i>Carregando dados...');
   try {
     const [vendas, contas, meta] = await Promise.all([
       fetchRange('Lancamento_Diario!A:P'),
@@ -837,7 +844,7 @@ async function carregarSheets() {
     (meta||[]).forEach(r=>{if(r[0]&&r[1])mm[r[0]]=r[1];});
     const ult = mm['ultima_atualizacao']||'—';
     document.getElementById('cfg-ultima').textContent = ult;
-    setSyncBar('ok',`✓ Atualizado — ${ult}`);
+    setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Conectado · última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
 
     renderizarPainel();
     filtrar();
@@ -845,7 +852,7 @@ async function carregarSheets() {
 
   } catch(e) {
     console.error(e);
-    setSyncBar('erro',`✗ Erro: ${e.message.slice(0,50)}`);
+    setSyncBar('erro',`<i class="ti ti-alert-triangle"></i>Erro: ${e.message.slice(0,50)}`);
     toast('Erro ao carregar — verifique a conexão');
   }
 }
