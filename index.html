@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_10.html -->
+<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_7.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./ados_files/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -214,7 +214,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 <div class="screen active" id="s-login">
   <div class="login2">
     <div class="login2-photo">
-      <img src="file:///C:/Users/USUARIO1/Downloads/img/fachada.jpg" alt="Ideal Supermercados" onerror="this.style.display=&#39;none&#39;" style="display: none;">
+      <img src="img/fachada.jpg" alt="Ideal Supermercados" onerror="this.style.display='none'">
       <div class="login2-photo-tint"></div>
     </div>
     <div class="login2-card">
@@ -280,7 +280,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="v-card">
         <div class="v-top">
           <div>
-            <div class="v-lbl">Hoje (parcial)</div>
+            <div class="v-lbl" id="p-hoje-lbl">Hoje (parcial)</div>
             <div class="v-num" id="p-hoje">—</div>
             <div class="metric-sub" id="p-hoje-d"></div>
           </div>
@@ -788,40 +788,59 @@ function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
 // DASHBOARD DE VENDAS (comparação vs ontem + gráfico 7 dias)
 // ══════════════════════════════════════════════════════
 function renderVendas(dH, dO, ds) {
+  // ordena por data e considera só dias com data válida
+  const ord = dadosVendas.slice().filter(r => parseDataBR(r.data)).sort((a,b) => parseDataBR(a.data) - parseDataBR(b.data));
+  const ag = new Date();
+  const hoje = String(ag.getDate()).padStart(2,'0') + '/' + String(ag.getMonth()+1).padStart(2,'0') + '/' + ag.getFullYear();
+
+  // dia exibido: hoje se já tiver dados, senão o último dia com dados
+  let dispIdx = dH ? ord.findIndex(r => r.data === hoje) : ord.length - 1;
+  if (dispIdx < 0) dispIdx = ord.length - 1;
+  const dD = dispIdx >= 0 ? ord[dispIdx] : null;
+  const dP = dispIdx > 0 ? ord[dispIdx - 1] : null;
+  const ehHoje = !!(dD && dD.data === hoje);
+
+  const lblEl = document.getElementById('p-hoje-lbl');
+  if (lblEl) lblEl.textContent = ehHoje ? 'Hoje (parcial)' : (dD ? 'Último dia (' + dD.data.slice(0,5) + ')' : 'Vendas');
+  document.getElementById('p-hoje').textContent = dD ? brl(dD.total) : '—';
+  const dtD = dD ? parseDataBR(dD.data) : null;
+  document.getElementById('p-hoje-d').textContent = dtD ? ds[dtD.getDay()] + ' ' + dD.data.slice(0,5) : '';
+  document.getElementById('p-ticket').textContent = dD && dD.clientes > 0 ? 'R$ ' + (dD.total / dD.clientes).toFixed(2).replace('.',',') : '—';
+  document.getElementById('p-cupons').textContent = dD ? dD.clientes.toLocaleString('pt-BR') : '—';
+
+  // comparação com o dia anterior real
   const cmp = document.getElementById('p-cmp');
   if (cmp) {
-    if (dH && dO && dO.total > 0) {
-      const pct = Math.round(((dH.total - dO.total) / dO.total) * 100);
+    if (dD && dP && dP.total > 0) {
+      const pct = Math.round(((dD.total - dP.total) / dP.total) * 100);
       const up = pct >= 0;
       cmp.style.display = 'inline-flex';
       cmp.className = 'v-cmp ' + (up ? 'up' : 'down');
-      cmp.innerHTML = '<i class="ti ti-arrow-' + (up ? 'up' : 'down') + '-right"></i> ' + Math.abs(pct) + '% vs ontem';
+      cmp.innerHTML = '<i class="ti ti-arrow-' + (up ? 'up' : 'down') + '-right"></i> ' + Math.abs(pct) + '% vs ' + dP.data.slice(0,5);
     } else {
       cmp.style.display = 'none';
     }
   }
+
+  // gráfico: últimos 7 dias em ordem cronológica, rótulo dd/mm
   const bars = document.getElementById('p-bars');
   const xl   = document.getElementById('p-xl');
   if (!bars || !xl) return;
-  const ult = dadosVendas.slice(-7);
+  const ult = ord.slice(-7);
   if (!ult.length) {
     bars.innerHTML = '';
     xl.innerHTML = '<span style="flex:1;color:#bbb">Sem dados de vendas ainda</span>';
     return;
   }
   const max = Math.max.apply(null, ult.map(r => r.total).concat([1]));
-  const ag = new Date();
-  const hoje = String(ag.getDate()).padStart(2,'0') + '/' + String(ag.getMonth()+1).padStart(2,'0') + '/' + ag.getFullYear();
   bars.innerHTML = ult.map(r => {
     const h = Math.max(6, Math.round((r.total / max) * 100));
-    const cor = r.data === hoje ? '#FFC400' : '#1B3A9E';
+    const cor = (dD && r.data === dD.data) ? '#FFC400' : '#1B3A9E';
     return '<div title="' + r.data + ': ' + brl(r.total) + '" style="height:' + h + '%;background:' + cor + '"></div>';
   }).join('');
   xl.innerHTML = ult.map(r => {
-    const dt = parseDataBR(r.data);
-    const lbl = r.data === hoje ? 'hoje' : (dt ? ds[dt.getDay()] : '');
-    const st = r.data === hoje ? 'color:#16267A;font-weight:500' : '';
-    return '<span style="' + st + '">' + lbl + '</span>';
+    const st = (dD && r.data === dD.data) ? 'color:#16267A;font-weight:500' : '';
+    return '<span style="' + st + '">' + r.data.slice(0,5) + '</span>';
   }).join('');
 }
 
@@ -830,11 +849,7 @@ function renderizarPainel() {
   const ds=['dom','seg','ter','qua','qui','sex','sáb'];
   const agora=new Date();
 
-  document.getElementById('p-hoje').textContent   = dH?brl(dH.total):'—';
-  document.getElementById('p-hoje-d').textContent = ds[agora.getDay()]+' '+agora.getDate()+'/'+(agora.getMonth()+1);
   renderVendas(dH, dO, ds);
-  document.getElementById('p-ticket').textContent = dH&&dH.clientes>0?'R$ '+(dH.total/dH.clientes).toFixed(2).replace('.',','):'—';
-  document.getElementById('p-cupons').textContent = dH?dH.clientes.toLocaleString('pt-BR'):'—';
 
   // Recebimentos D+1/D+2 pulando fins de semana.
   // Para cada dia de venda, calcula em que dia o dinheiro cai e soma o que cai HOJE.
@@ -1099,7 +1114,7 @@ async function salvarBaixaSheets(linha, dataPag, banco, obs) {
   if(!APPS_SCRIPT_URL) return; // sem URL = só local
   const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({acao:'baixa', linha, dataPag, banco, obs, sheetId:SHEET_ID})
   });
   if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
@@ -1109,7 +1124,7 @@ async function salvarDespesaSheets(dados) {
   if(!APPS_SCRIPT_URL) return;
   const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({acao:'despesa', ...dados, sheetId:SHEET_ID})
   });
   if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
@@ -1174,5 +1189,4 @@ const iv = setInterval(()=>{
 </script>
 
 
-</div>
-</body></html>
+</div></body></html>
