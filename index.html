@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_14.html -->
+<!-- saved from url=(0072)file:///C:/Users/USUARIO1/Downloads/index_ATUALIZADO_painel_grafico.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./Ideal SupermercadosAQW_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./Ideal ercados_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -69,6 +69,15 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .v-bars div{flex:1;border-radius:4px 4px 0 0;min-height:6px;background:#1B3A9E}
 .v-xl{display:flex;gap:7px;font-size:11px;color:#999;margin-top:5px;text-align:center}
 .v-xl span{flex:1}
+.v-chart{position:relative;height:140px;margin-top:14px}
+.vc-line{position:absolute;left:30px;right:4px;border-top:1px dashed #e6e6e6}
+.vc-lbl{position:absolute;left:0;font-size:11px;color:#aaa;transform:translateY(-50%)}
+.vc-bars{position:absolute;left:30px;right:8px;top:0;bottom:10px;display:flex;align-items:flex-end;justify-content:space-between;gap:5px}
+.vc-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.vc-val{font-size:11px;font-weight:500;color:#1B3A9E;margin-bottom:4px;visibility:hidden;white-space:nowrap}
+.vc-bar{width:13px;border-radius:4px 4px 0 0;background:#1B3A9E;transition:height .7s ease;height:0}
+.vc-x{font-size:11px;color:#999;margin-top:5px}
+.vc-x.on{color:#16267A;font-weight:500}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .metric{background:#f8f8f8;border-radius:10px;padding:12px}
 .metric-label{font-size:11px;color:#999;margin-bottom:3px}
@@ -286,8 +295,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
           </div>
           <div class="v-cmp" id="p-cmp" style="display:none">—</div>
         </div>
-        <div class="v-bars" id="p-bars" role="img" aria-label="Vendas dos últimos dias"></div>
-        <div class="v-xl" id="p-xl"></div>
+        <div class="v-chart" id="p-chart" role="img" aria-label="Vendas dos últimos dias"></div>
       </div>
       <div class="grid2" style="margin-top:10px;margin-bottom:0">
         <div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value" id="p-ticket">—</div></div>
@@ -573,6 +581,10 @@ let baixasLocais  = new Set(); // chaves doc|forn|venc baixadas nesta sessão (r
 // UTILITÁRIOS
 // ══════════════════════════════════════════════════════
 const brl = v => 'R$ ' + Math.abs(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+// escala "redonda" para o eixo do gráfico (1/2/5 x 10^n)
+function niceCeil(v){ if(v<=0) return 1; const p=Math.pow(10,Math.floor(Math.log10(v))); const n=v/p; const m=n<=1?1:(n<=2?2:(n<=5?5:10)); return m*p; }
+// formato curto: 1500->1,5k | 2000000->2M
+function fmtK(v){ v=Math.round(v); if(v>=1000000){ const m=v/1000000; return (m%1?m.toFixed(1):m.toFixed(0)).replace('.',',')+'M'; } if(v>=1000){ return Math.round(v/1000)+'k'; } return String(v); }
 const N   = v => { const n = parseFloat(String(v||'').replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; };
 
 function diasAte(venc) {
@@ -828,26 +840,47 @@ function renderVendas(dH, dO, ds) {
     }
   }
 
-  // gráfico: últimos 7 dias em ordem cronológica, rótulo dd/mm
-  const bars = document.getElementById('p-bars');
-  const xl   = document.getElementById('p-xl');
-  if (!bars || !xl) return;
+  // gráfico: últimos 7 dias com escala, animação e valor no toque
+  const chart = document.getElementById('p-chart');
+  if (!chart) return;
   const ult = ord.slice(-7);
   if (!ult.length) {
-    bars.innerHTML = '';
-    xl.innerHTML = '<span style="flex:1;color:#bbb">Sem dados de vendas ainda</span>';
+    chart.innerHTML = '<div style="padding:20px 0;color:#bbb;font-size:12px;text-align:center">Sem dados de vendas ainda</div>';
     return;
   }
-  const max = Math.max.apply(null, ult.map(r => r.total).concat([1]));
-  bars.innerHTML = ult.map(r => {
-    const h = Math.max(6, Math.round((r.total / max) * 100));
-    const cor = (dD && r.data === dD.data) ? '#FFC400' : '#1B3A9E';
-    return '<div title="' + r.data + ': ' + brl(r.total) + '" style="height:' + h + '%;background:' + cor + '"></div>';
+  const maxv = Math.max.apply(null, ult.map(r => Number(r.total) || 0));
+  const topo = niceCeil(maxv);
+  const lines = [[25, topo], [77, topo / 2], [130, 0]];
+  const linesHtml = lines.map(L => '<div class="vc-line" style="top:' + L[0] + 'px"></div><span class="vc-lbl" style="top:' + L[0] + 'px">' + fmtK(L[1]) + '</span>').join('');
+  const barsHtml = ult.map(r => {
+    const h = Math.max(4, Math.round((Number(r.total) / topo) * 105));
+    const sel = (dD && r.data === dD.data);
+    return '<div class="vc-col" data-v="' + brl(r.total) + '">'
+         + '<span class="vc-val"' + (sel ? ' style="visibility:visible"' : '') + '>' + brl(r.total) + '</span>'
+         + '<div class="vc-bar" data-h="' + h + '"' + (sel ? ' style="background:#FFC400"' : '') + '></div>'
+         + '<span class="vc-x' + (sel ? ' on' : '') + '">' + r.data.slice(0, 5) + '</span></div>';
   }).join('');
-  xl.innerHTML = ult.map(r => {
-    const st = (dD && r.data === dD.data) ? 'color:#16267A;font-weight:500' : '';
-    return '<span style="' + st + '">' + r.data.slice(0,5) + '</span>';
-  }).join('');
+  chart.innerHTML = linesHtml + '<div class="vc-bars">' + barsHtml + '</div>';
+  // animação: barras crescem
+  requestAnimationFrame(function () { setTimeout(function () {
+    chart.querySelectorAll('.vc-bar').forEach(function (b) { b.style.height = b.getAttribute('data-h') + 'px'; });
+  }, 30); });
+  // toque / passar o dedo: mostra o valor em cima da barra
+  const cols = chart.querySelectorAll('.vc-col');
+  cols.forEach(function (c) {
+    function selc() {
+      cols.forEach(function (x) {
+        x.querySelector('.vc-val').style.visibility = 'hidden';
+        x.querySelector('.vc-bar').style.background = '#1B3A9E';
+        x.querySelector('.vc-x').classList.remove('on');
+      });
+      c.querySelector('.vc-val').style.visibility = 'visible';
+      c.querySelector('.vc-bar').style.background = '#FFC400';
+      c.querySelector('.vc-x').classList.add('on');
+    }
+    c.addEventListener('click', selc);
+    c.addEventListener('mouseenter', selc);
+  });
 }
 
 function renderizarPainel() {
@@ -1198,4 +1231,5 @@ const iv = setInterval(()=>{
 
 
 </div>
+
 </body></html>
