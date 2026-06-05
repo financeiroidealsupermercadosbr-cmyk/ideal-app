@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_19.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_20.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./I_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./g_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -62,6 +62,18 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .cart-row .cr-val{font-size:14px;font-weight:600}
 .cart-tag{font-size:11px;background:#E6F1FB;color:#185FA5;padding:1px 7px;border-radius:6px;display:inline-block;margin-top:2px}
 .cart-tag.hoje{background:#E1F5EE;color:#0F6E56}
+.cart-extrato{display:flex;align-items:center;gap:7px;background:#E6F1FB;color:#185FA5;border-radius:8px;padding:8px 11px;font-size:11px;margin-bottom:11px}
+.cart-extrato i{font-size:15px;margin-right:0}
+.cart-loja{display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:10px 12px;border:1px solid rgba(22,38,122,0.12);margin-bottom:12px}
+.cart-loja .cl-nm{flex:1;font-size:13px;color:#16267A;font-weight:600}
+.cart-loja i{color:#1B3A9E;font-size:19px}
+.cart-agenda{background:#fff;border-radius:12px;border:1px solid rgba(22,38,122,0.12);padding:12px 14px;margin-top:12px}
+.cart-agenda .ag-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0}
+.cart-agenda .ag-row+.ag-row{border-top:1px solid rgba(0,0,0,0.06)}
+.cart-agenda .ag-d{font-size:12px;color:#16267A;font-weight:600}
+.cart-agenda .ag-s{font-size:11px;color:#888780;margin-top:1px}
+.cart-agenda .ag-v{font-size:13px;font-weight:600;color:#16267A}
+.cart-agenda .ag-rule{font-size:11px;color:#854F0B;background:#FAEEDA;padding:1px 6px;border-radius:6px;display:inline-block;margin-top:2px}
 .header-icon i{font-size:18px;color:#fff}
 .header-store{font-size:14px;font-weight:500;color:#fff}
 .header-user{font-size:11px;color:rgba(255,255,255,0.75)}
@@ -446,12 +458,20 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     <!-- CARTÕES E RECEBIMENTOS -->
     <div id="tab-cartoes" class="content" style="display:none">
       <div class="cart-head"><i class="ti ti-arrow-left" onclick="voltarPainel()"></i><span class="ch-t">Cartões e Recebimentos</span></div>
+      <div class="cart-extrato"><i class="ti ti-file-invoice"></i><span>Extrato bancário · última atualização <span id="c-extrato-ts">—</span></span></div>
+      <div class="cart-loja"><i class="ti ti-building-store"></i><span class="cl-nm" id="c-store">Loja 2 — Melhor QS8</span><i class="ti ti-chevron-down"></i></div>
       <div class="cart-total"><div class="ct-lab">Total a receber</div><div class="ct-val" id="c-total">—</div></div>
       <div class="cart-list">
         <div class="cart-row"><i class="ti ti-qrcode"></i><div class="cr-mid"><div class="cr-nm">Pix</div><span class="cart-tag hoje">cai hoje</span></div><span class="cr-val" id="c-pix">—</span></div>
         <div class="cart-row"><i class="ti ti-credit-card"></i><div class="cr-mid"><div class="cr-nm">Débito</div><span class="cart-tag">D+1</span></div><span class="cr-val" id="c-deb">—</span></div>
         <div class="cart-row"><i class="ti ti-credit-card"></i><div class="cr-mid"><div class="cr-nm">Crédito à vista</div><span class="cart-tag">D+2</span></div><span class="cr-val" id="c-cred">—</span></div>
         <div class="cart-row"><i class="ti ti-credit-card"></i><div class="cr-mid"><div class="cr-nm">Crédito parcelado</div><span class="cart-tag">D+2</span></div><span class="cr-val" id="c-parc">—</span></div>
+      </div>
+      <div class="cart-agenda">
+        <div class="section-label"><i class="ti ti-calendar"></i> Agenda — quando cai</div>
+        <div class="ag-row"><div><div class="ag-d" id="ag-d1-dia">—</div><div class="ag-s">Débito · D+1</div></div><span class="ag-v" id="ag-d1-val">—</span></div>
+        <div class="ag-row"><div><div class="ag-d" id="ag-d2-dia">—</div><div class="ag-s">Crédito à vista · D+2</div></div><span class="ag-v" id="ag-d2-val">—</span></div>
+        <div class="ag-row"><div><div class="ag-d" id="ag-d3-dia">—</div><div><span class="ag-rule">Crédito parcelado · D+2 · domingo: regra +1</span></div></div><span class="ag-v" id="ag-d3-val">—</span></div>
       </div>
     </div>
 
@@ -753,6 +773,19 @@ function renderCartoes() {
   document.getElementById('c-deb').textContent   = brl(r.deb);
   document.getElementById('c-cred').textContent  = brl(r.cred);
   document.getElementById('c-parc').textContent  = brl(r.parc);
+  var elUlt = document.getElementById('ultima');
+  var elEx = document.getElementById('c-extrato-ts');
+  if(elEx) elEx.textContent = elUlt ? elUlt.textContent : '—';
+  var elHs = document.getElementById('h-store');
+  var elCs = document.getElementById('c-store');
+  if(elCs && elHs && elHs.textContent.trim()) elCs.textContent = elHs.textContent.trim();
+  function proxUtil(base, n){ var d=new Date(base); var add=0; while(add<n){ d.setDate(d.getDate()+1); var w=d.getDay(); if(w!==0 && w!==6) add++; } return d; }
+  function fmtDia(d){ var sem=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()]; var dd=('0'+d.getDate()).slice(-2); var mm=('0'+(d.getMonth()+1)).slice(-2); return sem+' '+dd+'/'+mm; }
+  function setT(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+  var hoje=new Date();
+  setT('ag-d1-dia', fmtDia(proxUtil(hoje,1))); setT('ag-d1-val', brl(r.deb));
+  setT('ag-d2-dia', fmtDia(proxUtil(hoje,2))); setT('ag-d2-val', brl(r.cred));
+  setT('ag-d3-dia', fmtDia(proxUtil(hoje,2))); setT('ag-d3-val', brl(r.parc));
 }
 function showTab(name, btn) {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
@@ -1535,6 +1568,7 @@ initFiltro();
 
 
 </div>
+
 
 
 </body></html>
