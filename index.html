@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_7.html -->
+<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_8.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./index.html2_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./Ideal Supermercados3_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -234,9 +234,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="metric"><div class="metric-label">Cupons hoje</div><div class="metric-value" id="p-cupons">—</div></div>
       </div>
       <div class="section-label"><i class="ti ti-arrow-down-circle"></i> Recebimentos esperados</div>
-      <div class="row-card"><div><div class="row-label">Débito (D+1)</div><div class="row-sub">de ontem</div></div><div class="row-value green" id="p-deb">—</div></div>
-      <div class="row-card"><div><div class="row-label">Crédito à vista (D+2)</div><div class="row-sub">de anteontem</div></div><div class="row-value green" id="p-cred">—</div></div>
-      <div class="row-card"><div><div class="row-label">Crédito parcelado (D+2)</div><div class="row-sub">de anteontem</div></div><div class="row-value green" id="p-parc">—</div></div>
+      <div class="row-card"><div><div class="row-label">Débito (D+1)</div><div class="row-sub" id="p-deb-src">—</div></div><div class="row-value green" id="p-deb">—</div></div>
+      <div class="row-card"><div><div class="row-label">Crédito à vista (D+2)</div><div class="row-sub" id="p-cred-src">—</div></div><div class="row-value green" id="p-cred">—</div></div>
+      <div class="row-card"><div><div class="row-label">Crédito parcelado (D+2)</div><div class="row-sub" id="p-parc-src">—</div></div><div class="row-value green" id="p-parc">—</div></div>
       <div class="row-card"><div><div class="row-label">PIX (D+0)</div><div class="row-sub">já caiu hoje</div></div><div class="row-value green" id="p-pix">—</div></div>
       <div class="total-bar green"><div class="total-label green">Total esperado hoje</div><div class="total-value green" id="p-tot-rec">—</div></div>
       <div class="section-label"><i class="ti ti-arrow-up-circle"></i> Contas a pagar</div>
@@ -680,8 +680,35 @@ function getDia(offset) {
   return dadosVendas.find(r=>r.data===fmt)||null;
 }
 
+// ── Dias úteis / liquidação de recebimentos ──
+function parseDataBR(s){ // "DD/MM/YYYY" -> Date (00:00) | null
+  const p = String(s||'').trim().split('/');
+  if(p.length<3) return null;
+  const dt = new Date(+p[2], +p[1]-1, +p[0]); dt.setHours(0,0,0,0);
+  return isNaN(dt) ? null : dt;
+}
+function ehFimDeSemana(d){ const g=d.getDay(); return g===0||g===6; } // 0=dom 6=sáb
+function somarDiasUteis(d, n){ // próximos n dias úteis a partir de d
+  const r = new Date(d);
+  let add=0;
+  while(add<n){ r.setDate(r.getDate()+1); if(!ehFimDeSemana(r)) add++; }
+  return r;
+}
+function caiDebito(venda){ return somarDiasUteis(venda, 1); }     // D+1 útil
+function caiCredito(venda){                                       // D+2 útil
+  let r = somarDiasUteis(venda, 2);
+  if(venda.getDay()===0) r = somarDiasUteis(r, 1);                // domingo: +1 útil (cai na quarta)
+  return r;
+}
+function mesmoDia(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
+  if(!datas.length) return 'sem vendas na origem';
+  if(datas.length===1) return 'de '+datas[0];
+  return 'de '+datas.slice(0,-1).join(', ')+' e '+datas[datas.length-1];
+}
+
 function renderizarPainel() {
-  const dH=getDia(0), dO=getDia(-1), dA=getDia(-2);
+  const dH=getDia(0), dO=getDia(-1);
   const ds=['dom','seg','ter','qua','qui','sex','sáb'];
   const agora=new Date();
 
@@ -691,11 +718,18 @@ function renderizarPainel() {
   document.getElementById('p-ticket').textContent = dH&&dH.clientes>0?'R$ '+(dH.total/dH.clientes).toFixed(2).replace('.',','):'—';
   document.getElementById('p-cupons').textContent = dH?dH.clientes.toLocaleString('pt-BR'):'—';
 
-  // Recebimentos: usa colunas calculadas do Sheets se disponíveis, senão calcula
-  const rDeb  = dO?dO.debito:0;
-  const rCred = dA?dA.credito:0;
-  const rParc = dA?dA.parcelado:0;
-  const rPix  = dH?dH.pix:0;
+  // Recebimentos D+1/D+2 pulando fins de semana.
+  // Para cada dia de venda, calcula em que dia o dinheiro cai e soma o que cai HOJE.
+  // Na 2ª-feira, p.ex., o débito é a soma de sex + sáb + dom (todos caem juntos).
+  const hojeZero = new Date(agora); hojeZero.setHours(0,0,0,0);
+  let rDeb=0, rCred=0, rParc=0;
+  const origDeb=[], origCred=[];
+  dadosVendas.forEach(r=>{
+    const vd = parseDataBR(r.data); if(!vd) return;
+    if(mesmoDia(caiDebito(vd), hojeZero)){ rDeb += r.debito; origDeb.push(r.data.slice(0,5)); }
+    if(mesmoDia(caiCredito(vd), hojeZero)){ rCred += r.credito; rParc += r.parcelado; origCred.push(r.data.slice(0,5)); }
+  });
+  const rPix = dH?dH.pix:0; // PIX cai no mesmo dia (D+0)
   const totRec = rDeb+rCred+rParc+rPix;
 
   document.getElementById('p-deb').textContent     = brl(rDeb);
@@ -703,6 +737,10 @@ function renderizarPainel() {
   document.getElementById('p-parc').textContent    = brl(rParc);
   document.getElementById('p-pix').textContent     = brl(rPix);
   document.getElementById('p-tot-rec').textContent = brl(totRec);
+
+  document.getElementById('p-deb-src').textContent  = rotuloOrigem(origDeb);
+  document.getElementById('p-cred-src').textContent = rotuloOrigem(origCred);
+  document.getElementById('p-parc-src').textContent = rotuloOrigem(origCred);
 
   // Contas a pagar
   const hjStr = `${String(agora.getDate()).padStart(2,'0')}/${String(agora.getMonth()+1).padStart(2,'0')}/${agora.getFullYear()}`;
@@ -1015,4 +1053,5 @@ const iv = setInterval(()=>{
 </script>
 
 
-</div></body></html>
+</div>
+</body></html>
