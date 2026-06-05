@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_7.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_10.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="./ados_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -57,7 +57,18 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .nav-btn i{font-size:19px}
 
 .content{padding:14px}
-.section-label{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.section-label{font-size:12px;font-weight:600;color:#16267A;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.v-card{background:#fff;border:1px solid #ececec;border-radius:12px;padding:13px 14px}
+.v-top{display:flex;justify-content:space-between;align-items:flex-start}
+.v-lbl{font-size:12px;color:#888}
+.v-num{font-size:26px;font-weight:500;color:#16267A;line-height:1.1}
+.v-cmp{font-size:11px;font-weight:500;padding:4px 9px;border-radius:20px;white-space:nowrap;align-items:center;gap:3px}
+.v-cmp.up{background:#E1F5EE;color:#0F6E56}
+.v-cmp.down{background:#FCEBEB;color:#A32D2D}
+.v-bars{display:flex;align-items:flex-end;gap:7px;height:90px;margin-top:12px}
+.v-bars div{flex:1;border-radius:4px 4px 0 0;min-height:6px;background:#1B3A9E}
+.v-xl{display:flex;gap:7px;font-size:11px;color:#999;margin-top:5px;text-align:center}
+.v-xl span{flex:1}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .metric{background:#f8f8f8;border-radius:10px;padding:12px}
 .metric-label{font-size:11px;color:#999;margin-bottom:3px}
@@ -203,7 +214,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 <div class="screen active" id="s-login">
   <div class="login2">
     <div class="login2-photo">
-      <img src="img/fachada.jpg" alt="Ideal Supermercados" onerror="this.style.display='none'">
+      <img src="file:///C:/Users/USUARIO1/Downloads/img/fachada.jpg" alt="Ideal Supermercados" onerror="this.style.display=&#39;none&#39;" style="display: none;">
       <div class="login2-photo-tint"></div>
     </div>
     <div class="login2-card">
@@ -215,7 +226,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <label class="login2-lbl">Senha</label>
       <div class="login2-field"><i class="ti ti-lock"></i><input type="password" id="login-pass" placeholder="••••••" autocomplete="current-password"><i class="ti ti-eye login2-eye" onclick="togglePass(this)"></i></div>
       <label class="login2-lbl">Loja</label>
-      <div class="login2-field"><i class="ti ti-building-store"></i><select id="login-loja"><option value="">Selecione a loja...</option><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="all">Todas as lojas (gestor)</option></select></div>
+      <div class="login2-field"><i class="ti ti-building-store"></i><select id="login-loja"><option value="">Selecione a loja...</option><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="bolos">Ideal Bolos — Restaurante</option><option value="all">Todas as lojas (gestor)</option></select></div>
       <button class="btn-login" onclick="fazerLogin()"><i class="ti ti-login" style="font-size:18px;vertical-align:-3px;margin-right:4px"></i>Entrar</button>
       <div class="login-error" id="login-err"><i class="ti ti-alert-circle"></i><span id="login-err-txt">Erro</span></div>
       <div class="login2-trust">
@@ -223,7 +234,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 3.2 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 3.3 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -250,6 +261,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     <div class="loja-sel" id="loja-sel">
       <button class="loja-btn active" onclick="trocarLoja(this,&#39;Loja 2 — Melhor QS8&#39;,&#39;l2&#39;)">Loja 2</button>
       <button class="loja-btn" onclick="trocarLoja(this,&#39;Loja 1 — Areal QS11&#39;,&#39;l1&#39;)">Loja 1</button>
+      <button class="loja-btn" onclick="trocarLoja(this,&#39;Ideal Bolos — Restaurante&#39;,&#39;bolos&#39;)">Bolos</button>
       <button class="loja-btn" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;l2&#39;)">Todas</button>
     </div>
 
@@ -263,24 +275,38 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
+      <!-- VENDAS / DASHBOARD -->
+      <div class="section-label"><i class="ti ti-chart-bar"></i> Vendas</div>
+      <div class="v-card">
+        <div class="v-top">
+          <div>
+            <div class="v-lbl">Hoje (parcial)</div>
+            <div class="v-num" id="p-hoje">—</div>
+            <div class="metric-sub" id="p-hoje-d"></div>
+          </div>
+          <div class="v-cmp" id="p-cmp" style="display:none">—</div>
+        </div>
+        <div class="v-bars" id="p-bars" role="img" aria-label="Vendas dos últimos dias"></div>
+        <div class="v-xl" id="p-xl"></div>
+      </div>
+      <div class="grid2" style="margin-top:10px;margin-bottom:0">
+        <div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value" id="p-ticket">—</div></div>
+        <div class="metric"><div class="metric-label">Cupons hoje</div><div class="metric-value" id="p-cupons">—</div></div>
+      </div>
+
+      <!-- SALDO DO DIA -->
+      <div class="section-label" style="margin-top:16px"><i class="ti ti-scale"></i> Saldo do dia</div>
       <div class="saldo-hero" id="saldo-hero">
         <div class="saldo-hero-lbl"><i class="ti ti-scale"></i> Saldo projetado de hoje</div>
         <div class="saldo-hero-val" id="p-saldo">—</div>
         <div class="saldo-hero-verdict" id="p-saldo-verdict"></div>
       </div>
-      <div class="grid2" style="margin-bottom:14px">
+      <div class="grid2" style="margin-top:10px;margin-bottom:0">
         <div class="chip"><div class="chip-lbl"><i class="ti ti-arrow-down-circle" style="color:#0F6E56"></i> Entra hoje</div><div class="chip-val green" id="p-entra">—</div></div>
         <div class="chip"><div class="chip-lbl"><i class="ti ti-arrow-up-circle" style="color:#A32D2D"></i> Sai hoje</div><div class="chip-val red" id="p-sai">—</div></div>
       </div>
-      <div id="alerta-vencido" class="alert-box" style="display:none">
+      <div id="alerta-vencido" class="alert-box" style="display:none;margin-top:12px">
         <i class="ti ti-alert-triangle"></i><span id="alerta-txt"></span>
-      </div>
-      <div class="section-label"><i class="ti ti-currency-dollar"></i> Vendas do dia</div>
-      <div class="grid2">
-        <div class="metric"><div class="metric-label">Hoje (parcial)</div><div class="metric-value orange" id="p-hoje">—</div><div class="metric-sub" id="p-hoje-d"></div></div>
-        <div class="metric"><div class="metric-label">Ontem</div><div class="metric-value" id="p-ontem">—</div></div>
-        <div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value" id="p-ticket">—</div></div>
-        <div class="metric"><div class="metric-label">Cupons hoje</div><div class="metric-value" id="p-cupons">—</div></div>
       </div>
       <div class="section-label"><i class="ti ti-arrow-down-circle"></i> Recebimentos esperados</div>
       <div class="row-card"><div><div class="row-label">Débito (D+1)</div><div class="row-sub" id="p-deb-src">—</div></div><div class="row-value green" id="p-deb">—</div></div>
@@ -412,6 +438,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">A configurar</div></div><span class="badge warn">Config</span></div>
+      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-refresh"></i> Sincronização</div>
       <div class="row-card"><div><div class="row-label">Última atualização</div><div class="row-sub" id="cfg-ultima">—</div></div><i class="ti ti-circle-check" style="color:#0F6E56;font-size:18px"></i></div>
@@ -465,7 +492,7 @@ function doPost(e) {
 }</div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.1 — Sheets + Baixa + Despesa</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.3 — Painel novo + Vendas + Ideal Bolos</div></div>
     </div>
   </div>
 </div>
@@ -617,7 +644,7 @@ function fazerLogin() {
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
   document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.nivel==='gestor'?'Gestor':'Fiscal');
-  document.getElementById('h-store').textContent = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':'Todas as lojas';
+  document.getElementById('h-store').textContent = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
   document.getElementById('loja-sel').style.display = usr.nivel==='fiscal'?'none':'flex';
   if (usr.nivel==='fiscal') {
     document.querySelectorAll('.nav-btn').forEach((b,i)=>{ b.style.display=i===1?'flex':'none'; });
@@ -757,6 +784,47 @@ function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
   return 'de '+datas.slice(0,-1).join(', ')+' e '+datas[datas.length-1];
 }
 
+// ══════════════════════════════════════════════════════
+// DASHBOARD DE VENDAS (comparação vs ontem + gráfico 7 dias)
+// ══════════════════════════════════════════════════════
+function renderVendas(dH, dO, ds) {
+  const cmp = document.getElementById('p-cmp');
+  if (cmp) {
+    if (dH && dO && dO.total > 0) {
+      const pct = Math.round(((dH.total - dO.total) / dO.total) * 100);
+      const up = pct >= 0;
+      cmp.style.display = 'inline-flex';
+      cmp.className = 'v-cmp ' + (up ? 'up' : 'down');
+      cmp.innerHTML = '<i class="ti ti-arrow-' + (up ? 'up' : 'down') + '-right"></i> ' + Math.abs(pct) + '% vs ontem';
+    } else {
+      cmp.style.display = 'none';
+    }
+  }
+  const bars = document.getElementById('p-bars');
+  const xl   = document.getElementById('p-xl');
+  if (!bars || !xl) return;
+  const ult = dadosVendas.slice(-7);
+  if (!ult.length) {
+    bars.innerHTML = '';
+    xl.innerHTML = '<span style="flex:1;color:#bbb">Sem dados de vendas ainda</span>';
+    return;
+  }
+  const max = Math.max.apply(null, ult.map(r => r.total).concat([1]));
+  const ag = new Date();
+  const hoje = String(ag.getDate()).padStart(2,'0') + '/' + String(ag.getMonth()+1).padStart(2,'0') + '/' + ag.getFullYear();
+  bars.innerHTML = ult.map(r => {
+    const h = Math.max(6, Math.round((r.total / max) * 100));
+    const cor = r.data === hoje ? '#FFC400' : '#1B3A9E';
+    return '<div title="' + r.data + ': ' + brl(r.total) + '" style="height:' + h + '%;background:' + cor + '"></div>';
+  }).join('');
+  xl.innerHTML = ult.map(r => {
+    const dt = parseDataBR(r.data);
+    const lbl = r.data === hoje ? 'hoje' : (dt ? ds[dt.getDay()] : '');
+    const st = r.data === hoje ? 'color:#16267A;font-weight:500' : '';
+    return '<span style="' + st + '">' + lbl + '</span>';
+  }).join('');
+}
+
 function renderizarPainel() {
   const dH=getDia(0), dO=getDia(-1);
   const ds=['dom','seg','ter','qua','qui','sex','sáb'];
@@ -764,7 +832,7 @@ function renderizarPainel() {
 
   document.getElementById('p-hoje').textContent   = dH?brl(dH.total):'—';
   document.getElementById('p-hoje-d').textContent = ds[agora.getDay()]+' '+agora.getDate()+'/'+(agora.getMonth()+1);
-  document.getElementById('p-ontem').textContent  = dO?brl(dO.total):'—';
+  renderVendas(dH, dO, ds);
   document.getElementById('p-ticket').textContent = dH&&dH.clientes>0?'R$ '+(dH.total/dH.clientes).toFixed(2).replace('.',','):'—';
   document.getElementById('p-cupons').textContent = dH?dH.clientes.toLocaleString('pt-BR'):'—';
 
@@ -1106,4 +1174,5 @@ const iv = setInterval(()=>{
 </script>
 
 
-</div></body></html>
+</div>
+</body></html>
