@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_5.html -->
+<!-- saved from url=(0048)file:///C:/Users/USUARIO1/Downloads/index_7.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./Ideal 2_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./index.html2_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -299,10 +299,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="field-group"><label>Valor (R$)</label><input type="number" id="desp-valor" placeholder="0,00" step="0.01"></div>
         <div class="field-group"><label>Responsável</label><input type="text" id="desp-resp" placeholder="Nome de quem retirou"></div>
         <button class="btn-primary" id="btn-desp" onclick="salvarDespesa()">Registrar despesa</button>
-        <div class="script-notice" id="script-notice-desp">
-          ⚠ Para salvar no Google Sheets, configure o Apps Script.<br>
-          Veja instruções na aba <strong>Config</strong>.
-        </div>
+
       </div>
     </div>
 
@@ -325,14 +322,18 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       </div>
 
       <div class="search-row">
-        <input type="text" placeholder="Buscar fornecedor..." id="busca" oninput="filtrar()">
+        <input type="text" placeholder="Buscar fornecedor..." id="busca" oninput="filtrar()" style="flex:2">
         <select id="filtro-status" onchange="filtrar()">
           <option value="">Todos</option>
-          <option value="hoje">Hoje</option>
           <option value="vencido">Vencidos</option>
           <option value="pendente">Pendentes</option>
           <option value="pago">Pagos</option>
         </select>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="date" id="filtro-data" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+        <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+        <button onclick="limparFiltros()" style="padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer;white-space:nowrap">Limpar</button>
       </div>
       <div id="lista-boletos"><div style="text-align:center;padding:30px;color:#999;font-size:13px">Carregando...</div></div>
     </div>
@@ -373,8 +374,11 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="divider"></div>
 
       <!-- INSTRUÇÃO APPS SCRIPT -->
-      <div class="section-label"><i class="ti ti-brand-google"></i> Apps Script — Escrita no Sheets</div>
-      <div style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:12px;color:#444;line-height:1.8">
+      <div class="section-label" style="justify-content:space-between">
+        <span><i class="ti ti-brand-google"></i> Apps Script</span>
+        <button onclick="document.getElementById(&#39;cfg-script-det&#39;).style.display=document.getElementById(&#39;cfg-script-det&#39;).style.display===&#39;none&#39;?&#39;block&#39;:&#39;none&#39;" style="font-size:10px;padding:2px 8px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#666">Ver instruções</button>
+      </div>
+      <div id="cfg-script-det" style="display:none;background:#f8f8f8;border-radius:10px;padding:14px;font-size:12px;color:#444;line-height:1.8;margin-bottom:10px">
         Para salvar baixas e despesas no Google Sheets, siga:<br><br>
         <strong>1.</strong> Abra a planilha do Google Sheets<br>
         <strong>2.</strong> Menu: <strong>Extensões → Apps Script</strong><br>
@@ -511,8 +515,7 @@ function diasAte(venc) {
 function statusB(b) {
   if (b.pago) return 'pago';
   const d = diasAte(b.venc);
-  if (d < 0)  return 'vencido';
-  if (d === 0) return 'hoje';
+  if (d <= 0) return 'vencido';  // hoje E anteriores = vencido
   return 'pendente';
 }
 
@@ -746,9 +749,19 @@ function renderizarPainel() {
 // ══════════════════════════════════════════════════════
 // CONTAS — LISTAR
 // ══════════════════════════════════════════════════════
+function limparFiltros() {
+  ['busca','filtro-data','filtro-valor-max'].forEach(id=>{
+    const e=document.getElementById(id); if(e) e.value='';
+  });
+  const ss=document.getElementById('filtro-status'); if(ss) ss.value='';
+  filtrar();
+}
+
 function filtrar() {
   const q   = (document.getElementById('busca')||{value:''}).value.toLowerCase();
   const sel = (document.getElementById('filtro-status')||{value:''}).value;
+  const dtF = (document.getElementById('filtro-data')||{value:''}).value; // YYYY-MM-DD
+  const vlMax = parseFloat((document.getElementById('filtro-valor-max')||{value:''}).value)||Infinity;
   const lista = document.getElementById('lista-boletos');
   if(!lista) return;
 
@@ -756,6 +769,15 @@ function filtrar() {
     const st = statusB(b);
     if(q&&!b.forn.toLowerCase().includes(q)) return false;
     if(sel&&st!==sel) return false;
+    if(b.valor>vlMax) return false;
+    if(dtF) {
+      // converte venc DD/MM/YYYY para YYYY-MM-DD para comparar
+      const p=b.venc.split('/');
+      if(p.length>=3) {
+        const vencISO=p[2]+'-'+p[1]+'-'+p[0];
+        if(vencISO!==dtF) return false;
+      }
+    }
     return true;
   });
 
