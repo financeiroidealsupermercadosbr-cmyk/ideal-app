@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0072)file:///C:/Users/USUARIO1/Downloads/index_ATUALIZADO_painel_grafico.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_15.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./Ideal ercados_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./FR_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -78,6 +78,16 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .vc-bar{width:13px;border-radius:4px 4px 0 0;background:#1B3A9E;transition:height .7s ease;height:0}
 .vc-x{font-size:11px;color:#999;margin-top:5px}
 .vc-x.on{color:#16267A;font-weight:500}
+.e-chart{position:relative;height:165px;margin-top:10px}
+.ec-line{position:absolute;left:34px;right:6px;border-top:1px dashed #e6e6e6}
+.ec-lbl{position:absolute;left:0;font-size:11px;color:#aaa;transform:translateY(-50%)}
+.ec-bars{position:absolute;left:34px;right:6px;top:0;bottom:15px;display:flex;align-items:flex-end;justify-content:space-around}
+.ec-col{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.ec-val{font-size:11px;font-weight:500;color:#16267A;margin-bottom:4px;white-space:nowrap}
+.ec-val.off{color:#b8b6ae;font-weight:400}
+.ec-bar{width:32px;border-radius:4px 4px 0 0;background:#1B3A9E;transition:height .7s ease;height:0}
+.ec-lab{font-size:11px;color:#888780;margin-top:6px}
+.ec-note{display:flex;align-items:center;gap:6px;margin-top:4px;padding-left:34px;font-size:11px;color:#b8b6ae}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .metric{background:#f8f8f8;border-radius:10px;padding:12px}
 .metric-label{font-size:11px;color:#999;margin-bottom:3px}
@@ -284,8 +294,15 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
+      <!-- FATURAMENTO POR EMPRESA (mês) -->
+      <div class="section-label"><i class="ti ti-building-store"></i> Faturamento por empresa · mês</div>
+      <div class="v-card">
+        <div class="e-chart" id="p-emp" role="img" aria-label="Faturamento do mês por empresa"></div>
+        <div class="ec-note"><i class="ti ti-info-circle"></i><span id="p-emp-note">Loja 1 e Bolos: sem fonte de dados ainda</span></div>
+      </div>
+
       <!-- VENDAS / DASHBOARD -->
-      <div class="section-label"><i class="ti ti-chart-bar"></i> Vendas</div>
+      <div class="section-label" style="margin-top:16px"><i class="ti ti-chart-bar"></i> Vendas</div>
       <div class="v-card">
         <div class="v-top">
           <div>
@@ -805,6 +822,60 @@ function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
 // ══════════════════════════════════════════════════════
 // DASHBOARD DE VENDAS (comparação vs ontem + gráfico 7 dias)
 // ══════════════════════════════════════════════════════
+function renderEmpresas() {
+  const chart = document.getElementById('p-emp');
+  if (!chart) return;
+  const ag = new Date();
+  const mm = ag.getMonth(), yy = ag.getFullYear();
+  // Faturamento do mês atual da Loja 2 (única com fonte de dados hoje)
+  let totL2 = 0;
+  dadosVendas.forEach(function (r) {
+    const d = parseDataBR(r.data);
+    if (d && d.getMonth() === mm && d.getFullYear() === yy) totL2 += Number(r.total) || 0;
+  });
+  // Loja 1 e Bolos ficam zerados até conectar a fonte de cada um.
+  // Bolos usa amarelo (outro segmento) quando tiver dados.
+  const emp = [
+    { nome: 'Loja 1', val: 0,     cor: '#1B3A9E', dados: false },
+    { nome: 'Loja 2', val: totL2, cor: '#1B3A9E', dados: true  },
+    { nome: 'Bolos',  val: 0,     cor: '#FFC400', dados: false }
+  ];
+  const maxv = Math.max.apply(null, emp.map(function (e) { return e.val; }));
+  const topo = niceCeil(maxv > 0 ? maxv : 1);
+  const lines = [[20, topo], [53, topo * 0.75], [85, topo * 0.5], [118, topo * 0.25], [150, 0]];
+  const linesHtml = lines.map(function (L) {
+    return '<div class="ec-line" style="top:' + L[0] + 'px"></div><span class="ec-lbl" style="top:' + L[0] + 'px">' + fmtK(L[1]) + '</span>';
+  }).join('');
+  const barsHtml = emp.map(function (e) {
+    const tem = e.dados && e.val > 0;
+    const h = tem ? Math.max(4, Math.round((e.val / topo) * 130)) : 3;
+    const cor = tem ? e.cor : '#d3d1c7';
+    const valTxt = tem ? brl(e.val) : '—';
+    return '<div class="ec-col" data-real="' + (tem ? '1' : '0') + '" data-cor="' + e.cor + '">'
+         + '<span class="ec-val' + (tem ? '' : ' off') + '">' + valTxt + '</span>'
+         + '<div class="ec-bar" data-h="' + h + '" style="background:' + cor + '"></div>'
+         + '<span class="ec-lab">' + e.nome + '</span></div>';
+  }).join('');
+  chart.innerHTML = linesHtml + '<div class="ec-bars">' + barsHtml + '</div>';
+  // animação: barras crescem ao abrir
+  requestAnimationFrame(function () { setTimeout(function () {
+    chart.querySelectorAll('.ec-bar').forEach(function (b) { b.style.height = b.getAttribute('data-h') + 'px'; });
+  }, 40); });
+  // toque: destaca a barra tocada (só as que têm dados)
+  const cols = chart.querySelectorAll('.ec-col');
+  cols.forEach(function (c) {
+    c.addEventListener('click', function () {
+      cols.forEach(function (x) {
+        const real = x.getAttribute('data-real') === '1';
+        x.querySelector('.ec-bar').style.background = real ? x.getAttribute('data-cor') : '#d3d1c7';
+      });
+      if (c.getAttribute('data-real') === '1') {
+        c.querySelector('.ec-bar').style.background = '#FFC400';
+      }
+    });
+  });
+}
+
 function renderVendas(dH, dO, ds) {
   // considera só dias com data válida E com venda (>0), em ordem cronológica
   const ord = dadosVendas.slice().filter(r => parseDataBR(r.data) && Number(r.total) > 0).sort((a,b) => parseDataBR(a.data) - parseDataBR(b.data));
@@ -888,6 +959,7 @@ function renderizarPainel() {
   const ds=['dom','seg','ter','qua','qui','sex','sáb'];
   const agora=new Date();
 
+  renderEmpresas();
   renderVendas(dH, dO, ds);
 
   // Recebimentos D+1/D+2 pulando fins de semana.
@@ -1231,5 +1303,6 @@ const iv = setInterval(()=>{
 
 
 </div>
+
 
 </body></html>
