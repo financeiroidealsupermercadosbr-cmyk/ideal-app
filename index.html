@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_20.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_21.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./g_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./w_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -441,10 +441,13 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <i class="ti ti-alert-triangle"></i><span id="alerta-txt"></span>
       </div>
       <div class="section-label"><i class="ti ti-arrow-down-circle"></i> Recebimentos esperados</div>
-      <div class="row-card"><div><div class="row-label">Débito (D+1)</div><div class="row-sub" id="p-deb-src">—</div></div><div class="row-value green" id="p-deb">—</div></div>
-      <div class="row-card"><div><div class="row-label">Crédito à vista (D+2)</div><div class="row-sub" id="p-cred-src">—</div></div><div class="row-value green" id="p-cred">—</div></div>
-      <div class="row-card"><div><div class="row-label">Crédito parcelado (D+2)</div><div class="row-sub" id="p-parc-src">—</div></div><div class="row-value green" id="p-parc">—</div></div>
-      <div class="row-card"><div><div class="row-label">PIX (D+0)</div><div class="row-sub">já caiu hoje</div></div><div class="row-value green" id="p-pix">—</div></div>
+      <div class="row-card"><div><div class="row-label">Pix · débito · crédito</div></div><div class="row-value" id="p-receb-resumo" style="color:#16267A">—</div></div>
+      <div style="display:none">
+        <span id="p-deb-src"></span><span id="p-deb"></span>
+        <span id="p-cred-src"></span><span id="p-cred"></span>
+        <span id="p-parc-src"></span><span id="p-parc"></span>
+        <span id="p-pix"></span>
+      </div>
       <div class="verlink" onclick="abrirCartoes()"><span>Ver em Cartões e Recebimentos</span><i class="ti ti-arrow-right"></i></div>
       <div class="section-label"><i class="ti ti-arrow-up-circle"></i> Contas a pagar</div>
       <div class="pay-today">
@@ -1145,6 +1148,7 @@ function renderizarPainel() {
   const totRec = rDeb+rCred+rParc+rPix;
   window.recebHoje = {tot:totRec, pix:rPix, deb:rDeb, cred:rCred, parc:rParc};
 
+  var elResumo = document.getElementById('p-receb-resumo'); if(elResumo) elResumo.textContent = brl(totRec);
   document.getElementById('p-deb').textContent     = brl(rDeb);
   document.getElementById('p-cred').textContent    = brl(rCred);
   document.getElementById('p-parc').textContent    = brl(rParc);
