@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_22.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_23.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./q_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./K_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -32,6 +32,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .login-error{background:#FCEBEB;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px;display:none;align-items:center;gap:6px}
 
 .app-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+#s-app .app-wrap{min-height:calc(100vh - 20px);display:flex;flex-direction:column}
 .header{background:#1B3A9E;border-bottom:3px solid #FFC400;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .header-left{display:flex;align-items:center;gap:10px}
 .header-icon{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}.header-icon .hi-text{color:#1B3A9E;font-size:11.5px;font-weight:600;font-style:italic;letter-spacing:-0.4px;line-height:1}
@@ -465,14 +466,19 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <i class="ti ti-alert-triangle"></i><span id="alerta-txt"></span>
       </div>
       <div class="section-label"><i class="ti ti-arrow-down-circle"></i> Recebimentos esperados</div>
-      <div class="row-card"><div><div class="row-label">Pix · débito · crédito</div></div><div class="row-value" id="p-receb-resumo" style="color:#16267A">—</div></div>
+      <div style="background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:#5F5E5A">Pix · débito · crédito</span>
+          <b id="p-receb-resumo" style="font-size:15px;color:#16267A">—</b>
+        </div>
+        <div class="verlink" onclick="abrirCartoes()" style="border-top:1px solid rgba(0,0,0,0.08);margin-top:9px;padding-top:9px;justify-content:flex-end"><span>Ver em Cartões e Recebimentos</span><i class="ti ti-arrow-right"></i></div>
+      </div>
       <div style="display:none">
         <span id="p-deb-src"></span><span id="p-deb"></span>
         <span id="p-cred-src"></span><span id="p-cred"></span>
         <span id="p-parc-src"></span><span id="p-parc"></span>
         <span id="p-pix"></span>
       </div>
-      <div class="verlink" onclick="abrirCartoes()"><span>Ver em Cartões e Recebimentos</span><i class="ti ti-arrow-right"></i></div>
       <div class="section-label"><i class="ti ti-arrow-up-circle"></i> Contas a pagar</div>
       <div class="pay-today">
         <div class="pt-ico"><i class="ti ti-cash"></i></div>
