@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_17.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_19.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./x_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./I_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -45,6 +45,23 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .pay-7d{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
 .pay-7d .p7-lab{font-size:13px;color:#5F5E5A}
 .pay-7d .p7-val{font-size:15px;font-weight:600;color:#BA7517}
+.verlink{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 2px 2px;cursor:pointer;color:#185FA5;font-size:13px;font-weight:500}
+.verlink i{font-size:16px}
+.cart-head{background:#1B3A9E;border-bottom:3px solid #FFC400;padding:13px 14px;display:flex;align-items:center;gap:10px;margin:-14px -14px 14px}
+.cart-head i{color:#fff;font-size:19px;cursor:pointer}
+.cart-head .ch-t{flex:1;color:#fff;font-size:14px;font-weight:600}
+.cart-total{background:#1B3A9E;border-radius:12px;padding:14px;margin-bottom:12px}
+.cart-total .ct-lab{font-size:12px;color:#B5D4F4}
+.cart-total .ct-val{font-size:24px;font-weight:700;color:#fff;margin-top:3px}
+.cart-list{background:#fff;border-radius:12px;border:1px solid rgba(22,38,122,0.12);padding:2px 13px 6px}
+.cart-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(0,0,0,0.07)}
+.cart-row:first-child{border-top:none}
+.cart-row i{font-size:20px;color:#1B3A9E}
+.cart-row .cr-mid{flex:1}
+.cart-row .cr-nm{font-size:13px;color:#16267A;font-weight:600}
+.cart-row .cr-val{font-size:14px;font-weight:600}
+.cart-tag{font-size:11px;background:#E6F1FB;color:#185FA5;padding:1px 7px;border-radius:6px;display:inline-block;margin-top:2px}
+.cart-tag.hoje{background:#E1F5EE;color:#0F6E56}
 .header-icon i{font-size:18px;color:#fff}
 .header-store{font-size:14px;font-weight:500;color:#fff}
 .header-user{font-size:11px;color:rgba(255,255,255,0.75)}
@@ -416,13 +433,26 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="row-card"><div><div class="row-label">Crédito à vista (D+2)</div><div class="row-sub" id="p-cred-src">—</div></div><div class="row-value green" id="p-cred">—</div></div>
       <div class="row-card"><div><div class="row-label">Crédito parcelado (D+2)</div><div class="row-sub" id="p-parc-src">—</div></div><div class="row-value green" id="p-parc">—</div></div>
       <div class="row-card"><div><div class="row-label">PIX (D+0)</div><div class="row-sub">já caiu hoje</div></div><div class="row-value green" id="p-pix">—</div></div>
+      <div class="verlink" onclick="abrirCartoes()"><span>Ver em Cartões e Recebimentos</span><i class="ti ti-arrow-right"></i></div>
       <div class="section-label"><i class="ti ti-arrow-up-circle"></i> Contas a pagar</div>
       <div class="pay-today">
-        <div class="pt-ico"><i class="ti ti-cash-banknote"></i></div>
+        <div class="pt-ico"><i class="ti ti-cash"></i></div>
         <div class="pt-mid"><div class="pt-ttl">Contas a pagar hoje</div><div class="pt-sub" id="p-cp-hoje-sub">—</div></div>
         <div class="pt-val" id="p-cp-hoje">—</div>
       </div>
       <div class="pay-7d"><span class="p7-lab">Próximos 7 dias</span><span class="p7-val" id="p-cp-7d">—</span></div>
+    </div>
+
+    <!-- CARTÕES E RECEBIMENTOS -->
+    <div id="tab-cartoes" class="content" style="display:none">
+      <div class="cart-head"><i class="ti ti-arrow-left" onclick="voltarPainel()"></i><span class="ch-t">Cartões e Recebimentos</span></div>
+      <div class="cart-total"><div class="ct-lab">Total a receber</div><div class="ct-val" id="c-total">—</div></div>
+      <div class="cart-list">
+        <div class="cart-row"><i class="ti ti-qrcode"></i><div class="cr-mid"><div class="cr-nm">Pix</div><span class="cart-tag hoje">cai hoje</span></div><span class="cr-val" id="c-pix">—</span></div>
+        <div class="cart-row"><i class="ti ti-credit-card"></i><div class="cr-mid"><div class="cr-nm">Débito</div><span class="cart-tag">D+1</span></div><span class="cr-val" id="c-deb">—</span></div>
+        <div class="cart-row"><i class="ti ti-credit-card"></i><div class="cr-mid"><div class="cr-nm">Crédito à vista</div><span class="cart-tag">D+2</span></div><span class="cr-val" id="c-cred">—</span></div>
+        <div class="cart-row"><i class="ti ti-credit-card"></i><div class="cr-mid"><div class="cr-nm">Crédito parcelado</div><span class="cart-tag">D+2</span></div><span class="cr-val" id="c-parc">—</span></div>
+      </div>
     </div>
 
     <!-- LANÇAR -->
@@ -706,6 +736,23 @@ function statusB(b) {
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+function abrirCartoes() {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
+  document.getElementById('tab-cartoes').style.display='block';
+  renderCartoes();
+}
+function voltarPainel() {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
+  document.getElementById('tab-painel').style.display='block';
+}
+function renderCartoes() {
+  var r = window.recebHoje || {tot:0,pix:0,deb:0,cred:0,parc:0};
+  document.getElementById('c-total').textContent = brl(r.tot);
+  document.getElementById('c-pix').textContent   = brl(r.pix);
+  document.getElementById('c-deb').textContent   = brl(r.deb);
+  document.getElementById('c-cred').textContent  = brl(r.cred);
+  document.getElementById('c-parc').textContent  = brl(r.parc);
 }
 function showTab(name, btn) {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
@@ -1063,6 +1110,7 @@ function renderizarPainel() {
   });
   const rPix = dH?dH.pix:0; // PIX cai no mesmo dia (D+0)
   const totRec = rDeb+rCred+rParc+rPix;
+  window.recebHoje = {tot:totRec, pix:rPix, deb:rDeb, cred:rCred, parc:rParc};
 
   document.getElementById('p-deb').textContent     = brl(rDeb);
   document.getElementById('p-cred').textContent    = brl(rCred);
