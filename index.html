@@ -106,6 +106,61 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .dre-soon{background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
 .dre-soon i{font-size:34px;color:#1B3A9E;display:block;margin-bottom:10px}
 
+/* ===== DRE (fatia 1) ===== */
+.dre-lojas{display:flex;gap:6px;margin-bottom:10px}
+.dre-loja{flex:1;text-align:center;font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:8px;padding:7px 0;cursor:pointer;font-weight:500}
+.dre-loja.on{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.dre-per{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(22,38,122,0.15);border-radius:10px;padding:10px 11px;margin-bottom:8px;cursor:pointer}
+.dre-per i{color:#1B3A9E}.dre-per .dp-lbl{flex:1;font-size:12.5px;color:#16267A;font-weight:500}.dre-per .dp-hint{font-size:10px;color:#888780}
+.dre-perpanel{display:none;background:#fff;border:1px solid rgba(22,38,122,0.15);border-radius:10px;padding:10px;margin-bottom:8px}
+.dre-perpanel.open{display:block}
+.dre-chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.dre-chip{font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:20px;padding:6px 12px;cursor:pointer}
+.dre-chip.on{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.dre-toggle{display:flex;gap:6px;margin-bottom:12px}
+.dre-tg{flex:1;text-align:center;font-size:11px;color:#185FA5;background:#E6F1FB;border-radius:8px;padding:7px 0;cursor:pointer}
+.dre-tg.on{color:#fff;background:#185FA5}
+.dre-tg i{font-size:13px;vertical-align:-2px;margin-right:3px}
+.dre-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:0.5px solid #eee}
+.dre-row .dr-lbl{font-size:11px;color:#5F5E5A}
+.dre-row .dr-sub{font-size:9.5px;color:#888780;margin-top:1px}
+.dre-row .dr-val{font-size:12px;color:#16267A;text-align:right}
+.dre-row.head{background:#E1F5EE;border-radius:10px;border-bottom:none;margin-bottom:4px;padding:11px 12px}
+.dre-row.head .dr-lbl,.dre-row.head .dr-sub{color:#0F6E56}
+.dre-row.head .dr-val{font-size:16px;font-weight:500;color:#0F6E56}
+.dre-row.sub{padding:6px 12px 6px 22px}
+.dre-row.sub .dr-lbl{font-size:10.5px}.dre-row.sub .dr-val{font-size:11px;color:#5F5E5A}
+.dre-row.total{background:#fafbfc}.dre-row.total .dr-lbl{color:#16267A;font-weight:500}.dre-row.total .dr-val{font-size:13px;color:#16267A;font-weight:500}
+.dre-row.pend{opacity:.55}
+.dre-tag{font-size:10px;color:#888780;background:#F1EFE8;padding:2px 7px;border-radius:6px}
+.dre-result{display:flex;justify-content:space-between;align-items:center;background:#1B3A9E;border-radius:10px;padding:12px;margin-top:6px}
+.dre-result .dr-lbl{font-size:12.5px;color:#fff;font-weight:500}.dre-result .dr-note{font-size:11px;color:#FFC400}.dre-result .dr-val{font-size:16px;color:#fff;font-weight:500}
+.dre-foot{display:flex;gap:8px;margin-top:12px}
+.dre-fbtn{flex:1;text-align:center;font-size:11.5px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:9px;padding:9px 0;font-weight:500;cursor:pointer}
+.dre-fbtn i{font-size:13px;vertical-align:-2px;margin-right:3px}
+.dre-bars{display:flex;align-items:flex-end;gap:14px;height:150px;padding:10px 8px 0;justify-content:center}
+.dre-bcol{display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
+.dre-bval{font-size:10.5px;color:#16267A;font-weight:500;margin-bottom:4px;white-space:nowrap}
+.dre-bar{width:46px;border-radius:5px 5px 0 0;background:#1B3A9E;min-height:4px}
+.dre-bx{font-size:10.5px;color:#888780;margin-top:6px;text-align:center}
+/* navegador de mês */
+.dre-mesnav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dre-seta{width:40px;height:40px;flex:0 0 auto;border:1px solid rgba(22,38,122,0.2);background:#fff;border-radius:10px;color:#1B3A9E;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.dre-mesmid{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid rgba(22,38,122,0.15);border-radius:10px;padding:10px}
+.dre-mesmid i{color:#1B3A9E;font-size:17px}.dre-mesmid .dp-lbl{font-size:13.5px;color:#16267A;font-weight:500;text-transform:capitalize}
+/* grupos manuais */
+.dre-grp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:0.5px solid #eee}
+.dre-grp-row .gr-nm{font-size:11.5px;color:#16267A}
+.dre-grp-row .gr-rt{display:flex;align-items:center;gap:10px}
+.dre-grp-row .gr-val{font-size:12px;font-weight:500}
+.dre-grp-row .gr-x{color:#A32D2D;font-size:16px;cursor:pointer;opacity:.7}
+.dre-grp-lbl{font-size:11px;font-weight:600;color:#16267A;margin:10px 12px 2px;display:flex;align-items:center;gap:5px}
+/* toggle + / - no modal */
+.grp-sinal{display:flex;gap:8px}
+.grp-op{flex:1;text-align:center;font-size:12px;padding:11px 6px;border-radius:10px;border:1px solid #e0e0e0;cursor:pointer;color:#5F5E5A;background:#f8f8f8}
+.grp-op.minus.on{background:#FCEBEB;border-color:#A32D2D;color:#A32D2D;font-weight:500}
+.grp-op.plus.on{background:#E1F5EE;border-color:#0F6E56;color:#0F6E56;font-weight:500}
+
 .content{padding:14px}
 .section-label{font-size:12px;font-weight:600;color:#16267A;margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .v-card{background:#fff;border:1px solid #ececec;border-radius:12px;padding:13px 14px}
@@ -368,7 +423,37 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div id="tab-dre" class="content" style="display:none">
-      <div class="dre-soon"><i class="ti ti-chart-bar"></i>DRE — Resultado<br><span style="font-size:12px;color:#888780">Em construção. Aqui vai entrar Receita → custos → despesas → Resultado, com dados reais, na próxima fatia.</span></div>
+      <div class="dre-lojas">
+        <div class="dre-loja" data-loja="l1" onclick="dreSetLoja('l1')">Loja 1</div>
+        <div class="dre-loja on" data-loja="l2" onclick="dreSetLoja('l2')">Loja 2</div>
+        <div class="dre-loja" data-loja="all" onclick="dreSetLoja('all')">Todas</div>
+      </div>
+
+      <div class="dre-mesnav">
+        <button class="dre-seta" onclick="dreStepMes(-1)" aria-label="Mês anterior"><i class="ti ti-chevron-left"></i></button>
+        <div class="dre-mesmid">
+          <i class="ti ti-calendar"></i>
+          <span class="dp-lbl" id="dre-perLbl">Este mês</span>
+        </div>
+        <button class="dre-seta" id="dre-setaProx" onclick="dreStepMes(1)" aria-label="Próximo mês"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="dre-chiprow" style="margin-bottom:12px">
+        <span class="dre-chip" data-per="hoje" onclick="dreMesHoje()">Mês atual</span>
+        <span class="dre-chip" data-per="ano" onclick="dreSetPer('ano',this)">Este ano</span>
+        <span class="dre-chip" data-per="tudo" onclick="dreSetPer('tudo',this)">Tudo</span>
+      </div>
+
+      <div class="dre-toggle">
+        <div class="dre-tg on" id="dre-tgTab" onclick="dreSetView('tabela')"><i class="ti ti-table"></i>Tabela</div>
+        <div class="dre-tg" id="dre-tgGraf" onclick="dreSetView('grafico')"><i class="ti ti-chart-bar"></i>Gráfico</div>
+      </div>
+
+      <div id="dre-corpo"></div>
+
+      <div class="dre-foot">
+        <div class="dre-fbtn" id="dre-btn-grupo" onclick="abrirModalGrupo()"><i class="ti ti-plus"></i>Novo grupo</div>
+        <div class="dre-fbtn" onclick="toast('Exportar PDF — chega no final')"><i class="ti ti-file-type-pdf"></i>Exportar PDF</div>
+      </div>
     </div>
 
     <div id="tab-menu" class="content" style="display:none">
@@ -720,6 +805,29 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- MODAL GRUPO MANUAL DA DRE -->
+<div class="modal-bg" id="modal-grupo">
+  <div class="modal-card">
+    <div class="modal-title" id="modal-grupo-title">Novo grupo da DRE</div>
+    <div class="field-group"><label>Nome do grupo</label><input type="text" id="grp-nome" placeholder="Ex.: Aluguel, Internet, Imposto..."></div>
+    <div class="field-group"><label>Esse valor…</label>
+      <div class="grp-sinal">
+        <div class="grp-op minus on" id="grp-op-minus" onclick="dreSetSinalGrupo('-')"><i class="ti ti-minus"></i> Subtrai (despesa)</div>
+        <div class="grp-op plus" id="grp-op-plus" onclick="dreSetSinalGrupo('+')"><i class="ti ti-plus"></i> Soma (receita)</div>
+      </div>
+    </div>
+    <div class="field-group"><label>Valor (R$)</label><input type="number" inputmode="decimal" id="grp-valor" placeholder="0,00"></div>
+    <div class="field-group"><label>Vale para</label>
+      <select id="grp-loja"><option value="l2">Loja 2</option><option value="l1">Loja 1</option><option value="all">Todas</option></select>
+    </div>
+    <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:2px"><i class="ti ti-repeat" style="vertical-align:-1px;margin-right:3px"></i>Fica salvo e reaparece todo mês (ex.: aluguel).</div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModalGrupo()">Cancelar</button>
+      <button class="btn-confirmar" onclick="salvarGrupo()">✓ Salvar grupo</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -758,6 +866,13 @@ let dadosContas   = [];
 let boletoCurrent = null;
 let selecionados  = new Set(); // índices selecionados para baixa em massa
 let baixasLocais  = new Set(); // chaves doc|forn|venc baixadas nesta sessão (rede de segurança contra leitura atrasada)
+
+// ── DRE (fatia 1) ──
+let dreLoja   = 'l2';     // l1 | l2 | all  (Loja 1 zerada; l2/all mostram dados)
+let drePer    = 'mes';    // mes (mês de dreMesRef) | ano | tudo
+let dreView   = 'tabela'; // tabela | grafico
+let dreMesRef = (function(){ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })(); // mês exibido
+let dreGrupos = [];       // grupos manuais salvos (aluguel, internet, etc.)
 
 // ══════════════════════════════════════════════════════
 // UTILITÁRIOS
@@ -827,6 +942,7 @@ function showTab(name, btn) {
   var alvo = document.getElementById('tab-'+name); if(alvo) alvo.style.display='block';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if(btn) btn.classList.add('active');
+  if(name==='dre') renderDRE();
   window.scrollTo(0,0);
 }
 function abrirFuncao(name){
@@ -900,6 +1016,7 @@ function fazerLogin() {
   document.getElementById('modal-data-pag').value = hj;
   document.getElementById('massa-data-pag').value = hj;
   show('s-app');
+  dreCarregarGrupos();
   carregarSheets();
 }
 function fazerLogout() {
@@ -966,10 +1083,12 @@ async function carregarSheets() {
         forn:  r[4]||'—',
         doc:   r[5]||'',
         venc:  r[2]||'',  // DT_VENCTO = coluna C = índice 2
+        emis:  r[1]||'',  // DT_EMISSAO = coluna B = índice 1 (usada na DRE)
         valor: N(r[6]),   // VALOR = coluna G = índice 6
         pago:  pagoSheet || baixasLocais.has(chave),
         banco: r[11]||'',
         chave: chave,
+        cat:   categoriaConta(r[4]||''),  // CMV / imposto / despesa, pelo nome do fornecedor
       };
     });
 
@@ -983,6 +1102,8 @@ async function carregarSheets() {
     renderizarPainel();
     filtrar();
     atualizarContadorSelecionados();
+    renderDRE();
+    dreCarregarGruposSheet().then(ok=>{ if(ok) renderDRE(); });
 
   } catch(e) {
     console.error(e);
@@ -994,10 +1115,17 @@ async function carregarSheets() {
 // ══════════════════════════════════════════════════════
 // PAINEL
 // ══════════════════════════════════════════════════════
+// Visão de dados da loja selecionada no topo.
+// Hoje só a Loja 2 tem fonte; Loja 1 e Bolos aparecem ZERADOS até conectarmos cada fonte.
+// "Todas" usa a Loja 2 (trocarLoja manda id 'l2'), então também mostra dados.
+function lojaTemDados(){ return lojaAtual==='l2' || lojaAtual==='all'; }
+function vAtivas(){ return lojaTemDados() ? dadosVendas : []; }
+function cAtivas(){ return lojaTemDados() ? dadosContas : []; }
+
 function getDia(offset) {
   const d = new Date(); d.setDate(d.getDate()+offset);
   const fmt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-  return dadosVendas.find(r=>r.data===fmt)||null;
+  return vAtivas().find(r=>r.data===fmt)||null;
 }
 
 // ── Dias úteis / liquidação de recebimentos ──
@@ -1085,6 +1213,7 @@ function renderEmpresas() {
 }
 
 function renderVendas(dH, dO, ds) {
+  const dadosVendas = vAtivas();
   // considera só dias com data válida E com venda (>0), em ordem cronológica
   const ord = dadosVendas.slice().filter(r => parseDataBR(r.data) && Number(r.total) > 0).sort((a,b) => parseDataBR(a.data) - parseDataBR(b.data));
   const ag = new Date();
@@ -1163,6 +1292,10 @@ function renderVendas(dH, dO, ds) {
 }
 
 function renderizarPainel() {
+  // Visão da loja selecionada: Loja 1 e Bolos = vazio (sem fonte ainda); Loja 2 / Todas = dados.
+  // (renderEmpresas continua mostrando as 3 lojas no comparativo — Loja 2 cheia, as outras zeradas.)
+  const dadosVendas = vAtivas();
+  const dadosContas = cAtivas();
   const dH=getDia(0), dO=getDia(-1);
   const ds=['dom','seg','ter','qua','qui','sex','sáb'];
   const agora=new Date();
@@ -1311,6 +1444,281 @@ function filtrar() {
         </div>
       </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// DRE — RESULTADO (fatia 1: receita real ligada nas vendas)
+// ══════════════════════════════════════════════════════
+// moeda com centavos, no estilo contábil (R$ 1.234.567,89)
+const brlC = v => 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// interações do topo
+function dreSetLoja(l){
+  dreLoja = l;
+  document.querySelectorAll('.dre-loja').forEach(b=>b.classList.toggle('on', b.getAttribute('data-loja')===l));
+  renderDRE();
+}
+function dreSetView(v){
+  dreView = v;
+  document.getElementById('dre-tgTab').classList.toggle('on', v==='tabela');
+  document.getElementById('dre-tgGraf').classList.toggle('on', v==='grafico');
+  renderDRE();
+}
+// navegação por mês (setinhas ‹ ›)
+function dreStepMes(delta){
+  drePer = 'mes';
+  dreMesRef.setMonth(dreMesRef.getMonth()+delta);
+  document.querySelectorAll('.dre-chip').forEach(c=>c.classList.remove('on'));
+  renderDRE();
+}
+function dreMesHoje(){
+  drePer = 'mes';
+  const d=new Date(); dreMesRef = new Date(d.getFullYear(), d.getMonth(), 1);
+  document.querySelectorAll('.dre-chip').forEach(c=>c.classList.remove('on'));
+  renderDRE();
+}
+function dreSetPer(p, el){
+  drePer = p; // 'ano' | 'tudo'
+  document.querySelectorAll('.dre-chip').forEach(c=>c.classList.remove('on'));
+  if(el) el.classList.add('on');
+  renderDRE();
+}
+
+// rótulo do período + função que diz se uma data "DD/MM/YYYY" entra no período
+function dreLabelPeriodo(){
+  const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  if(drePer==='ano')  return 'ano '+dreMesRef.getFullYear();
+  if(drePer==='tudo') return 'todo o período';
+  return meses[dreMesRef.getMonth()]+' '+dreMesRef.getFullYear();
+}
+function dreNoPeriodo(dataBR){
+  const p=String(dataBR||'').split('/'); if(p.length<3) return false;
+  const m=+p[1], a=+p[2];
+  if(drePer==='tudo') return true;
+  if(drePer==='ano')  return a===dreMesRef.getFullYear();
+  return m===(dreMesRef.getMonth()+1) && a===dreMesRef.getFullYear(); // 'mes'
+}
+
+// ── GRUPOS MANUAIS (salvos na planilha + cache local; só o MASTER mexe) ──
+function ehGestor(){ return !!(userAtual && userAtual.nivel==='gestor'); }
+
+function dreCarregarGrupos(){ // cache local (instantâneo)
+  try { dreGrupos = JSON.parse(localStorage.getItem('dre_grupos')||'[]'); }
+  catch(e){ dreGrupos = []; }
+}
+function dreSalvarGrupos(){ localStorage.setItem('dre_grupos', JSON.stringify(dreGrupos)); }
+
+// lê os grupos da planilha (aba DRE_Grupos). Se a aba ainda não existir, mantém o cache local.
+async function dreCarregarGruposSheet(){
+  try {
+    const rows = await fetchRange('DRE_Grupos!A:F');
+    dreGrupos = rows.slice(1)
+      .filter(r=>r[0] && String(r[5]||'').toUpperCase()!=='REMOVIDO')
+      .map(r=>({ id:Number(r[0])||r[0], nome:r[1]||'', sinal:(String(r[2]).trim()==='+'?'+':'-'), valor:N(r[3]), loja:r[4]||'l2' }));
+    dreSalvarGrupos(); // atualiza o cache local
+    return true;
+  } catch(e){ return false; } // sem aba/sem conexão → fica com o cache local
+}
+// grava/remove na planilha via Apps Script (não quebra a tela se estiver offline)
+async function dreEnviarGrupoSheet(payload){
+  if(!APPS_SCRIPT_URL) return;
+  try {
+    await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({...payload, sheetId:SHEET_ID})});
+  } catch(e){ /* offline: fica no cache local e sincroniza na próxima */ }
+}
+
+let grpSinalAtual = '-';
+let grpEditId = null;
+function dreSetSinalGrupo(s){
+  grpSinalAtual = s;
+  document.getElementById('grp-op-minus').classList.toggle('on', s==='-');
+  document.getElementById('grp-op-plus').classList.toggle('on', s==='+');
+}
+function abrirModalGrupo(id){
+  if(!ehGestor()){ toast('Só o usuário master pode mexer nos grupos'); return; }
+  grpEditId = id||null;
+  const g = id ? dreGrupos.find(x=>x.id===id) : null;
+  document.getElementById('modal-grupo-title').textContent = g ? 'Editar grupo' : 'Novo grupo da DRE';
+  document.getElementById('grp-nome').value  = g ? g.nome : '';
+  document.getElementById('grp-valor').value = g ? g.valor : '';
+  document.getElementById('grp-loja').value  = g ? g.loja : (dreLoja==='all'?'all':dreLoja);
+  dreSetSinalGrupo(g ? g.sinal : '-');
+  document.getElementById('modal-grupo').classList.add('open');
+}
+function fecharModalGrupo(){ document.getElementById('modal-grupo').classList.remove('open'); grpEditId=null; }
+function salvarGrupo(){
+  if(!ehGestor()){ toast('Só o usuário master pode mexer nos grupos'); return; }
+  const nome = document.getElementById('grp-nome').value.trim();
+  const valor = N(document.getElementById('grp-valor').value);
+  const loja = document.getElementById('grp-loja').value;
+  if(!nome){ toast('Dê um nome ao grupo'); return; }
+  if(!valor){ toast('Digite um valor'); return; }
+  let id;
+  if(grpEditId){
+    id = grpEditId;
+    const g = dreGrupos.find(x=>x.id===grpEditId);
+    if(g){ g.nome=nome; g.valor=valor; g.sinal=grpSinalAtual; g.loja=loja; }
+  } else {
+    id = Date.now();
+    dreGrupos.push({id, nome, valor, sinal:grpSinalAtual, loja});
+  }
+  dreSalvarGrupos();
+  dreEnviarGrupoSheet({acao:'grupo', id, nome, sinal:grpSinalAtual, valor, loja}); // sincroniza
+  fecharModalGrupo();
+  renderDRE();
+  toast('Grupo salvo ✓');
+}
+function dreRemoverGrupo(id){
+  if(!ehGestor()){ toast('Só o usuário master pode mexer nos grupos'); return; }
+  dreGrupos = dreGrupos.filter(g=>g.id!==id);
+  dreSalvarGrupos();
+  dreEnviarGrupoSheet({acao:'grupo_del', id}); // sincroniza a remoção
+  renderDRE();
+  toast('Grupo removido');
+}
+// grupos que valem para a loja atualmente exibida na DRE
+function dreGruposVisiveis(){
+  return dreGrupos.filter(g => g.loja===dreLoja || g.loja==='all' || dreLoja==='all');
+}
+
+// soma a receita real das vendas no período.
+// Loja 1 ainda não tem fonte de dados → volta tudo zerado. Loja 2 / Todas usam a base atual.
+function dreSomaReceita(){
+  let bruta=0, dinheiro=0, cartao=0, pix=0;
+  const temDados = (dreLoja==='l2' || dreLoja==='all');
+  if(temDados) (dadosVendas||[]).forEach(r=>{
+    if(!dreNoPeriodo(r.data)) return;
+    bruta    += r.total;
+    dinheiro += r.dinheiro;
+    cartao   += (r.debito + r.credito + r.parcelado + r.aliment);
+    pix      += r.pix;
+  });
+  return {bruta, dinheiro, cartao, pix};
+}
+
+// Classifica uma conta a pagar pela "cara" do nome do fornecedor.
+// Padrão = mercadoria (CMV). As listas abaixo são fáceis de ampliar quando aparecerem
+// fornecedores novos de imposto/energia/etc. (é só me mandar o nome).
+const DRE_IMPOSTO  = ['RECEITA FEDERAL','SEFAZ','SECRETARIA DA FAZENDA','DARF','SIMPLES NACIONAL',' GPS','FGTS','INSS','IPTU','TRIBUTO','IMPOSTO','PREFEITURA','GDF',' DAS '];
+const DRE_DESPFIN  = ['CIELO','GETNET','STONE','REDECARD','TAXA ADM','TARIFA BANC','ADQUIRENTE'];
+const DRE_ENERGIA  = ['NEOENERGIA','ENERGISA','ENEL','CEB DISTRIBUI','COMPANHIA ENERG','LIGHT S'];
+const DRE_AGUA     = ['CAESB','SANEAMENTO','SABESP','AGUAS DE'];
+const DRE_ALUGUEL  = ['ALUGUEL','IMOBILIARIA','LOCACAO','LOCADORA','IMOVEIS','ADM DE BENS'];
+const DRE_TELEFONE = ['VIVO','CLARO','TELEFONICA','OI MOVEL','OI S.A','INTERNET','TELECOM','ALGAR'];
+const DRE_SERVICO  = ['CONTABIL','ADVOCACIA','ADVOG','HONORARIO','MONITORAMENTO','SEGURANCA','VIGILANCIA','ALARME','LIMPEZA','CONSERVA','MANUTENCAO','TECNOLOGIA','SOFTWARE','SISTEMA','PUBLICIDADE','PROPAGANDA','MARKETING','GRAFICA','SINDICATO','FECOMERCIO','SESC','SENAC','SEGURO','CARTORIO','CORREIOS','COMBUSTIVEL','POSTO ','FRETE','TRANSPORTADORA'];
+function categoriaConta(forn){
+  const U = ' ' + String(forn||'').toUpperCase() + ' ';
+  const tem = lista => lista.some(k => U.indexOf(k)>=0);
+  if(tem(DRE_IMPOSTO))  return 'imposto';
+  if(tem(DRE_DESPFIN))  return 'desp_fin';
+  if(tem(DRE_ENERGIA))  return 'energia';
+  if(tem(DRE_AGUA))     return 'agua';
+  if(tem(DRE_ALUGUEL))  return 'aluguel';
+  if(tem(DRE_TELEFONE)) return 'telefone';
+  if(tem(DRE_SERVICO))  return 'servico';
+  return 'cmv';
+}
+
+// Soma as contas a pagar do período (por data de VENCIMENTO; cai pra emissão se não tiver),
+// já separadas em CMV / impostos / despesas. Loja 1 (sem fonte) volta zerado.
+function dreSomaContas(){
+  const b = {cmv:0, imposto:0, desp_fin:0, energia:0, agua:0, aluguel:0, telefone:0, servico:0};
+  const temDados = (dreLoja==='l2' || dreLoja==='all');
+  if(temDados) (dadosContas||[]).forEach(c=>{
+    const dt = c.venc || c.emis;
+    if(!dreNoPeriodo(dt)) return;
+    b[c.cat] = (b[c.cat]||0) + c.valor;
+  });
+  b.despOp = b.energia + b.agua + b.aluguel + b.telefone + b.servico; // despesas operacionais (soma)
+  return b;
+}
+
+function renderDRE(){
+  const corpo=document.getElementById('dre-corpo'); if(!corpo) return;
+  const btnG=document.getElementById('dre-btn-grupo'); if(btnG) btnG.style.display = ehGestor()?'flex':'none';
+  document.getElementById('dre-perLbl').textContent = dreLabelPeriodo();
+  const rec=dreSomaReceita();
+  const semFonte = (dreLoja!=='l2' && dreLoja!=='all');
+  const aviso = semFonte
+    ? `<div class="dre-row pend" style="opacity:1;background:#FAEEDA;border-radius:10px;border-bottom:none;margin-bottom:6px;padding:10px 12px"><div class="dr-lbl" style="color:#854F0B"><i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:4px"></i>Loja 1 ainda sem fonte de dados — tudo zerado por enquanto.</div></div>`
+    : '';
+
+  if(dreView==='grafico'){
+    const dados=[['Dinheiro',rec.dinheiro],['Cartão',rec.cartao],['PIX',rec.pix]];
+    const max=Math.max(1, rec.dinheiro, rec.cartao, rec.pix);
+    const barras=dados.map(([nm,v])=>{
+      const h=Math.max(4, Math.round((v/max)*120));
+      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" style="height:${h}px"></div><div class="dre-bx">${nm}</div></div>`;
+    }).join('');
+    corpo.innerHTML = `${aviso}
+      <div class="dre-row head"><div><div class="dr-lbl">(+) Receita bruta</div><div class="dr-sub">composição do recebimento</div></div><div class="dr-val">${brl(rec.bruta)}</div></div>
+      <div class="dre-bars">${barras}</div>`;
+    return;
+  }
+
+  // tabela
+  const ct = dreSomaContas();
+  const impostos = ct.imposto;
+  const cmv      = ct.cmv;
+  const despOp   = ct.despOp;
+  const despFin  = ct.desp_fin;
+  const recFin   = 0; // bonificações/sobras de caixa — não vêm do Contas a Pagar (entram depois)
+  const recLiq   = rec.bruta - impostos;
+  const margem   = recLiq - cmv;
+  // grupos manuais (aluguel, internet, etc.) — somam ou subtraem do resultado
+  const grupos   = dreGruposVisiveis();
+  const grpSoma  = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
+  const resultado= margem - despOp + recFin - despFin + grpSoma;
+  const pct = v => rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%' : '—';
+
+  // detalhe das despesas operacionais (só mostra as que têm valor)
+  const subDesp = [['Energia',ct.energia],['Água',ct.agua],['Aluguel',ct.aluguel],['Telefone/internet',ct.telefone],['Serviços/outras',ct.servico]]
+    .filter(([n,v])=>v>0)
+    .map(([n,v])=>`<div class="dre-row sub"><div class="dr-lbl">${n}</div><div class="dr-val">${brlC(v)}</div></div>`).join('');
+
+  const posit = resultado>=0;
+
+  corpo.innerHTML = `${aviso}
+    <div class="dre-row head">
+      <div><div class="dr-lbl">(+) Receita bruta</div><div class="dr-sub">à vista · cartão · PIX</div></div>
+      <div class="dr-val">${brlC(rec.bruta)}<div class="dr-sub">100%</div></div>
+    </div>
+    <div class="dre-row sub"><div class="dr-lbl">Dinheiro (à vista)</div><div class="dr-val">${brlC(rec.dinheiro)}</div></div>
+    <div class="dre-row sub"><div class="dr-lbl">Cartão (déb + créd + parc)</div><div class="dr-val">${brlC(rec.cartao)}</div></div>
+    <div class="dre-row sub"><div class="dr-lbl">PIX</div><div class="dr-val">${brlC(rec.pix)}</div></div>
+
+    <div class="dre-row"><div class="dr-lbl">(−) Deduções e impostos</div><div class="dr-val">${impostos>0?'− '+brlC(impostos):'R$ 0,00'}<div class="dr-sub">${impostos>0?pct(impostos):'sem imposto no período'}</div></div></div>
+
+    <div class="dre-row total"><div class="dr-lbl">(=) Receita líquida</div><div class="dr-val">${brlC(recLiq)}</div></div>
+
+    <div class="dre-row"><div class="dr-lbl">(−) Custo mercadorias (CMV)</div><div class="dr-val">${cmv>0?'− '+brlC(cmv):'R$ 0,00'}<div class="dr-sub">${cmv>0?pct(cmv)+' da receita':'sem compras no período'}</div></div></div>
+    <div class="dre-row total"><div class="dr-lbl">(=) Margem bruta</div><div class="dr-val">${brlC(margem)}<div class="dr-sub">margem ${pct(margem)}</div></div></div>
+
+    <div class="dre-row"><div class="dr-lbl">(−) Despesas operacionais</div><div class="dr-val">${despOp>0?'− '+brlC(despOp):'R$ 0,00'}</div></div>
+    ${subDesp}
+
+    <div class="dre-row"><div class="dr-lbl">(+) Receitas financeiras</div><div class="dr-val"><span class="dre-tag">bonificações/sobras — entram depois</span></div></div>
+    <div class="dre-row"><div class="dr-lbl">(−) Despesas financeiras</div><div class="dr-val">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}<div class="dr-sub">${despFin>0?'taxa de cartão':'taxa de cartão — entra depois'}</div></div></div>
+
+    ${grupos.length ? `<div class="dre-grp-lbl"><i class="ti ti-adjustments"></i>Grupos manuais</div>` + grupos.map(g=>`
+      <div class="dre-grp-row">
+        <div class="gr-nm">${g.sinal==='+'?'(+)':'(−)'} ${g.nome}</div>
+        <div class="gr-rt">
+          <span class="gr-val" style="color:${g.sinal==='+'?'#0F6E56':'#A32D2D'}">${g.sinal==='+'?'+ ':'− '}${brlC(g.valor)}</span>
+          ${ehGestor()?`<i class="ti ti-pencil" style="color:#888780;font-size:15px;cursor:pointer" onclick="abrirModalGrupo(${g.id})"></i>
+          <i class="ti ti-trash gr-x" onclick="dreRemoverGrupo(${g.id})"></i>`:''}
+        </div>
+      </div>`).join('') : ''}
+
+    <div class="dre-result" style="background:${posit?'#0F6E56':'#A32D2D'}">
+      <div><span class="dr-lbl">(=) Resultado</span><div class="dr-note">${posit?'lucro no período':'prejuízo no período'} · margem ${pct(resultado)}</div></div>
+      <span class="dr-val">${brlC(resultado)}</span>
+    </div>
+
+    <div style="font-size:10px;color:#888780;text-align:center;margin-top:10px;line-height:1.5">
+      <i class="ti ti-wand" style="vertical-align:-1px;margin-right:3px"></i>Separação automática pelo nome do fornecedor (ajustável).<br>Contas contadas pela data de vencimento. Grupos manuais reaparecem todo mês.
+    </div>`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -1505,7 +1913,7 @@ const iv = setInterval(()=>{
 },30);
 
 // Fechar modais clicando fora
-['modal-baixa','modal-massa'].forEach(id=>{
+['modal-baixa','modal-massa','modal-grupo'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){
     if(e.target===this) this.classList.remove('open');
   });
