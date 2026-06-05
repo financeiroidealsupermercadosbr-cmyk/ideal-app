@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_21.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_22.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./w_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./q_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
-.app{max-width:380px;width:100%;font-family:Arial,sans-serif}
+.app{max-width:380px;width:100%;font-family:Arial,sans-serif;padding-bottom:66px}
 .screen{display:none}.screen.active{display:block}
 
 .splash{background:#1B3A9E;min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
@@ -91,10 +91,19 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .loja-btn{flex:1;padding:8px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#666;font-size:12px;cursor:pointer;text-align:center;font-family:Arial,sans-serif}
 .loja-btn.active{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
 
-.nav{display:flex;background:#f8f8f8;border-bottom:1px solid #eee}
-.nav-btn{flex:1;padding:9px 4px 7px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:#999;font-size:9px;border-bottom:2px solid transparent;font-family:Arial,sans-serif}
-.nav-btn.active{color:#1B3A9E;border-bottom-color:#1B3A9E}
-.nav-btn i{font-size:19px}
+.nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:380px;display:flex;justify-content:space-around;background:#fff;border-top:1px solid rgba(0,0,0,0.10);padding:9px 4px 11px;z-index:60}
+.nav-btn{flex:1;padding:0;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#9aa0b0;font-size:11px;font-family:Arial,sans-serif}
+.nav-btn.active{color:#1B3A9E;font-weight:600}
+.nav-btn i{font-size:21px}
+.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:12px}
+.qcard{position:relative;background:#fff;border-radius:14px;padding:15px 4px;display:flex;flex-direction:column;align-items:center;gap:7px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
+.qcard i{font-size:23px;color:#1B3A9E}
+.qcard .qnm{font-size:11px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
+.qcard .qsoon{font-size:10px;color:#888780}
+.qcard.soon{opacity:0.55;cursor:default}
+.qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
+.dre-soon{background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
+.dre-soon i{font-size:34px;color:#1B3A9E;display:block;margin-bottom:10px}
 
 .content{padding:14px}
 .section-label{font-size:12px;font-weight:600;color:#16267A;margin-bottom:8px;display:flex;align-items:center;gap:6px}
@@ -351,11 +360,26 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div class="nav">
-      <button class="nav-btn active" onclick="showTab(&#39;painel&#39;,this)"><i class="ti ti-layout-dashboard"></i>Painel</button>
-      <button class="nav-btn" onclick="showTab(&#39;lancar&#39;,this)"><i class="ti ti-upload"></i>Lançar</button>
-      <button class="nav-btn" onclick="showTab(&#39;contas&#39;,this)"><i class="ti ti-file-invoice"></i>Contas</button>
-      <button class="nav-btn" onclick="showTab(&#39;resumo&#39;,this)"><i class="ti ti-chart-bar"></i>Resumo</button>
-      <button class="nav-btn" onclick="showTab(&#39;config&#39;,this)"><i class="ti ti-settings"></i>Config</button>
+      <button class="nav-btn active" id="nav-painel" onclick="showTab(&#39;painel&#39;,this)"><i class="ti ti-layout-dashboard"></i>Painel</button>
+      <button class="nav-btn" id="nav-dre" onclick="showTab(&#39;dre&#39;,this)"><i class="ti ti-report-money"></i>DRE</button>
+      <button class="nav-btn" id="nav-menu" onclick="showTab(&#39;menu&#39;,this)"><i class="ti ti-apps"></i>Menu</button>
+      <button class="nav-btn" id="nav-config" onclick="showTab(&#39;config&#39;,this)"><i class="ti ti-settings"></i>Config</button>
+    </div>
+
+    <div id="tab-dre" class="content" style="display:none">
+      <div class="dre-soon"><i class="ti ti-chart-bar"></i>DRE — Resultado<br><span style="font-size:12px;color:#888780">Em construção. Aqui vai entrar Receita → custos → despesas → Resultado, com dados reais, na próxima fatia.</span></div>
+    </div>
+
+    <div id="tab-menu" class="content" style="display:none">
+      <div class="cart-loja" style="margin:12px 12px 4px"><i class="ti ti-building-store"></i><span class="cl-nm" id="m-store">Loja 2 — Melhor QS8</span><i class="ti ti-chevron-down"></i></div>
+      <div class="qgrid">
+        <div class="qcard" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
+        <div class="qcard" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
+        <div class="qcard" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
+        <div class="qcard soon"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon"><i class="ti ti-eye"></i><span class="qnm">Consulta de preço</span><span class="qsoon">em breve</span></div>
+      </div>
     </div>
 
     <!-- PAINEL -->
@@ -768,6 +792,8 @@ function abrirCartoes() {
 function voltarPainel() {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
   document.getElementById('tab-painel').style.display='block';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  var p=document.getElementById('nav-painel'); if(p) p.classList.add('active');
 }
 function renderCartoes() {
   var r = window.recebHoje || {tot:0,pix:0,deb:0,cred:0,parc:0};
@@ -792,9 +818,14 @@ function renderCartoes() {
 }
 function showTab(name, btn) {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
-  document.getElementById('tab-'+name).style.display='block';
+  var alvo = document.getElementById('tab-'+name); if(alvo) alvo.style.display='block';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if(btn) btn.classList.add('active');
+  window.scrollTo(0,0);
+}
+function abrirFuncao(name){
+  showTab(name, null);
+  var m=document.getElementById('nav-menu'); if(m) m.classList.add('active');
 }
 function setSubTab(el, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
