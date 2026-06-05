@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_15.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_16.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./FR_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./Supermefffdsvddrcados_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -88,6 +88,32 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .ec-bar{width:32px;border-radius:4px 4px 0 0;background:#1B3A9E;transition:height .7s ease;height:0}
 .ec-lab{font-size:11px;color:#888780;margin-top:6px}
 .ec-note{display:flex;align-items:center;gap:6px;margin-top:4px;padding-left:34px;font-size:11px;color:#b8b6ae}
+.flt-periodo{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:11px 12px;border:1px solid rgba(22,38,122,0.15);cursor:pointer;margin-bottom:14px}
+.flt-periodo i{font-size:18px;color:#1B3A9E}
+.flt-periodo .flt-lbl{flex:1;font-size:13px;color:#16267A;font-weight:500}
+.flt-periodo .flt-hint{font-size:11px;color:#888780}
+.flt-panel{display:none;background:#fff;border-radius:12px;border:1px solid rgba(22,38,122,0.15);padding:14px;margin-bottom:14px}
+.flt-panel.open{display:block}
+.flt-label{font-size:12px;color:#5F5E5A}
+.flt-lojarow{display:flex;gap:6px;margin:6px 0 12px}
+.flt-pill{flex:1;text-align:center;font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:8px;padding:7px 0;cursor:pointer;font-weight:500}
+.flt-chiprow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.flt-chip{font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:20px;padding:6px 12px;cursor:pointer}
+.flt-chip.on,.flt-pill.on{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.flt-cal-wrap{background:#f7f8fa;border-radius:12px;padding:12px;margin-bottom:12px}
+.flt-datas{display:flex;gap:10px;margin-bottom:12px}
+.flt-datas .flt-d{flex:1}
+.flt-datas .flt-k{font-size:11px;color:#888780}
+.flt-datas .flt-v{font-size:13px;color:#1B3A9E;font-weight:500;margin-top:2px}
+.flt-calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.flt-calnav i{font-size:18px;color:#1B3A9E}
+.flt-calnav span{font-size:13px;color:#16267A;font-weight:500}
+.flt-calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.flt-wd{text-align:center;font-size:11px;color:#888780;font-weight:500}
+.flt-day{text-align:center;font-size:12px;color:#16267A;padding:8px 0;border-radius:8px;cursor:pointer}
+.flt-day.sel{background:#1B3A9E;color:#fff;font-weight:500}
+.flt-day.rng{background:#E6F1FB}
+.flt-apply{text-align:center;font-size:13px;color:#fff;background:#1B3A9E;border-radius:10px;padding:11px 0;cursor:pointer;font-weight:500;margin-top:8px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .metric{background:#f8f8f8;border-radius:10px;padding:12px}
 .metric-label{font-size:11px;color:#999;margin-bottom:3px}
@@ -294,6 +320,47 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
+      <!-- BARRA DE PERÍODO + FILTRO (fatia 3) -->
+      <div class="flt-periodo" id="flt-periodBtn">
+        <i class="ti ti-filter"></i>
+        <span class="flt-lbl" id="flt-lblPeriodo">Junho 2026</span>
+        <span class="flt-hint">toque para filtrar</span>
+        <i class="ti ti-chevron-down" id="flt-chev"></i>
+      </div>
+      <div class="flt-panel" id="flt-panel">
+        <span class="flt-label">Loja</span>
+        <div class="flt-lojarow">
+          <span class="flt-pill" data-group="loja" data-loja="l1">Loja 1</span>
+          <span class="flt-pill on" data-group="loja" data-loja="l2">Loja 2</span>
+          <span class="flt-pill" data-group="loja" data-loja="bolos">Bolos</span>
+          <span class="flt-pill" data-group="loja" data-loja="all">Todas</span>
+        </div>
+        <span class="flt-label">Atalhos</span>
+        <div class="flt-chiprow">
+          <span class="flt-chip" data-group="per" data-per="hoje">Hoje</span>
+          <span class="flt-chip" data-group="per" data-per="ontem">Ontem</span>
+          <span class="flt-chip" data-group="per" data-per="semana">Esta semana</span>
+          <span class="flt-chip on" data-group="per" data-per="mes">Este mês</span>
+          <span class="flt-chip" data-group="per" data-per="ano">Este ano</span>
+        </div>
+        <div class="flt-cal-wrap">
+          <div class="flt-datas">
+            <div class="flt-d"><div class="flt-k">Data inicial</div><div class="flt-v" id="flt-di">01/06/2026</div></div>
+            <div class="flt-d"><div class="flt-k">Data final</div><div class="flt-v" id="flt-df">05/06/2026</div></div>
+          </div>
+          <div class="flt-calnav"><i class="ti ti-chevron-left" id="flt-calPrev"></i><span id="flt-calTtl">Junho 2026</span><i class="ti ti-chevron-right" id="flt-calNext"></i></div>
+          <div class="flt-calgrid" style="margin-bottom:4px"><span class="flt-wd">D</span><span class="flt-wd">S</span><span class="flt-wd">T</span><span class="flt-wd">Q</span><span class="flt-wd">Q</span><span class="flt-wd">S</span><span class="flt-wd">S</span></div>
+          <div class="flt-calgrid" id="flt-calGrid"><div></div><div class="flt-day sel">1</div><div class="flt-day rng">2</div><div class="flt-day rng">3</div><div class="flt-day rng">4</div><div class="flt-day sel">5</div><div class="flt-day">6</div><div class="flt-day">7</div><div class="flt-day">8</div><div class="flt-day">9</div><div class="flt-day">10</div><div class="flt-day">11</div><div class="flt-day">12</div><div class="flt-day">13</div><div class="flt-day">14</div><div class="flt-day">15</div><div class="flt-day">16</div><div class="flt-day">17</div><div class="flt-day">18</div><div class="flt-day">19</div><div class="flt-day">20</div><div class="flt-day">21</div><div class="flt-day">22</div><div class="flt-day">23</div><div class="flt-day">24</div><div class="flt-day">25</div><div class="flt-day">26</div><div class="flt-day">27</div><div class="flt-day">28</div><div class="flt-day">29</div><div class="flt-day">30</div></div>
+        </div>
+        <span class="flt-label">Comparar com</span>
+        <div class="flt-chiprow">
+          <span class="flt-chip" data-group="cmp" data-cmp="mes">Mês anterior</span>
+          <span class="flt-chip on" data-group="cmp" data-cmp="ano">Ano anterior</span>
+          <span class="flt-chip" data-group="cmp" data-cmp="nao">Não comparar</span>
+        </div>
+        <div class="flt-apply" id="flt-apply">Filtrar</div>
+      </div>
+
       <!-- FATURAMENTO POR EMPRESA (mês) -->
       <div class="section-label"><i class="ti ti-building-store"></i> Faturamento por empresa · mês</div>
       <div class="v-card">
@@ -1299,6 +1366,101 @@ const iv = setInterval(()=>{
     if(e.target===this) this.classList.remove('open');
   });
 });
+
+// ══════════════════════════════════════════════════════
+// FATIA 3 — BARRA DE PERÍODO + FILTRO (visual/interativo)
+// Abre/fecha, chips e pílulas selecionam, calendário marca
+// intervalo, e o texto da barra muda sozinho pelo atalho/intervalo.
+// (Ligar ao filtro de dados reais é etapa posterior.)
+// ══════════════════════════════════════════════════════
+function initFiltro(){
+  const bar=document.getElementById('flt-periodBtn');
+  if(!bar) return;
+  const panel=document.getElementById('flt-panel');
+  const chev=document.getElementById('flt-chev');
+  const lbl=document.getElementById('flt-lblPeriodo');
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const hoje=new Date();
+  let calY=hoje.getFullYear(), calM=hoje.getMonth();
+  let rStart=new Date(hoje.getFullYear(),hoje.getMonth(),1), rEnd=new Date(hoje);
+  let modo='mes';
+
+  function dd(n){ return (n<10?'0':'')+n; }
+  function fmtDM(d){ return dd(d.getDate())+'/'+dd(d.getMonth()+1); }
+  function fmtFull(d){ return dd(d.getDate())+'/'+dd(d.getMonth()+1)+'/'+d.getFullYear(); }
+  function sameDay(a,b){ return a&&b&&a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+
+  function atualizarLabel(){
+    if(modo==='hoje'){ lbl.textContent='Hoje · '+fmtDM(hoje); }
+    else if(modo==='ontem'){ const o=new Date(hoje); o.setDate(o.getDate()-1); lbl.textContent='Ontem · '+fmtDM(o); }
+    else if(modo==='semana'){ lbl.textContent='Esta semana'; }
+    else if(modo==='mes'){ lbl.textContent=meses[hoje.getMonth()]+' '+hoje.getFullYear(); }
+    else if(modo==='ano'){ lbl.textContent=String(hoje.getFullYear()); }
+    else if(modo==='range' && rStart && rEnd){ lbl.textContent=fmtDM(rStart)+' – '+fmtDM(rEnd); }
+    else if(modo==='range' && rStart){ lbl.textContent=fmtDM(rStart)+' – …'; }
+  }
+
+  bar.addEventListener('click',function(){
+    const open=panel.classList.toggle('open');
+    chev.className='ti ti-chevron-'+(open?'up':'down');
+  });
+  document.getElementById('flt-apply').addEventListener('click',function(){
+    panel.classList.remove('open'); chev.className='ti ti-chevron-down';
+  });
+
+  document.querySelectorAll('#flt-panel .flt-chip, #flt-panel .flt-pill').forEach(function(ch){
+    ch.addEventListener('click',function(){
+      const g=ch.getAttribute('data-group');
+      document.querySelectorAll('#flt-panel [data-group="'+g+'"]').forEach(function(x){ x.classList.remove('on'); });
+      ch.classList.add('on');
+      if(g==='per'){
+        modo=ch.getAttribute('data-per');
+        if(modo==='hoje'){ rStart=new Date(hoje); rEnd=new Date(hoje); }
+        else if(modo==='ontem'){ const o=new Date(hoje); o.setDate(o.getDate()-1); rStart=new Date(o); rEnd=new Date(o); }
+        else if(modo==='semana'){ const s=new Date(hoje); s.setDate(s.getDate()-s.getDay()); rStart=s; rEnd=new Date(hoje); }
+        else if(modo==='mes'){ rStart=new Date(hoje.getFullYear(),hoje.getMonth(),1); rEnd=new Date(hoje); }
+        else if(modo==='ano'){ rStart=new Date(hoje.getFullYear(),0,1); rEnd=new Date(hoje); }
+        calY=hoje.getFullYear(); calM=hoje.getMonth();
+        renderCal(); atualizarLabel();
+      }
+    });
+  });
+
+  const grid=document.getElementById('flt-calGrid');
+  const ttl=document.getElementById('flt-calTtl');
+  function renderCal(){
+    grid.innerHTML='';
+    ttl.textContent=meses[calM]+' '+calY;
+    const first=new Date(calY,calM,1).getDay();
+    const dim=new Date(calY,calM+1,0).getDate();
+    for(let i=0;i<first;i++){ grid.appendChild(document.createElement('div')); }
+    for(let d=1;d<=dim;d++){
+      const cell=document.createElement('div');
+      cell.className='flt-day'; cell.textContent=d;
+      const cur=new Date(calY,calM,d);
+      if(sameDay(cur,rStart)||sameDay(cur,rEnd)) cell.classList.add('sel');
+      else if(rStart&&rEnd&&cur>rStart&&cur<rEnd) cell.classList.add('rng');
+      cell.addEventListener('click',(function(dia){ return function(){
+        const clicked=new Date(calY,calM,dia);
+        if(!rStart || (rStart&&rEnd)){ rStart=clicked; rEnd=null; }
+        else if(clicked>rStart){ rEnd=clicked; }
+        else { rStart=clicked; }
+        modo='range';
+        document.querySelectorAll('#flt-panel [data-group="per"]').forEach(function(x){ x.classList.remove('on'); });
+        renderCal(); atualizarLabel();
+      }; })(d));
+      grid.appendChild(cell);
+    }
+    document.getElementById('flt-di').textContent=rStart?fmtFull(rStart):'—';
+    document.getElementById('flt-df').textContent=rEnd?fmtFull(rEnd):'—';
+  }
+  document.getElementById('flt-calPrev').addEventListener('click',function(){ calM--; if(calM<0){calM=11;calY--;} renderCal(); });
+  document.getElementById('flt-calNext').addEventListener('click',function(){ calM++; if(calM>11){calM=0;calY++;} renderCal(); });
+
+  renderCal();
+  atualizarLabel();
+}
+initFiltro();
 </script>
 
 
