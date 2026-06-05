@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_12.html -->
+<!-- saved from url=(0049)file:///C:/Users/USUARIO1/Downloads/index_14.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ideal Supermercados</title>
-<link rel="stylesheet" href="./Ideal Sup2323_files/tabler-icons.min.css">
+<link rel="stylesheet" href="./Ideal SupermercadosAQW_files/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
@@ -234,7 +234,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 3.3 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 3.5 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -492,7 +492,7 @@ function doPost(e) {
 }</div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.3 — Painel novo + Vendas + Ideal Bolos</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.5 — baixa mais robusta + fachada embutida</div></div>
     </div>
   </div>
 </div>
@@ -567,6 +567,7 @@ let dadosVendas   = [];
 let dadosContas   = [];
 let boletoCurrent = null;
 let selecionados  = new Set(); // índices selecionados para baixa em massa
+let baixasLocais  = new Set(); // chaves doc|forn|venc baixadas nesta sessão (rede de segurança contra leitura atrasada)
 
 // ══════════════════════════════════════════════════════
 // UTILITÁRIOS
@@ -719,16 +720,21 @@ async function carregarSheets() {
     // ── CONTAS — índices corretos ──
     // [0]=NUM [1]=DT_EMIS [2]=DT_VENCTO [3]=DT_PAGTO
     // [4]=FORNECEDOR [5]=DOCUMENTO [6]=VALOR [10]=STATUS [11]=BANCO
-    dadosContas = contas.slice(1).filter(r=>r[4]).map((r,i)=>({
-      idx:   i,
-      linha: i+2,       // linha real no Sheets (cabeçalho=1)
-      forn:  r[4]||'—',
-      doc:   r[5]||'',
-      venc:  r[2]||'',  // DT_VENCTO = coluna C = índice 2
-      valor: N(r[6]),   // VALOR = coluna G = índice 6
-      pago:  !!(r[10]&&r[10].toString().toUpperCase().includes('PAGO')),
-      banco: r[11]||'',
-    }));
+    dadosContas = contas.slice(1).filter(r=>r[4]).map((r,i)=>{
+      const chave = (r[5]||'')+'|'+(r[4]||'').toString().toUpperCase().trim()+'|'+(r[2]||'');
+      const pagoSheet = !!(r[10]&&r[10].toString().toUpperCase().includes('PAGO'));
+      return {
+        idx:   i,
+        linha: i+2,       // linha real no Sheets (cabeçalho=1)
+        forn:  r[4]||'—',
+        doc:   r[5]||'',
+        venc:  r[2]||'',  // DT_VENCTO = coluna C = índice 2
+        valor: N(r[6]),   // VALOR = coluna G = índice 6
+        pago:  pagoSheet || baixasLocais.has(chave),
+        banco: r[11]||'',
+        chave: chave,
+      };
+    });
 
     // ── METADADOS ──
     const mm={};
@@ -1049,6 +1055,7 @@ async function confirmarBaixaMassa() {
     b.pago=true;
     try {
       await salvarBaixaSheets(b.linha, dataPag, banco, 'Baixa em massa');
+      if(b.chave) baixasLocais.add(b.chave);
       salvos++;
     } catch(e) { erros++; }
   }
@@ -1098,6 +1105,7 @@ async function confirmarBaixa() {
   boletoCurrent.pago=true;
   try {
     await salvarBaixaSheets(boletoCurrent.linha, dataPag, banco, obs);
+    if(boletoCurrent.chave) baixasLocais.add(boletoCurrent.chave);
     toast('✓ Baixa registrada com sucesso!');
   } catch(e) {
     toast('⚠ Não gravou no Google ('+(e.message||'erro de conexão')+') — ficou só local');
