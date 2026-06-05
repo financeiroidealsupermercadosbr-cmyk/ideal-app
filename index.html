@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
-.app{max-width:380px;width:100%;font-family:Arial,sans-serif;padding-bottom:66px}
+.app{max-width:380px;width:100%;font-family:Arial,sans-serif;padding-bottom:0}
 .screen{display:none}.screen.active{display:block}
 
 .splash{background:#1B3A9E;min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
@@ -32,7 +32,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .login-error{background:#FCEBEB;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px;display:none;align-items:center;gap:6px}
 
 .app-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-#s-app .app-wrap{min-height:calc(100vh - 20px);display:flex;flex-direction:column}
+#s-app .app-wrap{min-height:auto;display:flex;flex-direction:column;padding-bottom:74px}
 .header{background:#1B3A9E;border-bottom:3px solid #FFC400;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .header-left{display:flex;align-items:center;gap:10px}
 .header-icon{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}.header-icon .hi-text{color:#1B3A9E;font-size:11.5px;font-weight:600;font-style:italic;letter-spacing:-0.4px;line-height:1}
