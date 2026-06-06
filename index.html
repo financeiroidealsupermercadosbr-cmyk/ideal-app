@@ -648,6 +648,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="field-group"><label>Valor (R$)</label><input type="number" id="desp-valor" placeholder="0,00" step="0.01"></div>
         <div class="field-group"><label>Responsável</label><input type="text" id="desp-resp" placeholder="Nome de quem retirou"></div>
         <button class="btn-primary" id="btn-desp" onclick="salvarDespesa()">Registrar despesa</button>
+        <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:8px"><i class="ti ti-report-money" style="vertical-align:-1px;margin-right:3px"></i>Entra na DRE da loja selecionada, em Despesas operacionais (Internet → Telefone; Água/Luz → Energia; o restante → Serviços/outras). Dá pra ajustar a linha depois, na DRE.</div>
 
       </div>
     </div>
@@ -880,6 +881,7 @@ let lojaAtual     = 'l2';
 let userAtual     = null;
 let dadosVendas   = [];
 let dadosContas   = [];
+let dadosCaixa    = [];   // despesas de caixa lançadas no app (aba Despesas_Caixa) → entram na DRE
 let boletoCurrent = null;
 let selecionados  = new Set(); // índices selecionados para baixa em massa
 let baixasLocais  = new Set(); // chaves doc|forn|venc baixadas nesta sessão (rede de segurança contra leitura atrasada)
@@ -1124,6 +1126,7 @@ async function carregarSheets() {
     renderDRE();
     dreCarregarGruposSheet().then(ok=>{ if(ok) renderDRE(); });
     dreCarregarAjustesSheet().then(ok=>{ if(ok) renderDRE(); });
+    dreCarregarCaixa().then(ok=>{ if(ok) renderDRE(); });
 
   } catch(e) {
     console.error(e);
@@ -1725,13 +1728,53 @@ function dreSomaContas(){
   return b;
 }
 
+// ── DESPESAS DE CAIXA (lançadas no app) → entram na DRE como despesa operacional ──
+// Mapa: categoria do caixa → linha da DRE. O que não estiver aqui cai em "Serviços/outras".
+const CAIXA_PARA_DRE = { 'Internet':'telefone', 'Água / Luz':'energia' };
+function caixaBucket(cat){ return CAIXA_PARA_DRE[cat] || 'servico'; }
+// extrai mês/ano de uma data em vários formatos (AAAA-MM-DD, DD/MM/AAAA ou serial do Sheets)
+function caixaMesAno(raw){
+  raw = String(raw==null?'':raw).trim();
+  if(/^\d+(\.\d+)?$/.test(raw)){ const dt=new Date(Date.UTC(1899,11,30)+Math.round(parseFloat(raw))*86400000); return {m:dt.getUTCMonth()+1, y:dt.getUTCFullYear()}; }
+  if(raw.indexOf('-')>=0){ const p=raw.split('-'); if(p.length===3) return {m:+p[1], y:+p[0]}; }
+  if(raw.indexOf('/')>=0){ const p=raw.split('/'); if(p.length===3) return {m:+p[1], y:+p[2]}; }
+  return null;
+}
+function caixaNoPeriodo(raw){
+  const o = caixaMesAno(raw); if(!o) return false;
+  if(drePer==='tudo') return true;
+  if(drePer==='ano')  return o.y===dreMesRef.getFullYear();
+  return o.m===(dreMesRef.getMonth()+1) && o.y===dreMesRef.getFullYear();
+}
+async function dreCarregarCaixa(){
+  try {
+    const rows = await fetchRange('Despesas_Caixa!A:G'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS
+    dadosCaixa = rows.slice(1).filter(r=>r[0]&&r[4]).map(r=>({
+      data: r[0], loja: r[1]||'l2', categoria: r[2]||'Outros', valor: (dreParseValor(r[4])||0)
+    }));
+    return true;
+  } catch(e){ dadosCaixa = []; return false; } // aba ainda não existe → sem despesas de caixa
+}
+// soma as despesas de caixa do período/loja, já agrupadas por linha da DRE
+function dreSomaCaixa(){
+  const b = {energia:0, agua:0, aluguel:0, telefone:0, servico:0};
+  const temDados = (dreLoja==='l2' || dreLoja==='all');
+  if(temDados) (dadosCaixa||[]).forEach(x=>{
+    if(!caixaNoPeriodo(x.data)) return;
+    if(dreLoja!=='all' && x.loja!==dreLoja) return;
+    b[caixaBucket(x.categoria)] += x.valor;
+  });
+  return b;
+}
+
 // Cálculo central da DRE (aplica os ajustes manuais por linha). Usado pela tela E pelo PDF.
 function dreCalcular(){
   const rec = dreSomaReceita();
   const ct  = dreSomaContas();
   const subCats = [['energia','Energia'],['agua','Água'],['aluguel','Aluguel'],['telefone','Telefone/internet'],['servico','Serviços/outras']];
+  const caixa = dreSomaCaixa();
   const sub = {}, subAj = {};
-  subCats.forEach(([k])=>{ const a=dreAjGet(k); subAj[k]=(a!=null); sub[k]=(a!=null)?a:(ct[k]||0); });
+  subCats.forEach(([k])=>{ const a=dreAjGet(k); subAj[k]=(a!=null); const auto=(ct[k]||0)+(caixa[k]||0); sub[k]=(a!=null)?a:auto; });
   const despOp = subCats.reduce((s,[k])=> s + sub[k], 0);
   const aImp=dreAjGet('imposto'), aCmv=dreAjGet('cmv'), aDF=dreAjGet('despFin'), aRF=dreAjGet('recFin');
   const imposto = aImp!=null?aImp:ct.imposto;
@@ -2082,6 +2125,8 @@ async function salvarDespesa() {
   btn.disabled=true; btn.textContent='Salvando...';
   try {
     await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp});
+    dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor}); // reflete na DRE na hora
+    renderDRE();
     toast('✓ Despesa registrada'+(APPS_SCRIPT_URL?' no Sheets!':' localmente!'));
     document.getElementById('desp-desc').value='';
     document.getElementById('desp-valor').value='';
