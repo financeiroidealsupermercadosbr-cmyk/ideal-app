@@ -531,7 +531,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       </div>
       <div class="grid2" style="margin-top:10px;margin-bottom:0">
         <div class="metric"><div class="metric-label">Ticket médio (mês)</div><div class="metric-value" id="p-ticket">—</div></div>
-        <div class="metric"><div class="metric-label">Cupons hoje</div><div class="metric-value" id="p-cupons">—</div></div>
+        <div class="metric"><div class="metric-label">Cupons (mês)</div><div class="metric-value" id="p-cupons">—</div></div>
       </div>
 
       <!-- SALDO DO DIA -->
@@ -1259,7 +1259,7 @@ function renderVendas(dH, dO, ds) {
   let _accV=0,_accC=0;
   dadosVendas.forEach(r=>{ if(r.clientes>0){ _accV+=r.total; _accC+=r.clientes; } });
   document.getElementById('p-ticket').textContent = _accC>0 ? 'R$ '+(_accV/_accC).toFixed(2).replace('.',',') : '—';
-  document.getElementById('p-cupons').textContent = (dD && dD.clientes>0) ? dD.clientes.toLocaleString('pt-BR') : '—';
+  document.getElementById('p-cupons').textContent = _accC>0 ? _accC.toLocaleString('pt-BR') : '—';
 
   // comparação com o dia anterior real
   const cmp = document.getElementById('p-cmp');
