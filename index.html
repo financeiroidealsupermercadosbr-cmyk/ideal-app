@@ -530,7 +530,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="v-chart" id="p-chart" role="img" aria-label="Vendas dos últimos dias"></div>
       </div>
       <div class="grid2" style="margin-top:10px;margin-bottom:0">
-        <div class="metric"><div class="metric-label">Ticket médio</div><div class="metric-value" id="p-ticket">—</div></div>
+        <div class="metric"><div class="metric-label">Ticket médio (mês)</div><div class="metric-value" id="p-ticket">—</div></div>
         <div class="metric"><div class="metric-label">Cupons hoje</div><div class="metric-value" id="p-cupons">—</div></div>
       </div>
 
@@ -1254,8 +1254,12 @@ function renderVendas(dH, dO, ds) {
   document.getElementById('p-hoje').textContent = dD ? brl(dD.total) : '—';
   const dtD = dD ? parseDataBR(dD.data) : null;
   document.getElementById('p-hoje-d').textContent = dtD ? ds[dtD.getDay()] + ' ' + dD.data.slice(0,5) : '';
-  document.getElementById('p-ticket').textContent = dD && dD.clientes > 0 ? 'R$ ' + (dD.total / dD.clientes).toFixed(2).replace('.',',') : '—';
-  document.getElementById('p-cupons').textContent = dD ? dD.clientes.toLocaleString('pt-BR') : '—';
+  // Ticket médio do MÊS (acumulado): total de vendas ÷ total de clientes — só dias que têm cupom lançado.
+  // Mais estável que o diário e não some se faltar o cupom de um dia.
+  let _accV=0,_accC=0;
+  dadosVendas.forEach(r=>{ if(r.clientes>0){ _accV+=r.total; _accC+=r.clientes; } });
+  document.getElementById('p-ticket').textContent = _accC>0 ? 'R$ '+(_accV/_accC).toFixed(2).replace('.',',') : '—';
+  document.getElementById('p-cupons').textContent = (dD && dD.clientes>0) ? dD.clientes.toLocaleString('pt-BR') : '—';
 
   // comparação com o dia anterior real
   const cmp = document.getElementById('p-cmp');
@@ -1387,7 +1391,9 @@ function renderizarPainel() {
   const totCu=dadosVendas.reduce((s,r)=>s+r.clientes,0);
   document.getElementById('r-total').textContent  = brl(totV);
   document.getElementById('r-cupons').textContent = totCu.toLocaleString('pt-BR');
-  document.getElementById('r-ticket').textContent = totCu>0?'R$ '+(totV/totCu).toFixed(2).replace('.',','): '—';
+  let _tkV=0,_tkCu=0;
+  dadosVendas.forEach(r=>{ if(r.clientes>0){ _tkV+=r.total; _tkCu+=r.clientes; } });
+  document.getElementById('r-ticket').textContent = _tkCu>0?'R$ '+(_tkV/_tkCu).toFixed(2).replace('.',','): '—';
   document.getElementById('r-perd').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.perdidos,0));
   document.getElementById('r-deb').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.debito,0));
   document.getElementById('r-cred').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.credito,0));
