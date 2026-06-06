@@ -103,6 +103,8 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qcard .qsoon{font-size:10px;color:#888780}
 .qcard.soon{opacity:0.55;cursor:default}
 .qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
+.dre-aj-edit{color:#888780;font-size:14px;cursor:pointer;margin-left:6px;vertical-align:-1px}
+.dre-tag-aj{display:inline-block;background:#FAEEDA;color:#854F0B;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:5px;vertical-align:1px}
 .dre-soon{background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
 .dre-soon i{font-size:34px;color:#1B3A9E;display:block;margin-bottom:10px}
 
@@ -829,6 +831,20 @@ function doPost(e) {
   </div>
 </div>
 
+<div class="modal-bg" id="modal-ajuste">
+  <div class="modal-card">
+    <div class="modal-title" id="modal-ajuste-title">Ajustar linha</div>
+    <div style="font-size:12px;color:#888780;margin:-4px 0 8px" id="aj-info"></div>
+    <div class="field-group"><label>Valor ajustado (R$)</label><input type="text" inputmode="decimal" id="aj-valor" placeholder="0,00"></div>
+    <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:2px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Vale só nesta loja e período. Não altera o Contas a Pagar de origem.</div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" id="aj-limpar" onclick="limparAjuste()" style="display:none">↺ Voltar ao automático</button>
+      <button class="btn-cancelar" onclick="fecharModalAjuste()">Cancelar</button>
+      <button class="btn-confirmar" onclick="salvarAjuste()">✓ Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -874,6 +890,7 @@ let drePer    = 'mes';    // mes (mês de dreMesRef) | ano | tudo
 let dreView   = 'tabela'; // tabela | grafico
 let dreMesRef = (function(){ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })(); // mês exibido
 let dreGrupos = [];       // grupos manuais salvos (aluguel, internet, etc.)
+let dreAjustes = {};      // ajustes manuais por linha da DRE: chave `loja|periodo|linha` -> valor
 
 // ══════════════════════════════════════════════════════
 // UTILITÁRIOS
@@ -1018,6 +1035,7 @@ function fazerLogin() {
   document.getElementById('massa-data-pag').value = hj;
   show('s-app');
   dreCarregarGrupos();
+  dreCarregarAjustes();
   carregarSheets();
 }
 function fazerLogout() {
@@ -1105,6 +1123,7 @@ async function carregarSheets() {
     atualizarContadorSelecionados();
     renderDRE();
     dreCarregarGruposSheet().then(ok=>{ if(ok) renderDRE(); });
+    dreCarregarAjustesSheet().then(ok=>{ if(ok) renderDRE(); });
 
   } catch(e) {
     console.error(e);
@@ -1529,6 +1548,77 @@ async function dreEnviarGrupoSheet(payload){
   } catch(e){ /* offline: fica no cache local e sincroniza na próxima */ }
 }
 
+// ── AJUSTES MANUAIS POR LINHA DA DRE (override; não altera a origem) ──
+// chave = loja|periodo|linha  → valor. Salvo local (cache) + planilha (aba DRE_Ajustes).
+function dreAjKey(linha){ return dreLoja + '|' + dreLabelPeriodo() + '|' + linha; }
+function dreAjGet(linha){ const v = dreAjustes[dreAjKey(linha)]; return (typeof v==='number' && !isNaN(v)) ? v : null; }
+function dreCarregarAjustes(){ try { dreAjustes = JSON.parse(localStorage.getItem('dre_ajustes')||'{}'); } catch(e){ dreAjustes = {}; } }
+function dreSalvarAjustes(){ localStorage.setItem('dre_ajustes', JSON.stringify(dreAjustes)); }
+// lê os ajustes da planilha (aba DRE_Ajustes). Se a aba não existir, mantém o cache local.
+async function dreCarregarAjustesSheet(){
+  try {
+    const rows = await fetchRange('DRE_Ajustes!A:F');
+    const obj = {};
+    rows.slice(1).forEach(r=>{
+      if(!r[0]) return;
+      if(String(r[5]||'').toUpperCase()==='REMOVIDO') return;
+      obj[r[0]] = N(r[4]);
+    });
+    dreAjustes = obj; dreSalvarAjustes();
+    return true;
+  } catch(e){ return false; } // sem aba/sem conexão → fica com o cache local
+}
+async function dreEnviarAjusteSheet(payload){
+  if(!APPS_SCRIPT_URL) return;
+  try {
+    await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({...payload, sheetId:SHEET_ID})});
+  } catch(e){ /* offline: fica no cache local e sincroniza depois */ }
+}
+// parser tolerante: aceita "2.800,50" (pt-BR) e "2800.50" (input number)
+function dreParseValor(s){
+  s = String(s==null?'':s).trim().replace(/\s/g,'');
+  if(s==='') return null;
+  if(s.indexOf(',')>=0) s = s.replace(/\./g,'').replace(',','.');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+let ajLinhaAtual = null;
+function abrirModalAjuste(linha, label){
+  if(!ehGestor()){ toast('Só o usuário master pode ajustar a DRE'); return; }
+  ajLinhaAtual = linha;
+  document.getElementById('modal-ajuste-title').textContent = 'Ajustar: ' + label;
+  const atual = dreAjGet(linha);
+  document.getElementById('aj-valor').value = (atual!=null) ? atual : '';
+  document.getElementById('aj-info').textContent = ({l1:'Loja 1',l2:'Loja 2',all:'Todas'}[dreLoja]||'') + ' · ' + dreLabelPeriodo();
+  document.getElementById('aj-limpar').style.display = (atual!=null) ? 'inline-block' : 'none';
+  document.getElementById('modal-ajuste').classList.add('open');
+  setTimeout(()=>{ const i=document.getElementById('aj-valor'); if(i) i.focus(); }, 60);
+}
+function fecharModalAjuste(){ document.getElementById('modal-ajuste').classList.remove('open'); ajLinhaAtual=null; }
+function salvarAjuste(){
+  if(!ehGestor()){ toast('Só o usuário master pode ajustar a DRE'); return; }
+  const valor = dreParseValor(document.getElementById('aj-valor').value);
+  if(valor==null){ toast('Digite um valor (ou toque em Voltar ao automático)'); return; }
+  const key = dreAjKey(ajLinhaAtual);
+  dreAjustes[key] = valor;
+  dreSalvarAjustes();
+  dreEnviarAjusteSheet({acao:'ajuste', chave:key, loja:dreLoja, periodo:dreLabelPeriodo(), linha:ajLinhaAtual, valor});
+  fecharModalAjuste();
+  renderDRE();
+  toast('Ajuste salvo ✓');
+}
+function limparAjuste(){
+  if(!ehGestor() || !ajLinhaAtual) return;
+  const key = dreAjKey(ajLinhaAtual);
+  delete dreAjustes[key];
+  dreSalvarAjustes();
+  dreEnviarAjusteSheet({acao:'ajuste_del', chave:key});
+  fecharModalAjuste();
+  renderDRE();
+  toast('Voltou ao automático');
+}
+
 let grpSinalAtual = '-';
 let grpEditId = null;
 function dreSetSinalGrupo(s){
@@ -1635,6 +1725,28 @@ function dreSomaContas(){
   return b;
 }
 
+// Cálculo central da DRE (aplica os ajustes manuais por linha). Usado pela tela E pelo PDF.
+function dreCalcular(){
+  const rec = dreSomaReceita();
+  const ct  = dreSomaContas();
+  const subCats = [['energia','Energia'],['agua','Água'],['aluguel','Aluguel'],['telefone','Telefone/internet'],['servico','Serviços/outras']];
+  const sub = {}, subAj = {};
+  subCats.forEach(([k])=>{ const a=dreAjGet(k); subAj[k]=(a!=null); sub[k]=(a!=null)?a:(ct[k]||0); });
+  const despOp = subCats.reduce((s,[k])=> s + sub[k], 0);
+  const aImp=dreAjGet('imposto'), aCmv=dreAjGet('cmv'), aDF=dreAjGet('despFin'), aRF=dreAjGet('recFin');
+  const imposto = aImp!=null?aImp:ct.imposto;
+  const cmv     = aCmv!=null?aCmv:ct.cmv;
+  const despFin = aDF!=null?aDF:ct.desp_fin;
+  const recFin  = aRF!=null?aRF:0;
+  const recLiq  = rec.bruta - imposto;
+  const margem  = recLiq - cmv;
+  const grupos  = dreGruposVisiveis();
+  const grpSoma = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
+  const resultado = margem - despOp + recFin - despFin + grpSoma;
+  return {rec, ct, subCats, sub, subAj, despOp, imposto, cmv, despFin, recFin, recLiq, margem,
+          grupos, grpSoma, resultado, aj:{imposto:aImp!=null, cmv:aCmv!=null, despFin:aDF!=null, recFin:aRF!=null}};
+}
+
 function renderDRE(){
   const corpo=document.getElementById('dre-corpo'); if(!corpo) return;
   const btnG=document.getElementById('dre-btn-grupo'); if(btnG) btnG.style.display = ehGestor()?'flex':'none';
@@ -1658,25 +1770,19 @@ function renderDRE(){
     return;
   }
 
-  // tabela
-  const ct = dreSomaContas();
-  const impostos = ct.imposto;
-  const cmv      = ct.cmv;
-  const despOp   = ct.despOp;
-  const despFin  = ct.desp_fin;
-  const recFin   = 0; // bonificações/sobras de caixa — não vêm do Contas a Pagar (entram depois)
-  const recLiq   = rec.bruta - impostos;
-  const margem   = recLiq - cmv;
-  // grupos manuais (aluguel, internet, etc.) — somam ou subtraem do resultado
-  const grupos   = dreGruposVisiveis();
-  const grpSoma  = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
-  const resultado= margem - despOp + recFin - despFin + grpSoma;
+  // tabela — usa o cálculo central (já com os ajustes manuais aplicados)
+  const D = dreCalcular();
+  const impostos = D.imposto, cmv = D.cmv, despOp = D.despOp, despFin = D.despFin, recFin = D.recFin;
+  const recLiq = D.recLiq, margem = D.margem, grupos = D.grupos, resultado = D.resultado;
   const pct = v => rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%' : '—';
+  const G = ehGestor();
+  const lap  = (linha,label)=> G ? ` <i class="ti ti-pencil dre-aj-edit" onclick="abrirModalAjuste('${linha}','${label}')"></i>` : '';
+  const tagA = on => on ? ` <span class="dre-tag-aj">ajustado</span>` : '';
 
-  // detalhe das despesas operacionais (só mostra as que têm valor)
-  const subDesp = [['Energia',ct.energia],['Água',ct.agua],['Aluguel',ct.aluguel],['Telefone/internet',ct.telefone],['Serviços/outras',ct.servico]]
-    .filter(([n,v])=>v>0)
-    .map(([n,v])=>`<div class="dre-row sub"><div class="dr-lbl">${n}</div><div class="dr-val">${brlC(v)}</div></div>`).join('');
+  // detalhe das despesas operacionais (gestor vê os 5 pra poder ajustar; senão só os > 0)
+  const subDesp = D.subCats
+    .filter(([k])=> G || D.sub[k]>0)
+    .map(([k,label])=>`<div class="dre-row sub"><div class="dr-lbl">${label}${tagA(D.subAj[k])}</div><div class="dr-val">${brlC(D.sub[k])}${lap(k,label)}</div></div>`).join('');
 
   const posit = resultado>=0;
 
@@ -1689,25 +1795,25 @@ function renderDRE(){
     <div class="dre-row sub"><div class="dr-lbl">Cartão (déb + créd + parc)</div><div class="dr-val">${brlC(rec.cartao)}</div></div>
     <div class="dre-row sub"><div class="dr-lbl">PIX</div><div class="dr-val">${brlC(rec.pix)}</div></div>
 
-    <div class="dre-row"><div class="dr-lbl">(−) Deduções e impostos</div><div class="dr-val">${impostos>0?'− '+brlC(impostos):'R$ 0,00'}<div class="dr-sub">${impostos>0?pct(impostos):'sem imposto no período'}</div></div></div>
+    <div class="dre-row"><div class="dr-lbl">(−) Deduções e impostos${tagA(D.aj.imposto)}</div><div class="dr-val">${impostos>0?'− '+brlC(impostos):'R$ 0,00'}${lap('imposto','Deduções e impostos')}<div class="dr-sub">${impostos>0?pct(impostos):'sem imposto no período'}</div></div></div>
 
     <div class="dre-row total"><div class="dr-lbl">(=) Receita líquida</div><div class="dr-val">${brlC(recLiq)}</div></div>
 
-    <div class="dre-row"><div class="dr-lbl">(−) Custo mercadorias (CMV)</div><div class="dr-val">${cmv>0?'− '+brlC(cmv):'R$ 0,00'}<div class="dr-sub">${cmv>0?pct(cmv)+' da receita':'sem compras no período'}</div></div></div>
+    <div class="dre-row"><div class="dr-lbl">(−) Custo mercadorias (CMV)${tagA(D.aj.cmv)}</div><div class="dr-val">${cmv>0?'− '+brlC(cmv):'R$ 0,00'}${lap('cmv','Custo das mercadorias (CMV)')}<div class="dr-sub">${cmv>0?pct(cmv)+' da receita':'sem compras no período'}</div></div></div>
     <div class="dre-row total"><div class="dr-lbl">(=) Margem bruta</div><div class="dr-val">${brlC(margem)}<div class="dr-sub">margem ${pct(margem)}</div></div></div>
 
     <div class="dre-row"><div class="dr-lbl">(−) Despesas operacionais</div><div class="dr-val">${despOp>0?'− '+brlC(despOp):'R$ 0,00'}</div></div>
     ${subDesp}
 
-    <div class="dre-row"><div class="dr-lbl">(+) Receitas financeiras</div><div class="dr-val"><span class="dre-tag">bonificações/sobras — entram depois</span></div></div>
-    <div class="dre-row"><div class="dr-lbl">(−) Despesas financeiras</div><div class="dr-val">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}<div class="dr-sub">${despFin>0?'taxa de cartão':'taxa de cartão — entra depois'}</div></div></div>
+    <div class="dre-row"><div class="dr-lbl">(+) Receitas financeiras${tagA(D.aj.recFin)}</div><div class="dr-val">${D.aj.recFin ? '+ '+brlC(recFin) : '<span class="dre-tag">bonificações/sobras — entram depois</span>'}${lap('recFin','Receitas financeiras')}</div></div>
+    <div class="dre-row"><div class="dr-lbl">(−) Despesas financeiras${tagA(D.aj.despFin)}</div><div class="dr-val">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}${lap('despFin','Despesas financeiras')}<div class="dr-sub">${despFin>0?'taxa de cartão':'taxa de cartão — entra depois'}</div></div></div>
 
     ${grupos.length ? `<div class="dre-grp-lbl"><i class="ti ti-adjustments"></i>Grupos manuais</div>` + grupos.map(g=>`
       <div class="dre-grp-row">
         <div class="gr-nm">${g.sinal==='+'?'(+)':'(−)'} ${g.nome}</div>
         <div class="gr-rt">
           <span class="gr-val" style="color:${g.sinal==='+'?'#0F6E56':'#A32D2D'}">${g.sinal==='+'?'+ ':'− '}${brlC(g.valor)}</span>
-          ${ehGestor()?`<i class="ti ti-pencil" style="color:#888780;font-size:15px;cursor:pointer" onclick="abrirModalGrupo(${g.id})"></i>
+          ${G?`<i class="ti ti-pencil" style="color:#888780;font-size:15px;cursor:pointer" onclick="abrirModalGrupo(${g.id})"></i>
           <i class="ti ti-trash gr-x" onclick="dreRemoverGrupo(${g.id})"></i>`:''}
         </div>
       </div>`).join('') : ''}
@@ -1718,7 +1824,7 @@ function renderDRE(){
     </div>
 
     <div style="font-size:10px;color:#888780;text-align:center;margin-top:10px;line-height:1.5">
-      <i class="ti ti-wand" style="vertical-align:-1px;margin-right:3px"></i>Separação automática pelo nome do fornecedor (ajustável).<br>Contas contadas pela data de vencimento. Grupos manuais reaparecem todo mês.
+      <i class="ti ti-wand" style="vertical-align:-1px;margin-right:3px"></i>Separação automática pelo nome do fornecedor (ajustável).<br>Contas contadas pela data de vencimento. Grupos manuais reaparecem todo mês.${G?'<br><i class="ti ti-pencil" style="vertical-align:-1px;margin-right:3px"></i>Toque no lápis pra ajustar uma linha (não altera a origem).':''}
     </div>`;
 }
 
@@ -1731,21 +1837,20 @@ function dreExportarPDF(){
   const periodo  = dreLabelPeriodo();
   const agora    = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
-  const rec = dreSomaReceita();
-  const ct  = dreSomaContas();
-  const impostos = ct.imposto, cmv = ct.cmv, despOp = ct.despOp, despFin = ct.desp_fin;
-  const recFin   = 0;
-  const recLiq   = rec.bruta - impostos;
-  const margem   = recLiq - cmv;
-  const grupos   = dreGruposVisiveis();
-  const grpSoma  = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
-  const resultado= margem - despOp + recFin - despFin + grpSoma;
+  const D = dreCalcular();
+  const rec = D.rec;
+  const impostos = D.imposto, cmv = D.cmv, despOp = D.despOp, despFin = D.despFin;
+  const recFin   = D.recFin;
+  const recLiq   = D.recLiq;
+  const margem   = D.margem;
+  const grupos   = D.grupos;
+  const resultado= D.resultado;
   const pct = v => rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%' : '—';
   const posit = resultado>=0;
 
-  const subDesp = [['Energia',ct.energia],['Água',ct.agua],['Aluguel',ct.aluguel],['Telefone/internet',ct.telefone],['Serviços/outras',ct.servico]]
-    .filter(([n,v])=>v>0)
-    .map(([n,v])=>`<tr class="sub"><td>${n}</td><td class="v">${brlC(v)}</td></tr>`).join('');
+  const subDesp = D.subCats
+    .filter(([k])=> D.sub[k]>0)
+    .map(([k,label])=>`<tr class="sub"><td>${label}</td><td class="v">${brlC(D.sub[k])}</td></tr>`).join('');
 
   const subGrp = grupos.length ? grupos.map(g=>`<tr class="grp"><td>${g.sinal==='+'?'(+)':'(−)'} ${g.nome}</td><td class="v" style="color:${g.sinal==='+'?'#0F6E56':'#A32D2D'}">${g.sinal==='+'?'+ ':'− '}${brlC(g.valor)}</td></tr>`).join('') : '';
 
