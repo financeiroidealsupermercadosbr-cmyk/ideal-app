@@ -157,6 +157,31 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .dre-grp-row .gr-val{font-size:12px;font-weight:500}
 .dre-grp-row .gr-x{color:#A32D2D;font-size:16px;cursor:pointer;opacity:.7}
 .dre-grp-lbl{font-size:11px;font-weight:600;color:#16267A;margin:10px 12px 2px;display:flex;align-items:center;gap:5px}
+/* lançamentos do caixa por grupo (destrincha na DRE) */
+.dre-lanc-sec{margin:6px 12px 2px}
+.dre-lanc-hint{font-size:10.5px;color:#888780;padding:8px 0 6px;display:flex;align-items:center;gap:5px}
+.dre-lanc-hint i{font-size:14px;color:#1B3A9E}
+.dre-lanc-grp{margin-top:8px;border:1px solid rgba(22,38,122,0.12);border-radius:10px;overflow:hidden}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px;cursor:pointer;background:#fff}
+.dlg-left{display:flex;align-items:center;gap:8px;min-width:0}
+.dlg-chev{color:#1B3A9E;font-size:16px;flex:0 0 auto;transition:transform .15s}
+.dlg-nm{font-size:12.5px;color:#16267A;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlg-badge{font-size:10px;color:#185FA5;background:#E6F1FB;padding:1px 7px;border-radius:6px;white-space:nowrap;flex:0 0 auto}
+.dlg-val{font-size:13px;color:#16267A;font-weight:600;white-space:nowrap;flex:0 0 auto}
+.dlg-list{display:none;border-top:1px solid rgba(22,38,122,0.12);padding:0 11px 4px}
+.dlg-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid rgba(0,0,0,0.06)}
+.dlg-item:first-child{border-top:none}
+.dli-mid{min-width:0}
+.dli-nm{font-size:12px;color:#16267A}
+.dli-meta{font-size:10.5px;color:#888780;margin-top:2px}
+.dli-meta i{font-size:12px;vertical-align:-1px;margin-right:3px}
+.dli-val{font-size:12.5px;color:#16267A;font-weight:600;white-space:nowrap}
+.dre-lanc-grp.open .dlg-head{background:#1B3A9E}
+.dre-lanc-grp.open .dlg-nm{color:#fff}
+.dre-lanc-grp.open .dlg-chev{color:#fff;transform:rotate(90deg)}
+.dre-lanc-grp.open .dlg-val{color:#fff}
+.dre-lanc-grp.open .dlg-badge{background:#FFC400;color:#16267A}
+.dre-lanc-grp.open .dlg-list{display:block}
 /* toggle + / - no modal */
 .grp-sinal{display:flex;gap:8px}
 .grp-op{flex:1;text-align:center;font-size:12px;padding:11px 6px;border-radius:10px;border:1px solid #e0e0e0;cursor:pointer;color:#5F5E5A;background:#f8f8f8}
@@ -1756,7 +1781,8 @@ async function dreCarregarCaixa(){
   try {
     const rows = await fetchRange('Despesas_Caixa!A:G'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS
     dadosCaixa = rows.slice(1).filter(r=>r[0]&&r[4]).map(r=>({
-      data: r[0], loja: r[1]||'l2', categoria: r[2]||'Outros', valor: (dreParseValor(r[4])||0)
+      data: r[0], loja: r[1]||'l2', categoria: r[2]||'Outros', valor: (dreParseValor(r[4])||0),
+      desc: r[3]||'', resp: r[5]||'', ts: r[6]||''
     }));
     return true;
   } catch(e){ dadosCaixa = []; return false; } // aba ainda não existe → sem despesas de caixa
@@ -1772,6 +1798,49 @@ function dreSomaCaixa(){
   });
   return b;
 }
+
+// ── DESTRINCHAR LANÇAMENTOS NA DRE: agrupa as despesas de caixa do período/loja
+// por categoria (grupo) e devolve cada grupo com seus lançamentos individuais. ──
+function dreEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function dreP2(n){ n=parseInt(n,10)||0; return (n<10?'0':'')+n; }
+// data da despesa (col A) em DD/MM/AAAA — trata AAAA-MM-DD, DD/MM/AAAA e serial do Sheets
+function dreDataBR(raw){
+  raw = String(raw==null?'':raw).trim();
+  if(!raw) return '';
+  if(/^\d+(\.\d+)?$/.test(raw)){ const dt=new Date(Date.UTC(1899,11,30)+Math.round(parseFloat(raw))*86400000); return dreP2(dt.getUTCDate())+'/'+dreP2(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear(); }
+  if(raw.indexOf('-')>=0){ const p=raw.split('-'); if(p.length===3) return dreP2(p[2])+'/'+dreP2(p[1])+'/'+p[0]; }
+  if(raw.indexOf('/')>=0){ const p=raw.split('/'); if(p.length===3) return dreP2(p[0])+'/'+dreP2(p[1])+'/'+(p[2].length===2?'20'+p[2]:p[2]); }
+  return raw;
+}
+// hora (HH:MM) tirada do carimbo de data/hora (col G), salvo como toLocaleString pt-BR
+function dreHora(ts){ const m=String(ts==null?'':ts).match(/(\d{1,2}):(\d{2})/); return m?dreP2(m[1])+':'+m[2]:''; }
+// chave numérica pra ordenar os lançamentos do mais recente pro mais antigo
+function dreDataOrd(raw,ts){
+  raw=String(raw==null?'':raw).trim(); let y=0,mo=0,d=0;
+  if(/^\d+(\.\d+)?$/.test(raw)){ const dt=new Date(Date.UTC(1899,11,30)+Math.round(parseFloat(raw))*86400000); y=dt.getUTCFullYear();mo=dt.getUTCMonth()+1;d=dt.getUTCDate(); }
+  else if(raw.indexOf('-')>=0){ const p=raw.split('-'); y=+p[0];mo=+p[1];d=+p[2]; }
+  else if(raw.indexOf('/')>=0){ const p=raw.split('/'); d=+p[0];mo=+p[1];y=+(p[2]&&p[2].length===2?'20'+p[2]:p[2]); }
+  const hm=parseInt(dreHora(ts).replace(':',''),10)||0;
+  return (y||0)*1e8 + (mo||0)*1e6 + (d||0)*1e4 + hm;
+}
+function dreLancamentosPorGrupo(){
+  const grupos = {};
+  const temDados = (dreLoja==='l2' || dreLoja==='all');
+  if(temDados) (dadosCaixa||[]).forEach(x=>{
+    if(!caixaNoPeriodo(x.data)) return;
+    if(dreLoja!=='all' && x.loja!==dreLoja) return;
+    const cat = (x.categoria && String(x.categoria).trim()) ? x.categoria : 'Outros';
+    if(!grupos[cat]) grupos[cat] = {nome:cat, total:0, itens:[]};
+    grupos[cat].total += x.valor;
+    grupos[cat].itens.push(x);
+  });
+  const arr = Object.keys(grupos).map(k=>grupos[k]);
+  arr.forEach(g=> g.itens.sort((a,b)=> dreDataOrd(b.data,b.ts) - dreDataOrd(a.data,a.ts)));
+  arr.sort((a,b)=> b.total - a.total);
+  return arr;
+}
+// abre/fecha um grupo (só visual; não recalcula nada)
+function dreToggleGrupo(head){ head.parentElement.classList.toggle('open'); }
 
 // Cálculo central da DRE (aplica os ajustes manuais por linha). Usado pela tela E pelo PDF.
 function dreCalcular(){
@@ -1834,6 +1903,31 @@ function renderDRE(){
     .filter(([k])=> G || D.sub[k]>0)
     .map(([k,label])=>`<div class="dre-row sub"><div class="dr-lbl">${label}${tagA(D.subAj[k])}</div><div class="dr-val">${brlC(D.sub[k])}${lap(k,label)}</div></div>`).join('');
 
+  // lançamentos do caixa físico, destrinchados por grupo (abre/fecha ao tocar)
+  const grpLanc = semFonte ? [] : dreLancamentosPorGrupo();
+  const lancSec = grpLanc.length ? `
+    <div class="dre-lanc-sec">
+      <div class="dre-lanc-hint"><i class="ti ti-list-details"></i>Lançamentos do caixa por grupo · toque pra abrir</div>
+      ${grpLanc.map(g=>`
+        <div class="dre-lanc-grp">
+          <div class="dlg-head" onclick="dreToggleGrupo(this)">
+            <div class="dlg-left">
+              <i class="ti ti-chevron-right dlg-chev"></i>
+              <span class="dlg-nm">${dreEsc(g.nome)}</span>
+              <span class="dlg-badge">${g.itens.length} ${g.itens.length===1?'lançamento':'lançamentos'}</span>
+            </div>
+            <span class="dlg-val">${brlC(g.total)}</span>
+          </div>
+          <div class="dlg-list">
+            ${g.itens.map(it=>{
+              const obs = (it.desc&&String(it.desc).trim()) ? dreEsc(it.desc) : '(sem descrição)';
+              const meta = [dreDataBR(it.data), dreHora(it.ts), (it.resp&&String(it.resp).trim())?dreEsc(it.resp):''].filter(Boolean).join(' · ');
+              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div></div><div class="dli-val">${brlC(it.valor)}</div></div>`;
+            }).join('')}
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
   const posit = resultado>=0;
 
   corpo.innerHTML = `${aviso}
@@ -1854,6 +1948,7 @@ function renderDRE(){
 
     <div class="dre-row"><div class="dr-lbl">(−) Despesas operacionais</div><div class="dr-val">${despOp>0?'− '+brlC(despOp):'R$ 0,00'}</div></div>
     ${subDesp}
+    ${lancSec}
 
     <div class="dre-row"><div class="dr-lbl">(+) Receitas financeiras${tagA(D.aj.recFin)}</div><div class="dr-val">${D.aj.recFin ? '+ '+brlC(recFin) : '<span class="dre-tag">bonificações/sobras — entram depois</span>'}${lap('recFin','Receitas financeiras')}</div></div>
     <div class="dre-row"><div class="dr-lbl">(−) Despesas financeiras${tagA(D.aj.despFin)}</div><div class="dr-val">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}${lap('despFin','Despesas financeiras')}<div class="dr-sub">${despFin>0?'taxa de cartão':'taxa de cartão — entra depois'}</div></div></div>
@@ -2132,7 +2227,7 @@ async function salvarDespesa() {
   btn.disabled=true; btn.textContent='Salvando...';
   try {
     await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp});
-    dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor}); // reflete na DRE na hora
+    dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor, desc, resp, ts:new Date().toLocaleString('pt-BR')}); // reflete na DRE na hora
     renderDRE();
     toast('✓ Despesa registrada'+(APPS_SCRIPT_URL?' no Sheets!':' localmente!'));
     document.getElementById('desp-desc').value='';
