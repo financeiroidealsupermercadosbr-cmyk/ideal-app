@@ -411,10 +411,10 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div class="loja-sel" id="loja-sel">
-      <button class="loja-btn active" onclick="trocarLoja(this,&#39;Loja 2 — Melhor QS8&#39;,&#39;l2&#39;)">Loja 2</button>
       <button class="loja-btn" onclick="trocarLoja(this,&#39;Loja 1 — Areal QS11&#39;,&#39;l1&#39;)">Loja 1</button>
+      <button class="loja-btn active" onclick="trocarLoja(this,&#39;Loja 2 — Melhor QS8&#39;,&#39;l2&#39;)">Loja 2</button>
       <button class="loja-btn" onclick="trocarLoja(this,&#39;Ideal Bolos — Restaurante&#39;,&#39;bolos&#39;)">Bolos</button>
-      <button class="loja-btn" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;l2&#39;)">Todas</button>
+      <button class="loja-btn" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;l2&#39;)">Consolidado</button>
     </div>
 
     <div class="nav">
@@ -1013,7 +1013,7 @@ function fazerLogin() {
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
-  const _idxLoja = {l2:0, l1:1, bolos:2, all:3}[l];
+  const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
   document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
   dreLoja = lojaAtual;
   document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.nivel==='gestor'?'Gestor':'Fiscal');
