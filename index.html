@@ -425,11 +425,6 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div id="tab-dre" class="content" style="display:none">
-      <div class="dre-lojas">
-        <div class="dre-loja" data-loja="l1" onclick="dreSetLoja('l1')">Loja 1</div>
-        <div class="dre-loja on" data-loja="l2" onclick="dreSetLoja('l2')">Loja 2</div>
-        <div class="dre-loja" data-loja="all" onclick="dreSetLoja('all')">Todas</div>
-      </div>
 
       <div class="dre-mesnav">
         <button class="dre-seta" onclick="dreStepMes(-1)" aria-label="Mês anterior"><i class="ti ti-chevron-left"></i></button>
@@ -1051,7 +1046,8 @@ function trocarLoja(btn,nome,id) {
   document.querySelectorAll('.loja-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); lojaAtual=id;
   document.getElementById('h-store').textContent=nome;
-  renderizarPainel(); filtrar();
+  dreLoja = id;            // o seletor de cima agora comanda a DRE também
+  renderizarPainel(); filtrar(); renderDRE();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1796,8 +1792,9 @@ function renderDRE(){
   document.getElementById('dre-perLbl').textContent = dreLabelPeriodo();
   const rec=dreSomaReceita();
   const semFonte = (dreLoja!=='l2' && dreLoja!=='all');
+  const nomeSemFonte = (dreLoja==='bolos') ? 'Ideal Bolos' : 'Loja 1 (Areal)';
   const aviso = semFonte
-    ? `<div class="dre-row pend" style="opacity:1;background:#FAEEDA;border-radius:10px;border-bottom:none;margin-bottom:6px;padding:10px 12px"><div class="dr-lbl" style="color:#854F0B"><i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:4px"></i>Loja 1 ainda sem fonte de dados — tudo zerado por enquanto.</div></div>`
+    ? `<div class="dre-row pend" style="opacity:1;background:#FAEEDA;border-radius:10px;border-bottom:none;margin-bottom:6px;padding:10px 12px"><div class="dr-lbl" style="color:#854F0B"><i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:4px"></i>${nomeSemFonte} ainda sem fonte de dados — tudo zerado por enquanto.</div></div>`
     : '';
 
   if(dreView==='grafico'){
