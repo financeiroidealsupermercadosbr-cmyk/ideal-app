@@ -1012,6 +1012,10 @@ function fazerLogin() {
   if (usr.nivel==='fiscal'&&l!==usr.loja) { err.style.display='flex'; etx.textContent='Acesso não permitido.'; return; }
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
+  // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
+  const _idxLoja = {l2:0, l1:1, bolos:2, all:3}[l];
+  document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
+  dreLoja = lojaAtual;
   document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.nivel==='gestor'?'Gestor':'Fiscal');
   document.getElementById('h-store').textContent = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
   document.getElementById('loja-sel').style.display = usr.nivel==='fiscal'?'none':'flex';
