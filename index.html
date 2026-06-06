@@ -452,7 +452,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
       <div class="dre-foot">
         <div class="dre-fbtn" id="dre-btn-grupo" onclick="abrirModalGrupo()"><i class="ti ti-plus"></i>Novo grupo</div>
-        <div class="dre-fbtn" onclick="toast('Exportar PDF — chega no final')"><i class="ti ti-file-type-pdf"></i>Exportar PDF</div>
+        <div class="dre-fbtn" onclick="dreExportarPDF()"><i class="ti ti-file-type-pdf"></i>Exportar PDF</div>
       </div>
     </div>
 
@@ -1719,6 +1719,102 @@ function renderDRE(){
     <div style="font-size:10px;color:#888780;text-align:center;margin-top:10px;line-height:1.5">
       <i class="ti ti-wand" style="vertical-align:-1px;margin-right:3px"></i>Separação automática pelo nome do fornecedor (ajustável).<br>Contas contadas pela data de vencimento. Grupos manuais reaparecem todo mês.
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORTAR DRE EM PDF (abre página limpa → Imprimir/Salvar PDF)
+// Puxa os MESMOS números da tela; respeita loja e período selecionados.
+// ══════════════════════════════════════════════════════
+function dreExportarPDF(){
+  const nomeLoja = ({l1:'Loja 1 — Areal QS11', l2:'Loja 2 — Melhor QS8', all:'Todas as lojas (consolidado)'})[dreLoja] || 'Loja 2 — Melhor QS8';
+  const periodo  = dreLabelPeriodo();
+  const agora    = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  const rec = dreSomaReceita();
+  const ct  = dreSomaContas();
+  const impostos = ct.imposto, cmv = ct.cmv, despOp = ct.despOp, despFin = ct.desp_fin;
+  const recFin   = 0;
+  const recLiq   = rec.bruta - impostos;
+  const margem   = recLiq - cmv;
+  const grupos   = dreGruposVisiveis();
+  const grpSoma  = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
+  const resultado= margem - despOp + recFin - despFin + grpSoma;
+  const pct = v => rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%' : '—';
+  const posit = resultado>=0;
+
+  const subDesp = [['Energia',ct.energia],['Água',ct.agua],['Aluguel',ct.aluguel],['Telefone/internet',ct.telefone],['Serviços/outras',ct.servico]]
+    .filter(([n,v])=>v>0)
+    .map(([n,v])=>`<tr class="sub"><td>${n}</td><td class="v">${brlC(v)}</td></tr>`).join('');
+
+  const subGrp = grupos.length ? grupos.map(g=>`<tr class="grp"><td>${g.sinal==='+'?'(+)':'(−)'} ${g.nome}</td><td class="v" style="color:${g.sinal==='+'?'#0F6E56':'#A32D2D'}">${g.sinal==='+'?'+ ':'− '}${brlC(g.valor)}</td></tr>`).join('') : '';
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRE Ideal — ${nomeLoja} — ${periodo}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}
+.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}
+.hd{background:#1B3A9E;color:#fff;padding:16px 20px}
+.hd h1{font-size:18px;letter-spacing:.3px}
+.hd .sub{font-size:12px;opacity:.9;margin-top:2px}
+.stripe{height:4px;background:#FFC400}
+.body{padding:14px 20px 20px}
+.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee}
+table{width:100%;border-collapse:collapse;margin-top:4px}
+td{padding:8px 4px;font-size:13px;border-bottom:1px solid #f1f1f1;vertical-align:top}
+td.v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr.head td{font-weight:bold;color:#16267A;background:#F4F7FC}
+tr.total td{font-weight:bold;border-top:1px solid #C9D6EC;border-bottom:1px solid #C9D6EC;background:#E6F1FB}
+tr.sub td{color:#5F5E5A;font-size:12px;padding-left:16px}
+tr.grp td{color:#16267A;font-size:12px}
+.result{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 18px;border-radius:10px;color:#fff}
+.result .lbl{font-size:14px;font-weight:bold}
+.result .note{font-size:11px;opacity:.92;margin-top:2px}
+.result .val{font-size:20px;font-weight:bold;white-space:nowrap}
+.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}
+.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}
+.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}
+.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}
+@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}
+</style></head><body>
+<div class="sheet">
+  <div class="hd"><h1>DRE — Demonstrativo de Resultados</h1><div class="sub">Ideal Supermercados</div></div>
+  <div class="stripe"></div>
+  <div class="body">
+    <div class="meta"><span><b>${nomeLoja}</b></span><span>Período: <b>${periodo}</b></span><span>Gerado em ${agora}</span></div>
+    <table>
+      <tr class="head"><td>(+) Receita bruta</td><td class="v">${brlC(rec.bruta)} · 100%</td></tr>
+      <tr class="sub"><td>Dinheiro (à vista)</td><td class="v">${brlC(rec.dinheiro)}</td></tr>
+      <tr class="sub"><td>Cartão (déb + créd + parc)</td><td class="v">${brlC(rec.cartao)}</td></tr>
+      <tr class="sub"><td>PIX</td><td class="v">${brlC(rec.pix)}</td></tr>
+      <tr><td>(−) Deduções e impostos</td><td class="v">${impostos>0?'− '+brlC(impostos)+' · '+pct(impostos):'R$ 0,00'}</td></tr>
+      <tr class="total"><td>(=) Receita líquida</td><td class="v">${brlC(recLiq)}</td></tr>
+      <tr><td>(−) Custo das mercadorias (CMV)</td><td class="v">${cmv>0?'− '+brlC(cmv)+' · '+pct(cmv):'R$ 0,00'}</td></tr>
+      <tr class="total"><td>(=) Margem bruta</td><td class="v">${brlC(margem)} · margem ${pct(margem)}</td></tr>
+      <tr><td>(−) Despesas operacionais</td><td class="v">${despOp>0?'− '+brlC(despOp):'R$ 0,00'}</td></tr>
+      ${subDesp}
+      <tr><td>(+) Receitas financeiras</td><td class="v">${recFin>0?brlC(recFin):'— (entram depois)'}</td></tr>
+      <tr><td>(−) Despesas financeiras</td><td class="v">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}</td></tr>
+      ${grupos.length?`<tr class="head"><td colspan="2">Grupos manuais</td></tr>${subGrp}`:''}
+    </table>
+    <div class="result" style="background:${posit?'#0F6E56':'#A32D2D'}">
+      <div><div class="lbl">(=) Resultado</div><div class="note">${posit?'lucro no período':'prejuízo no período'} · margem ${pct(resultado)}</div></div>
+      <div class="val">${brlC(resultado)}</div>
+    </div>
+    <div class="foot">Separação automática pelo nome do fornecedor (ajustável). Contas contadas pela data de vencimento.<br>Documento gerado pelo app de Gestão Financeira — Ideal Supermercados.</div>
+    <div class="bar noprint">
+      <button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button>
+      <button class="b2" onclick="window.close()">Fechar</button>
+    </div>
+  </div>
+</div>
+<script>window.addEventListener('load',function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});<\/script>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
 }
 
 // ══════════════════════════════════════════════════════
