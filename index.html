@@ -96,9 +96,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .nav-btn{flex:1;padding:0;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#9aa0b0;font-size:11px;font-family:Arial,sans-serif}
 .nav-btn.active{color:#1B3A9E;font-weight:600}
 .nav-btn i{font-size:21px}
-.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:12px}
-.qcard{position:relative;background:#fff;border-radius:14px;padding:15px 4px;display:flex;flex-direction:column;align-items:center;gap:7px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
-.qcard i{font-size:23px;color:#1B3A9E}
+.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px}
+.qcard{position:relative;background:#fff;border-radius:14px;padding:24px 6px;min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
+.qcard i{font-size:26px;color:#1B3A9E}
 .qcard .qnm{font-size:11px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
 .qcard .qsoon{font-size:10px;color:#888780}
 .qcard.soon{opacity:0.55;cursor:default}
@@ -462,6 +462,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
+        <div class="qcard soon"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon"><i class="ti ti-eye"></i><span class="qnm">Consulta de preço</span><span class="qsoon">em breve</span></div>
