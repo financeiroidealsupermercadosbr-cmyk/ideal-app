@@ -497,6 +497,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
+      <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirRelatorios()"><i class="ti ti-chart-bar" style="font-size:22px;color:#16267A;margin-right:10px"></i><div style="flex:1"><div class="row-label">Relatórios por setor</div><div class="row-sub">Faturamento de cada setor · toque para ver</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <!-- BARRA DE PERÍODO + FILTRO (fatia 3) -->
       <div class="flt-periodo" id="flt-periodBtn">
         <i class="ti ti-filter"></i>
@@ -812,7 +813,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.7 — editor da estrutura mercadológica</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.9 — relatórios de faturamento por setor</div></div>
     </div>
   </div>
 </div>
@@ -952,6 +953,7 @@ function doPost(e) {
       <div style="font-size:16px;font-weight:600;color:#16267A">Estrutura mercadológica</div>
       <div style="font-size:11.5px;color:#888780" id="est-sub">Carregando…</div>
     </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="estAtualizar()" title="Atualizar"></i>
   </div>
 
   <!-- VISÃO 1: resumo -->
@@ -973,6 +975,31 @@ function doPost(e) {
   <div id="est-setor-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estResumoVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
     <div id="est-itens"><div class="row-sub" style="padding:6px 2px">Carregando produtos…</div></div>
+  </div>
+</div>
+
+<!-- TELA: Relatórios por setor (Bloco 2) -->
+<div class="screen" id="s-relatorios">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Relatórios por setor</div>
+      <div style="font-size:11.5px;color:#888780" id="rel-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="relAtualizar()" title="Atualizar"></i>
+  </div>
+
+  <div id="rel-lista-view" style="padding:0 14px 90px">
+    <div style="background:#F1F4FB;border-radius:10px;padding:12px;margin:12px 0">
+      <div style="font-size:11.5px;color:#888780">Faturamento total · últimos 30 dias</div>
+      <div style="font-size:22px;font-weight:600;color:#16267A" id="rel-total">—</div>
+    </div>
+    <div id="rel-setores"><div class="row-sub" style="padding:6px 2px">Carregando setores…</div></div>
+  </div>
+
+  <div id="rel-setor-view" style="display:none;padding:0 14px 90px">
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="relVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="rel-setor-nome">Setor</div><div class="row-sub" id="rel-setor-cont">—</div></div></div>
+    <div id="rel-itens"><div class="row-sub" style="padding:6px 2px">Carregando produtos…</div></div>
   </div>
 </div>
 
@@ -2904,6 +2931,15 @@ initFiltro();
 // ══════════════════════════════════════════════════════
 const EST_SETORES = ['ACOUGUE','PADARIA','HORTIFRUTI','FRIOS E LATICINIOS','CONGELADOS','PEIXARIA','MERCEARIA SALGADA','MERCEARIA DOCE','BEBIDAS','LIMPEZA','HIGIENE E PERFUMARIA','BAZAR E UTILIDADES','PET'];
 let estSetorAtual = '';
+let estCacheResumo = null;
+let estCacheSetor = {};
+
+function estAtualizar(){
+  estCacheResumo = null; estCacheSetor = {};
+  toast('Atualizando…');
+  if(document.getElementById('est-setor-view').style.display!=='none' && estSetorAtual){ estAbrirSetor(estSetorAtual); }
+  else { estResumo(); }
+}
 
 function _estCap(s){ return String(s||'').toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); }); }
 function _estEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -2923,22 +2959,27 @@ function abrirEstrutura(){
 }
 
 async function estResumo(){
+  if(estCacheResumo){ estRenderResumo(estCacheResumo); return; }
   document.getElementById('est-sub').textContent='Carregando…';
   document.getElementById('est-setores').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando setores…</div>';
   try{
     const d = await _estPost({acao:'estrutura_resumo'});
     if(!d.ok) throw new Error(d.erro||'falha');
-    const r = d.resumo||{};
-    let total=0; for(const k in r) total+=r[k];
-    document.getElementById('est-naoclass-num').textContent = (r['A REVISAR']||0).toLocaleString('pt-BR');
-    document.getElementById('est-sub').textContent = total.toLocaleString('pt-BR')+' produtos · base central';
-    let html='';
-    EST_SETORES.forEach(function(s){
-      const n = r[s]||0;
-      html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirSetor(\''+s+'\')"><div><div class="row-label">'+_estCap(s)+'</div><div class="row-sub">'+n.toLocaleString('pt-BR')+' produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
-    });
-    document.getElementById('est-setores').innerHTML = html;
-  }catch(e){ console.error('estResumo:',e); document.getElementById('est-setores').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Verifique a internet.</div>'; }
+    estCacheResumo = d.resumo||{};
+    estRenderResumo(estCacheResumo);
+  }catch(e){ console.error('estResumo:',e); document.getElementById('est-setores').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻) ou verifique a internet.</div>'; }
+}
+
+function estRenderResumo(r){
+  let total=0; for(const k in r) total+=r[k];
+  document.getElementById('est-naoclass-num').textContent = (r['A REVISAR']||0).toLocaleString('pt-BR');
+  document.getElementById('est-sub').textContent = total.toLocaleString('pt-BR')+' produtos · base central';
+  let html='';
+  EST_SETORES.forEach(function(s){
+    const n = r[s]||0;
+    html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirSetor(\''+s+'\')"><div><div class="row-label">'+_estCap(s)+'</div><div class="row-sub">'+n.toLocaleString('pt-BR')+' produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
+  });
+  document.getElementById('est-setores').innerHTML = html;
 }
 
 function estResumoVoltar(){
@@ -2952,6 +2993,10 @@ async function estAbrirSetor(setor){
   document.getElementById('est-resumo-view').style.display='none';
   document.getElementById('est-setor-view').style.display='block';
   document.getElementById('est-setor-nome').textContent = (setor==='A REVISAR') ? 'Não classificados' : _estCap(setor);
+  if(estCacheSetor[setor]){
+    document.getElementById('est-setor-cont').textContent = estCacheSetor[setor].length.toLocaleString('pt-BR')+' produtos · toque para mudar';
+    estRenderItens(estCacheSetor[setor]); return;
+  }
   document.getElementById('est-setor-cont').textContent = 'Carregando…';
   document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando produtos…</div>';
   try{
@@ -2959,9 +3004,10 @@ async function estAbrirSetor(setor){
     const d = await _estPost({acao:acao, setor:setor, limite:300});
     if(!d.ok) throw new Error(d.erro||'falha');
     const itens = d.itens||[];
+    estCacheSetor[setor] = itens;
     document.getElementById('est-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos · toque para mudar';
     estRenderItens(itens);
-  }catch(e){ console.error('estAbrirSetor:',e); document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Verifique a internet.</div>'; }
+  }catch(e){ console.error('estAbrirSetor:',e); document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻) ou verifique a internet.</div>'; }
 }
 
 function estOpcoesSetor(atual){
@@ -3006,10 +3052,98 @@ async function estSalvar(cod){
     const d = await _estPost({acao:'estrutura_save', codigo:cod, setor:novoSetor, grupo:novoGrupo, usuario:(userAtual&&userAtual.usuario)||''});
     if(!d.ok) throw new Error(d.erro||'falha');
     toast('✓ Movido para '+_estCap(novoSetor));
-    if(novoSetor!==estSetorAtual){ const row=document.getElementById('estrow-'+cod); if(row) row.remove(); }
-    else { estToggle(cod); }
+    if(novoSetor!==estSetorAtual){
+      if(estCacheSetor[estSetorAtual]) estCacheSetor[estSetorAtual]=estCacheSetor[estSetorAtual].filter(function(x){ return String(x.codigo)!==String(cod); });
+      delete estCacheSetor[novoSetor];   // o setor destino recarrega fresco quando abrir
+      if(estCacheResumo){
+        if(estCacheResumo[estSetorAtual]!=null) estCacheResumo[estSetorAtual]=Math.max(0,estCacheResumo[estSetorAtual]-1);
+        estCacheResumo[novoSetor]=(estCacheResumo[novoSetor]||0)+1;
+      }
+      const row=document.getElementById('estrow-'+cod); if(row) row.remove();
+    } else {
+      if(estCacheSetor[estSetorAtual]){ estCacheSetor[estSetorAtual].forEach(function(x){ if(String(x.codigo)===String(cod)) x.grupo=novoGrupo; }); }
+      estToggle(cod);
+    }
   }catch(e){ console.error('estSalvar:',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
   if(btn){ btn.disabled=false; btn.textContent=t; }
+}
+
+// ══════════════════════════════════════════════════════
+// RELATÓRIOS POR SETOR (Bloco 2)
+// ══════════════════════════════════════════════════════
+let relCacheSetores=null, relCacheItens={}, relSetorAtual='';
+function _relMoney(n){ return 'R$ '+Math.round(n).toLocaleString('pt-BR'); }
+
+function abrirRelatorios(){
+  show('s-relatorios');
+  document.getElementById('rel-lista-view').style.display='block';
+  document.getElementById('rel-setor-view').style.display='none';
+  relSetores();
+}
+function relAtualizar(){
+  relCacheSetores=null; relCacheItens={}; toast('Atualizando…');
+  if(document.getElementById('rel-setor-view').style.display!=='none' && relSetorAtual){ relAbrirSetor(relSetorAtual); }
+  else { relSetores(); }
+}
+async function relSetores(){
+  if(relCacheSetores){ relRenderSetores(relCacheSetores); return; }
+  document.getElementById('rel-sub').textContent='Carregando…';
+  document.getElementById('rel-setores').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando setores…</div>';
+  try{
+    const d = await _estPost({acao:'relatorio_setores'});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    relCacheSetores = d; relRenderSetores(d);
+  }catch(e){ console.error('relSetores:',e); document.getElementById('rel-setores').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻) ou verifique a internet.</div>'; }
+}
+function relRenderSetores(d){
+  const setores=d.setores||[], total=d.total||0;
+  document.getElementById('rel-total').textContent = _relMoney(total);
+  document.getElementById('rel-sub').textContent = setores.length+' setores · 30 dias';
+  let maxF=0; setores.forEach(function(s){ if(s.fat>maxF) maxF=s.fat; });
+  let html='';
+  setores.forEach(function(s){
+    const pct = total>0 ? (100*s.fat/total) : 0;
+    const w = maxF>0 ? Math.round(100*s.fat/maxF) : 0;
+    const nome = (s.setor==='A REVISAR')?'Não classificados':_estCap(s.setor);
+    html += '<div class="row-card" style="display:block;cursor:pointer;margin-bottom:6px" onclick="relAbrirSetor(\''+_estEsc(s.setor)+'\')">'
+      + '<div style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-size:14px;font-weight:500">'+nome+'</span>'
+      + '<span style="font-size:14px;font-weight:600;color:#16267A">'+_relMoney(s.fat)+'</span>'
+      + '<span style="font-size:11px;color:#888780;min-width:38px;text-align:right">'+pct.toFixed(1)+'%</span></div>'
+      + '<div style="height:6px;background:#E8EAF2;border-radius:3px;margin-top:7px;overflow:hidden"><div style="height:6px;width:'+w+'%;background:#185FA5;border-radius:3px"></div></div>'
+      + '</div>';
+  });
+  document.getElementById('rel-setores').innerHTML = html;
+}
+async function relAbrirSetor(setor){
+  relSetorAtual=setor;
+  document.getElementById('rel-lista-view').style.display='none';
+  document.getElementById('rel-setor-view').style.display='block';
+  document.getElementById('rel-setor-nome').textContent = (setor==='A REVISAR')?'Não classificados':_estCap(setor);
+  if(relCacheItens[setor]){ relRenderItens(relCacheItens[setor]); return; }
+  document.getElementById('rel-setor-cont').textContent='Carregando…';
+  document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando produtos…</div>';
+  try{
+    const d = await _estPost({acao:'relatorio_setor_itens', setor:setor});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    relCacheItens[setor]=d.itens||[];
+    relRenderItens(relCacheItens[setor]);
+  }catch(e){ console.error('relAbrirSetor:',e); document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻) ou verifique a internet.</div>'; }
+}
+function relRenderItens(itens){
+  let tot=0; itens.forEach(function(x){ tot+=x.fat; });
+  document.getElementById('rel-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos vendidos · '+_relMoney(tot);
+  if(!itens.length){ document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhuma venda neste setor.</div>'; return; }
+  let html='';
+  itens.forEach(function(x){
+    html += '<div class="row-card" style="margin-bottom:6px"><span style="font-size:11px;color:#888780;font-family:monospace;min-width:46px">'+_estEsc(x.codigo)+'</span>'
+      + '<span style="flex:1;font-size:13px;margin:0 8px">'+_estEsc(x.desc)+'</span>'
+      + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>';
+  });
+  document.getElementById('rel-itens').innerHTML = html;
+}
+function relVoltar(){
+  document.getElementById('rel-setor-view').style.display='none';
+  document.getElementById('rel-lista-view').style.display='block';
 }
 </script>
 
