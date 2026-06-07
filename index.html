@@ -501,6 +501,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
       <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirRelatorios()"><i class="ti ti-chart-bar" style="font-size:22px;color:#16267A;margin-right:10px"></i><div style="flex:1"><div class="row-label">Vendas por setor</div><div class="row-sub">Faturamento de cada setor · toque para ver</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
+      <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirFaturamento()"><i class="ti ti-calendar-stats" style="font-size:22px;color:#16267A;margin-right:10px"></i><div style="flex:1"><div class="row-label">Faturamento diário</div><div class="row-sub">Vendas de cada dia · direto do caixa</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <!-- BARRA DE PERÍODO + FILTRO (fatia 3) -->
       <div class="flt-periodo" id="flt-periodBtn">
         <i class="ti ti-filter"></i>
@@ -816,7 +817,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.3 — sugestões de grupo por setor</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.4 — faturamento diário (ponte)</div></div>
     </div>
   </div>
 </div>
@@ -1013,6 +1014,30 @@ function doPost(e) {
   <div id="rel-setor-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="relVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="rel-setor-nome">Setor</div><div class="row-sub" id="rel-setor-cont">—</div></div></div>
     <div id="rel-itens"><div class="row-sub" style="padding:6px 2px">Carregando produtos…</div></div>
+  </div>
+</div>
+
+<div class="screen" id="s-faturamento">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Faturamento diário</div>
+      <div style="font-size:11.5px;color:#888780" id="fat-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fatAtualizar()" title="Atualizar"></i>
+  </div>
+  <div style="padding:0 14px 90px">
+    <div style="display:flex;gap:10px;margin:12px 0">
+      <div style="flex:1;background:#F1F4FB;border-radius:10px;padding:12px">
+        <div style="font-size:11.5px;color:#888780" id="fat-lbl-mes">Mês atual</div>
+        <div style="font-size:19px;font-weight:600;color:#16267A" id="fat-mes">—</div>
+      </div>
+      <div style="flex:1;background:#F1F4FB;border-radius:10px;padding:12px">
+        <div style="font-size:11.5px;color:#888780">Últimos 30 dias</div>
+        <div style="font-size:19px;font-weight:600;color:#16267A" id="fat-30">—</div>
+      </div>
+    </div>
+    <div id="fat-dias"><div class="loadrow"><span class="spin"></span> Carregando dias…</div></div>
   </div>
 </div>
 
@@ -3135,6 +3160,49 @@ async function estSalvar(cod){
 // ══════════════════════════════════════════════════════
 let relCacheSetores=null, relCacheItens={}, relSetorAtual='';
 function _relMoney(n){ return 'R$ '+Math.round(n).toLocaleString('pt-BR'); }
+
+// ===== Faturamento diário (Fase 1 unificação · chat 18) =====
+var fatCache=null;
+var _FAT_MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+var _FAT_DOW=['dom','seg','ter','qua','qui','sex','sáb'];
+function abrirFaturamento(){ show('s-faturamento'); fatCarregar(); }
+function fatAtualizar(){ fatCache=null; toast('Atualizando…'); fatCarregar(); }
+async function fatCarregar(){
+  if(fatCache){ fatRender(fatCache); return; }
+  document.getElementById('fat-sub').textContent='Carregando…';
+  document.getElementById('fat-dias').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando dias…</div>';
+  try{
+    const d=await _estPost({acao:'faturamento_diario'});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    fatCache=d; fatRender(d);
+  }catch(e){ console.error('fatCarregar:',e); document.getElementById('fat-dias').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻) ou verifique a internet.</div>'; }
+}
+function _fatLabel(iso){
+  var a=iso.split('-'), y=+a[0], m=+a[1], dd=+a[2];
+  var dow=new Date(Date.UTC(y,m-1,dd)).getUTCDay();
+  return (dd<10?'0':'')+dd+'/'+(m<10?'0':'')+m+' · '+_FAT_DOW[dow];
+}
+function _fatMesNome(iso){ var a=iso.split('-'); return _FAT_MES[(+a[1])-1]+'/'+a[0]; }
+function fatRender(d){
+  var dias=(d.dias||[]).slice();
+  document.getElementById('fat-mes').textContent=_relMoney(d.mesAtual||0);
+  document.getElementById('fat-30').textContent=_relMoney(d.ult30||0);
+  if(d.ultimo){ document.getElementById('fat-lbl-mes').textContent=_estCap(_fatMesNome(d.ultimo.data)); }
+  document.getElementById('fat-sub').textContent=dias.length+' dias · direto do caixa';
+  if(!dias.length){ document.getElementById('fat-dias').innerHTML='<div class="row-sub" style="padding:6px 2px">Sem dados ainda. A ponte preenche na próxima rodada.</div>'; return; }
+  var maxF=0; dias.forEach(function(x){ if(x.total>maxF) maxF=x.total; });
+  var html='';
+  for(var i=dias.length-1;i>=0;i--){
+    var x=dias[i];
+    var w=maxF>0?Math.round(100*x.total/maxF):0;
+    html+='<div class="row-card" style="display:block;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:baseline;gap:8px"><span style="flex:1;font-size:13.5px;font-weight:500">'+_fatLabel(x.data)+'</span>'
+      +'<span style="font-size:14px;font-weight:600;color:#16267A">'+_relMoney(x.total)+'</span></div>'
+      +'<div style="height:6px;background:#E8EAF2;border-radius:3px;margin-top:7px;overflow:hidden"><div style="height:6px;width:'+w+'%;background:#185FA5;border-radius:3px"></div></div>'
+      +'</div>';
+  }
+  document.getElementById('fat-dias').innerHTML=html;
+}
 
 function abrirRelatorios(){
   show('s-relatorios');
