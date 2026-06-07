@@ -479,9 +479,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div id="tab-menu" class="content" style="display:none">
-      <div class="cart-loja" style="margin:12px 12px 4px"><i class="ti ti-building-store"></i><span class="cl-nm" id="m-store">Loja 2 — Melhor QS8</span><i class="ti ti-chevron-down"></i></div>
       <div class="qgrid">
-        <div class="qcard" onclick="abrirMeuPerfil()"><i class="ti ti-user-circle"></i><span class="qnm">Meu perfil</span></div>
         <div class="qcard" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
@@ -735,6 +733,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- CONFIG -->
     <div id="tab-config" class="content" style="display:none">
+      <div class="section-label"><i class="ti ti-user-circle"></i> Meu perfil</div>
+      <div class="row-card" style="cursor:pointer" onclick="abrirMeuPerfil()"><div><div class="row-label">Meus dados</div><div class="row-sub">Editar nome, telefone, e-mail e trocar minha senha</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
+      <div class="divider"></div>
       <div class="section-label" style="justify-content:space-between">
         <span><i class="ti ti-users"></i> Usuários</span>
         <button onclick="abrirModalUsuario()" style="font-size:11px;padding:3px 9px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#1B3A9E;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-plus" style="font-size:13px"></i> Novo</button>
@@ -1125,7 +1126,6 @@ async function fazerLogin() {
   const _lojaNome = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
   document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.setor||'');
   document.getElementById('h-store').textContent = _lojaNome;
-  const _ms0 = document.getElementById('m-store'); if(_ms0) _ms0.textContent = _lojaNome;
   aplicarPermissoes(usr, l);
   // Restaurar URL do Apps Script
   const savedUrl = localStorage.getItem('apps_script_url')||'';
@@ -1651,15 +1651,28 @@ function permsDoSetor(setor){
 function aplicarPermissoes(usr, l){
   const p = permsDoSetor(usr.setor);
   usr.perms = p;
-  const map = {painel:'nav-painel', dre:'nav-dre', menu:'nav-menu', config:'nav-config'};
-  Object.keys(map).forEach(function(k){
-    const b = document.getElementById(map[k]);
-    if(b) b.style.display = p[k] ? 'flex' : 'none';
+  // abas comuns (Painel, DRE, Menu)
+  [['painel','nav-painel'],['dre','nav-dre'],['menu','nav-menu']].forEach(function(par){
+    const b = document.getElementById(par[1]);
+    if(b) b.style.display = p[par[0]] ? 'flex' : 'none';
   });
-  const ordem = ['painel','dre','menu','config'];
-  let primeira = 'menu';
-  for(let i=0;i<ordem.length;i++){ if(p[ordem[i]]){ primeira = ordem[i]; break; } }
-  showTab(primeira, document.getElementById(map[primeira]));
+  // 4º botão: Config (só o master) OU Meu perfil (todos os outros)
+  const cfgBtn = document.getElementById('nav-config');
+  if(cfgBtn){
+    cfgBtn.style.display = 'flex';
+    if(p.config){
+      cfgBtn.innerHTML = '<i class="ti ti-settings"></i>Config';
+      cfgBtn.onclick = function(){ showTab('config', cfgBtn); };
+    } else {
+      cfgBtn.innerHTML = '<i class="ti ti-user-circle"></i>Meu perfil';
+      cfgBtn.onclick = function(){ abrirMeuPerfil(); };
+    }
+  }
+  // cai na primeira aba permitida (Painel > DRE > Menu)
+  const ordem = [['painel','nav-painel'],['dre','nav-dre'],['menu','nav-menu']];
+  let alvo = ['menu','nav-menu'];
+  for(let i=0;i<ordem.length;i++){ if(p[ordem[i][0]]){ alvo = ordem[i]; break; } }
+  showTab(alvo[0], document.getElementById(alvo[1]));
   // seletor de loja só pra quem vê Painel ou DRE e tem acesso a todas as lojas
   const mostrarSel = (p.painel || p.dre) && usr.loja==='all';
   const sel = document.getElementById('loja-sel');
