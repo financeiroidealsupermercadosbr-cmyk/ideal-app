@@ -734,9 +734,11 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- CONFIG -->
     <div id="tab-config" class="content" style="display:none">
-      <div class="section-label"><i class="ti ti-users"></i> Usuários</div>
-      <div class="row-card"><div><div class="row-label">Gilberto Arruda</div><div class="row-sub">Gestor · todas as lojas</div></div><span class="badge ok">Ativo</span></div>
-      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Fiscal Loja 2</div><div class="row-sub">Fiscal · somente despesas</div></div><span class="badge pend">Pendente</span></div>
+      <div class="section-label" style="justify-content:space-between">
+        <span><i class="ti ti-users"></i> Usuários</span>
+        <button onclick="abrirModalUsuario()" style="font-size:11px;padding:3px 9px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#1B3A9E;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-plus" style="font-size:13px"></i> Novo</button>
+      </div>
+      <div id="cfg-users-list"><div class="row-sub" style="padding:6px 2px">Carregando usuários…</div></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
@@ -748,8 +750,13 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <button class="btn-primary" style="margin-top:12px" onclick="carregarSheets()">Sincronizar agora</button>
       <div class="divider"></div>
 
-      <!-- INSTRUÇÃO APPS SCRIPT -->
-      <div class="section-label" style="justify-content:space-between">
+      <!-- AVANÇADO · SÓ GESTOR (esconde o Apps Script) -->
+      <div class="section-label" style="justify-content:space-between;cursor:pointer" onclick="toggleAvancado()">
+        <span><i class="ti ti-settings"></i> Avançado · só gestor</span>
+        <i class="ti ti-chevron-down" id="cfg-avancado-chev"></i>
+      </div>
+      <div id="cfg-avancado" style="display:none">
+      <div class="section-label" style="justify-content:space-between;margin-top:8px">
         <span><i class="ti ti-brand-google"></i> Apps Script</span>
         <button onclick="document.getElementById(&#39;cfg-script-det&#39;).style.display=document.getElementById(&#39;cfg-script-det&#39;).style.display===&#39;none&#39;?&#39;block&#39;:&#39;none&#39;" style="font-size:10px;padding:2px 8px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#666">Ver instruções</button>
       </div>
@@ -793,6 +800,7 @@ function doPost(e) {
 
   return out;
 }</div>
+      </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
       <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.5 — baixa mais robusta + fachada embutida</div></div>
@@ -866,6 +874,32 @@ function doPost(e) {
       <button class="btn-cancelar" id="aj-limpar" onclick="limparAjuste()" style="display:none">↺ Voltar ao automático</button>
       <button class="btn-cancelar" onclick="fecharModalAjuste()">Cancelar</button>
       <button class="btn-confirmar" onclick="salvarAjuste()">✓ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-usuario">
+  <div class="modal-card">
+    <div class="modal-title" id="modal-usuario-title">Novo usuário</div>
+    <div class="field-group"><label>Usuário (login)</label><input type="text" id="usr-login" placeholder="ex.: joao" autocomplete="off"></div>
+    <div class="field-group"><label>Senha</label><input type="text" id="usr-senha" placeholder="defina uma senha" autocomplete="off"></div>
+    <div id="usr-senha-hint" style="display:none;font-size:11px;color:#888780;margin:-8px 0 12px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Deixe em branco para manter a senha atual.</div>
+    <div class="field-group"><label>Nome completo</label><input type="text" id="usr-nome" placeholder="ex.: João da Silva"></div>
+    <div class="field-group"><label>Setor</label>
+      <select id="usr-setor"><option>Gerentes</option><option>Fiscal de caixa</option><option>Financeiro</option><option>Gestor/Master</option></select>
+    </div>
+    <div class="field-group"><label>Loja</label>
+      <select id="usr-loja"><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="bolos">Ideal Bolos</option><option value="all">Todas as lojas</option></select>
+    </div>
+    <div class="field-group"><label>Telefone</label><input type="text" id="usr-tel" placeholder="(61) 9...."></div>
+    <div class="field-group"><label>E-mail (opcional)</label><input type="text" id="usr-email" placeholder="email@..."></div>
+    <div class="field-group"><label>Status</label>
+      <select id="usr-status"><option>Ativo</option><option>Inativo</option></select>
+    </div>
+    <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:2px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Setores diferentes de Gestor/Master entram com acesso restrito por enquanto (a regra fina vem na Fase 3).</div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModalUsuario()">Cancelar</button>
+      <button class="btn-confirmar" id="usr-btn-salvar" onclick="salvarUsuario()">✓ Salvar usuário</button>
     </div>
   </div>
 </div>
@@ -1093,6 +1127,7 @@ async function fazerLogin() {
   dreCarregarGrupos();
   dreCarregarAjustes();
   carregarSheets();
+  if (usr.nivel==='gestor') carregarUsuarios();
 }
 function fazerLogout() {
   userAtual=null;
@@ -1585,6 +1620,160 @@ function dreNoPeriodo(dataBR){
 
 // ── GRUPOS MANUAIS (salvos na planilha + cache local; só o MASTER mexe) ──
 function ehGestor(){ return !!(userAtual && userAtual.nivel==='gestor'); }
+
+// ══════════════════════════════════════════════════════
+// GESTÃO DE USUÁRIOS (Fase 2) — só o gestor chega na Config
+// ══════════════════════════════════════════════════════
+function _urlApps(){ return APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec'; }
+
+function toggleAvancado(){
+  const c = document.getElementById('cfg-avancado');
+  const ch = document.getElementById('cfg-avancado-chev');
+  if(!c) return;
+  const aberto = c.style.display!=='none';
+  c.style.display = aberto ? 'none' : 'block';
+  if(ch) ch.className = aberto ? 'ti ti-chevron-down' : 'ti ti-chevron-up';
+}
+
+let usuariosCache = [];
+let usrEditando = null;
+const LOJA_NOMES = {all:'Todas', l2:'Loja 2', l1:'Loja 1', bolos:'Ideal Bolos'};
+
+function _iniUsr(nome){
+  const p = String(nome||'').trim().split(/\s+/);
+  return ((p[0]||'').charAt(0) + (p.length>1?(p[p.length-1]||'').charAt(0):'')).toUpperCase() || '?';
+}
+function _escUsr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+async function carregarUsuarios(){
+  const box = document.getElementById('cfg-users-list');
+  if(!box) return;
+  box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando usuários…</div>';
+  try{
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'usuarios_list', sheetId:SHEET_ID})
+    });
+    const data = await res.json();
+    if(!data.ok || !Array.isArray(data.usuarios)) throw new Error('resposta inválida');
+    usuariosCache = data.usuarios;
+    renderUsuarios(data.usuarios);
+  }catch(e){
+    console.error('carregarUsuarios:', e);
+    box.innerHTML = '<div class="row-sub" style="padding:6px 2px;color:#A32D2D">Não consegui carregar a lista agora. Toque em “Sincronizar agora” e abra a Config de novo.</div>';
+  }
+}
+
+function renderUsuarios(arr){
+  const box = document.getElementById('cfg-users-list');
+  if(!box) return;
+  const ativos = (arr||[]).filter(u=>String(u.status||'').toLowerCase()!=='inativo');
+  if(!ativos.length){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Nenhum usuário cadastrado ainda.</div>'; return; }
+  box.innerHTML = ativos.map(function(u){
+    const lj = LOJA_NOMES[u.loja] || u.loja || '';
+    const sub = _escUsr(u.setor||'') + (lj?(' · '+_escUsr(lj)):'');
+    return '<div class="row-card" style="gap:8px">'
+      + '<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">'+_escUsr(_iniUsr(u.nome||u.usuario))+'</div>'
+      + '<div style="flex:1;min-width:0">'
+        + '<div class="row-label">'+_escUsr(u.nome||u.usuario)+'</div>'
+        + '<div class="row-sub">'+sub+'</div>'
+      + '</div>'
+      + '<span class="badge ok">Ativo</span>'
+      + '<i class="ti ti-edit" style="font-size:17px;color:#888780;cursor:pointer" onclick="abrirModalUsuario(\''+_escUsr(u.usuario)+'\')"></i>'
+      + '<i class="ti ti-trash" style="font-size:17px;color:#888780;cursor:pointer" onclick="removerUsuario(\''+_escUsr(u.usuario)+'\',\''+_escUsr(u.nome||u.usuario)+'\')"></i>'
+      + '</div>';
+  }).join('');
+}
+
+function _matchSetor(s){
+  s = String(s||'').toLowerCase();
+  if(s.indexOf('gestor')>=0||s.indexOf('master')>=0) return 'Gestor/Master';
+  if(s.indexOf('financ')>=0) return 'Financeiro';
+  if(s.indexOf('fiscal')>=0) return 'Fiscal de caixa';
+  return 'Gerentes';
+}
+
+function abrirModalUsuario(login){
+  usrEditando = login || null;
+  const t = document.getElementById('modal-usuario-title');
+  const hint = document.getElementById('usr-senha-hint');
+  const g = document.getElementById('usr-login');
+  if(login){
+    const u = usuariosCache.find(function(x){return String(x.usuario)===String(login);}) || {};
+    t.textContent = 'Editar usuário';
+    g.value = u.usuario||''; g.disabled = true;
+    document.getElementById('usr-senha').value = '';
+    if(hint) hint.style.display = 'block';
+    document.getElementById('usr-nome').value = u.nome||'';
+    document.getElementById('usr-setor').value = _matchSetor(u.setor);
+    document.getElementById('usr-loja').value = u.loja||'l2';
+    document.getElementById('usr-tel').value = u.telefone||'';
+    document.getElementById('usr-email').value = u.email||'';
+    document.getElementById('usr-status').value = (String(u.status||'').toLowerCase()==='inativo')?'Inativo':'Ativo';
+  } else {
+    t.textContent = 'Novo usuário';
+    g.value=''; g.disabled=false;
+    document.getElementById('usr-senha').value='';
+    if(hint) hint.style.display='none';
+    document.getElementById('usr-nome').value='';
+    document.getElementById('usr-setor').value='Gerentes';
+    document.getElementById('usr-loja').value='l2';
+    document.getElementById('usr-tel').value='';
+    document.getElementById('usr-email').value='';
+    document.getElementById('usr-status').value='Ativo';
+  }
+  document.getElementById('modal-usuario').classList.add('open');
+}
+
+function fecharModalUsuario(){ document.getElementById('modal-usuario').classList.remove('open'); usrEditando=null; }
+
+async function salvarUsuario(){
+  const login = document.getElementById('usr-login').value.trim().toLowerCase();
+  const senha = document.getElementById('usr-senha').value;
+  const nome  = document.getElementById('usr-nome').value.trim();
+  const setor = document.getElementById('usr-setor').value;
+  const loja  = document.getElementById('usr-loja').value;
+  const tel   = document.getElementById('usr-tel').value.trim();
+  const email = document.getElementById('usr-email').value.trim();
+  const status= document.getElementById('usr-status').value;
+  if(!login){ toast('⚠ Informe o usuário (login)'); return; }
+  if(/\s/.test(login)){ toast('⚠ O usuário não pode ter espaços'); return; }
+  if(!nome){ toast('⚠ Informe o nome'); return; }
+  if(!usrEditando && !senha){ toast('⚠ Defina uma senha'); return; }
+  const btn = document.getElementById('usr-btn-salvar');
+  const txt = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'usuario_save', sheetId:SHEET_ID, usuario:login, senha:senha, nome:nome, setor:setor, loja:loja, telefone:tel, email:email, status:status})
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.erro||'falha');
+    toast('✓ Usuário salvo');
+    fecharModalUsuario();
+    carregarUsuarios();
+  }catch(e){
+    console.error('salvarUsuario:', e); toast('⚠ Não consegui salvar. Verifique a internet.');
+  }
+  btn.disabled=false; btn.textContent=txt;
+}
+
+async function removerUsuario(login, nome){
+  if(userAtual && String(login).toLowerCase()===String(userAtual.usuario||'').toLowerCase()){
+    toast('⚠ Você não pode remover o seu próprio usuário'); return;
+  }
+  if(!confirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)')) return;
+  try{
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'usuario_del', sheetId:SHEET_ID, usuario:login})
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.erro||'falha');
+    toast('✓ Acesso removido');
+    carregarUsuarios();
+  }catch(e){ console.error('removerUsuario:', e); toast('⚠ Não consegui remover. Verifique a internet.'); }
+}
 
 function dreCarregarGrupos(){ // cache local (instantâneo)
   try { dreGrupos = JSON.parse(localStorage.getItem('dre_grupos')||'[]'); }
