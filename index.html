@@ -746,6 +746,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="section-label"><i class="ti ti-lock-access"></i> Permissões</div>
       <div class="row-card" style="cursor:pointer" onclick="abrirPermsMenu()"><div><div class="row-label">Permissões do Menu</div><div class="row-sub">Escolher, por setor, o que cada um pode abrir no Menu</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-category-2"></i> Estrutura mercadológica</div>
+      <div class="row-card" style="cursor:pointer" onclick="abrirEstrutura()"><div><div class="row-label">Organizar produtos por setor</div><div class="row-sub">Ver, classificar e corrigir o setor/grupo dos produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
+      <div class="divider"></div>
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">A configurar</div></div><span class="badge warn">Config</span></div>
@@ -809,7 +812,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.6 — permissões do Menu por setor</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.7 — editor da estrutura mercadológica</div></div>
     </div>
   </div>
 </div>
@@ -940,6 +943,38 @@ function doPost(e) {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- TELA: Estrutura mercadológica (Bloco 3 · só gestor) -->
+<div class="screen" id="s-estrutura">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Estrutura mercadológica</div>
+      <div style="font-size:11.5px;color:#888780" id="est-sub">Carregando…</div>
+    </div>
+  </div>
+
+  <!-- VISÃO 1: resumo -->
+  <div id="est-resumo-view" style="padding:0 14px 90px">
+    <div style="cursor:pointer;border:1px solid #E0B23C;border-radius:10px;padding:12px;background:#FFF8E6;margin:12px 0" onclick="estAbrirSetor('A REVISAR')">
+      <div style="display:flex;align-items:center;gap:9px">
+        <i class="ti ti-alert-triangle" style="font-size:19px;color:#9A6B00"></i>
+        <span style="flex:1;font-size:14px;font-weight:600;color:#9A6B00">Não classificados</span>
+        <span style="font-size:17px;font-weight:600;color:#9A6B00" id="est-naoclass-num">—</span>
+        <i class="ti ti-chevron-right" style="color:#9A6B00"></i>
+      </div>
+      <div style="font-size:11.5px;color:#9A6B00;margin-top:6px;line-height:1.5">Produtos não identificados automaticamente (falta de NCM ou descrição genérica). Toque para classificar um a um.</div>
+    </div>
+    <div class="section-label"><i class="ti ti-category-2"></i> Setores</div>
+    <div id="est-setores"><div class="row-sub" style="padding:6px 2px">Carregando setores…</div></div>
+  </div>
+
+  <!-- VISÃO 2: dentro de um setor -->
+  <div id="est-setor-view" style="display:none;padding:0 14px 90px">
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estResumoVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
+    <div id="est-itens"><div class="row-sub" style="padding:6px 2px">Carregando produtos…</div></div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -2863,6 +2898,119 @@ function initFiltro(){
   atualizarLabel();
 }
 initFiltro();
+
+// ══════════════════════════════════════════════════════
+// ESTRUTURA MERCADOLÓGICA (Bloco 3 · só gestor)
+// ══════════════════════════════════════════════════════
+const EST_SETORES = ['ACOUGUE','PADARIA','HORTIFRUTI','FRIOS E LATICINIOS','CONGELADOS','PEIXARIA','MERCEARIA SALGADA','MERCEARIA DOCE','BEBIDAS','LIMPEZA','HIGIENE E PERFUMARIA','BAZAR E UTILIDADES','PET'];
+let estSetorAtual = '';
+
+function _estCap(s){ return String(s||'').toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); }); }
+function _estEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+async function _estPost(payload){
+  const res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID}, payload)) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function abrirEstrutura(){
+  if(!ehGestor()){ toast('Só o gestor pode organizar a estrutura'); return; }
+  show('s-estrutura');
+  document.getElementById('est-resumo-view').style.display='block';
+  document.getElementById('est-setor-view').style.display='none';
+  estResumo();
+}
+
+async function estResumo(){
+  document.getElementById('est-sub').textContent='Carregando…';
+  document.getElementById('est-setores').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando setores…</div>';
+  try{
+    const d = await _estPost({acao:'estrutura_resumo'});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    const r = d.resumo||{};
+    let total=0; for(const k in r) total+=r[k];
+    document.getElementById('est-naoclass-num').textContent = (r['A REVISAR']||0).toLocaleString('pt-BR');
+    document.getElementById('est-sub').textContent = total.toLocaleString('pt-BR')+' produtos · base central';
+    let html='';
+    EST_SETORES.forEach(function(s){
+      const n = r[s]||0;
+      html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirSetor(\''+s+'\')"><div><div class="row-label">'+_estCap(s)+'</div><div class="row-sub">'+n.toLocaleString('pt-BR')+' produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
+    });
+    document.getElementById('est-setores').innerHTML = html;
+  }catch(e){ console.error('estResumo:',e); document.getElementById('est-setores').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Verifique a internet.</div>'; }
+}
+
+function estResumoVoltar(){
+  document.getElementById('est-setor-view').style.display='none';
+  document.getElementById('est-resumo-view').style.display='block';
+  estResumo();
+}
+
+async function estAbrirSetor(setor){
+  estSetorAtual = setor;
+  document.getElementById('est-resumo-view').style.display='none';
+  document.getElementById('est-setor-view').style.display='block';
+  document.getElementById('est-setor-nome').textContent = (setor==='A REVISAR') ? 'Não classificados' : _estCap(setor);
+  document.getElementById('est-setor-cont').textContent = 'Carregando…';
+  document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando produtos…</div>';
+  try{
+    const acao = (setor==='A REVISAR') ? 'estrutura_revisar' : 'estrutura_setor';
+    const d = await _estPost({acao:acao, setor:setor, limite:300});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    const itens = d.itens||[];
+    document.getElementById('est-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos · toque para mudar';
+    estRenderItens(itens);
+  }catch(e){ console.error('estAbrirSetor:',e); document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Verifique a internet.</div>'; }
+}
+
+function estOpcoesSetor(atual){
+  let o='';
+  EST_SETORES.forEach(function(s){ o += '<option value="'+_estEsc(s)+'"'+(s===atual?' selected':'')+'>'+_estCap(s)+'</option>'; });
+  return o;
+}
+
+function estRenderItens(itens){
+  if(!itens.length){ document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum produto aqui.</div>'; return; }
+  const inEst = 'width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;margin-top:4px;font-size:13px;box-sizing:border-box';
+  let html='';
+  itens.forEach(function(it){
+    const cod=_estEsc(it.codigo), desc=_estEsc(it.descricao), grp=_estEsc(it.grupo||'');
+    html += '<div class="row-card" id="estrow-'+cod+'" style="display:block;margin-bottom:6px">'
+      + '<div style="display:flex;align-items:center;gap:9px;cursor:pointer" onclick="estToggle(\''+cod+'\')">'
+      + '<span style="font-size:11px;color:#888780;font-family:monospace;min-width:46px">'+cod+'</span>'
+      + '<span style="flex:1;font-size:13px">'+desc+(grp?' <span style="color:#888780;font-size:11px">· '+grp+'</span>':'')+'</span>'
+      + '<i class="ti ti-dots-vertical" style="color:#888780"></i></div>'
+      + '<div id="estedit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
+      + '<label style="font-size:11px;color:#888780">Setor</label>'
+      + '<select id="estsel-'+cod+'" style="'+inEst+'">'+estOpcoesSetor(estSetorAtual)+'</select>'
+      + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
+      + '<input id="estgrp-'+cod+'" type="text" value="'+grp+'" placeholder="ex.: Bovina, Cervejas, Biscoitos…" style="'+inEst+'">'
+      + '<button class="btn-primary" style="margin-top:10px" id="estbtn-'+cod+'" onclick="estSalvar(\''+cod+'\')">Salvar mudança</button>'
+      + '</div></div>';
+  });
+  document.getElementById('est-itens').innerHTML = html;
+}
+
+function estToggle(cod){
+  const el=document.getElementById('estedit-'+cod);
+  if(el) el.style.display = (el.style.display==='none') ? 'block' : 'none';
+}
+
+async function estSalvar(cod){
+  const sel=document.getElementById('estsel-'+cod), grp=document.getElementById('estgrp-'+cod), btn=document.getElementById('estbtn-'+cod);
+  if(!sel) return;
+  const novoSetor=sel.value, novoGrupo=grp?grp.value.trim():'';
+  const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando…';
+  try{
+    const d = await _estPost({acao:'estrutura_save', codigo:cod, setor:novoSetor, grupo:novoGrupo, usuario:(userAtual&&userAtual.usuario)||''});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    toast('✓ Movido para '+_estCap(novoSetor));
+    if(novoSetor!==estSetorAtual){ const row=document.getElementById('estrow-'+cod); if(row) row.remove(); }
+    else { estToggle(cod); }
+  }catch(e){ console.error('estSalvar:',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
+  if(btn){ btn.disabled=false; btn.textContent=t; }
+}
 </script>
 
 
