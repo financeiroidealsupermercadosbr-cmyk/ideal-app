@@ -102,6 +102,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qcard .qnm{font-size:11px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
 .qcard .qsoon{font-size:10px;color:#888780}
 .qcard.soon{opacity:0.55;cursor:default}
+.qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
 .qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
 .dre-aj-edit{color:#888780;font-size:14px;cursor:pointer;margin-left:6px;vertical-align:-1px}
 .dre-tag-aj{display:inline-block;background:#FAEEDA;color:#854F0B;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:5px;vertical-align:1px}
@@ -480,17 +481,17 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <div id="tab-menu" class="content" style="display:none">
       <div class="qgrid">
-        <div class="qcard" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
-        <div class="qcard" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
-        <div class="qcard" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
-        <div class="qcard soon"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-eye"></i><span class="qnm">Consulta de preço</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
+        <div class="qcard" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
+        <div class="qcard" data-menu="cotacao" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
+        <div class="qcard soon" data-menu="sangrias"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="transf"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="preco"><i class="ti ti-eye"></i><span class="qnm">Consulta de preço</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="ck_temp"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
+        <div class="qcard soon" data-menu="folha"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span><span class="qsoon">em breve</span></div>
       </div>
     </div>
 
@@ -742,6 +743,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       </div>
       <div id="cfg-users-list"><div class="row-sub" style="padding:6px 2px">Carregando usuários…</div></div>
       <div class="divider"></div>
+      <div class="section-label"><i class="ti ti-lock-access"></i> Permissões</div>
+      <div class="row-card" style="cursor:pointer" onclick="abrirPermsMenu()"><div><div class="row-label">Permissões do Menu</div><div class="row-sub">Escolher, por setor, o que cada um pode abrir no Menu</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
+      <div class="divider"></div>
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">A configurar</div></div><span class="badge warn">Config</span></div>
@@ -805,7 +809,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.5 — baixa mais robusta + fachada embutida</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.6 — permissões do Menu por setor</div></div>
     </div>
   </div>
 </div>
@@ -918,6 +922,19 @@ function doPost(e) {
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="fecharMeuPerfil()">Cancelar</button>
       <button class="btn-confirmar" id="perfil-btn" onclick="salvarMeuPerfil()">✓ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-perms">
+  <div class="modal-card">
+    <div class="modal-title">Permissões do Menu</div>
+    <div style="font-size:12px;color:#888780;line-height:1.5;margin:-8px 0 12px">Escolha o setor e ligue/desligue o que ele pode abrir no Menu. O <b>Gestor/Master</b> sempre vê tudo.</div>
+    <div id="perms-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+    <div id="perms-itens"></div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharPermsMenu()">Cancelar</button>
+      <button class="btn-confirmar" id="perms-btn" onclick="salvarPermsMenu()">✓ Salvar permissões</button>
     </div>
   </div>
 </div>
@@ -1126,6 +1143,7 @@ async function fazerLogin() {
   const _lojaNome = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
   document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.setor||'');
   document.getElementById('h-store').textContent = _lojaNome;
+  await permsCarregarMenu();
   aplicarPermissoes(usr, l);
   // Restaurar URL do Apps Script
   const savedUrl = localStorage.getItem('apps_script_url')||'';
@@ -1677,6 +1695,162 @@ function aplicarPermissoes(usr, l){
   const mostrarSel = (p.painel || p.dre) && usr.loja==='all';
   const sel = document.getElementById('loja-sel');
   if(sel) sel.style.display = mostrarSel ? 'flex' : 'none';
+  aplicarPermsMenu();
+}
+
+// ══════════════════════════════════════════════════════
+// PERMISSÕES DO MENU (Fase 3 · Parte 2) — só Gestor/Master edita
+// ══════════════════════════════════════════════════════
+// Quais itens cada setor pode abrir no Menu. Guardado na aba "Permissoes" do Sheets.
+// Padrão = LIBERADO: só esconde o que o gestor marcar como desligado (valor 0).
+let MENU_PERMS = {};                 // { setorKey: { itemKey: 0|1 } }
+let permsEdit = {};                  // estado temporário enquanto o gestor edita
+let permsSetorSel = 'gerente';
+
+const PERMS_SETORES = [
+  {key:'dono',    nome:'Dono/Proprietário'},
+  {key:'financ',  nome:'Financeiro'},
+  {key:'gerente', nome:'Gerentes'},
+  {key:'fiscal',  nome:'Fiscal de caixa'}
+];
+const MENU_ITENS = [
+  {k:'contas',     ic:'ti-file-invoice',     nm:'Contas a pagar'},
+  {k:'lancar',     ic:'ti-edit',             nm:'Lançamentos'},
+  {k:'cotacao',    ic:'ti-shopping-cart',    nm:'Lista de cotação'},
+  {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias', soon:1},
+  {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento', soon:1},
+  {k:'transf',     ic:'ti-scale',            nm:'Transferência de estoque', soon:1},
+  {k:'preco',      ic:'ti-eye',              nm:'Consulta de preço', soon:1},
+  {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
+  {k:'ck_temp',    ic:'ti-temperature-snow', nm:'Checklist temperatura freezers', soon:1},
+  {k:'ck_contas',  ic:'ti-calendar-dollar',  nm:'Checklist contas mensais', soon:1},
+  {k:'folha',      ic:'ti-report-money',     nm:'Folha de pagamento', soon:1}
+];
+
+// transforma o nome do setor (como está na planilha) numa chave estável
+function _setorKey(s){
+  s = String(s||'').toLowerCase();
+  if(s.indexOf('gestor')>=0 || s.indexOf('master')>=0) return 'gestor';
+  if(s.indexOf('dono')>=0   || s.indexOf('propriet')>=0) return 'dono';
+  if(s.indexOf('financ')>=0) return 'financ';
+  if(s.indexOf('fiscal')>=0) return 'fiscal';
+  return 'gerente';
+}
+
+// lê a aba "Permissoes" (se ainda não existir, fica liberado pra todos)
+async function permsCarregarMenu(){
+  MENU_PERMS = {};
+  try{
+    const rows = await fetchRange('Permissoes!A:C');
+    rows.slice(1).forEach(function(r){
+      if(!r[0]) return;
+      const k = String(r[0]).trim();
+      const item = String(r[1]).trim();
+      const v = (String(r[2]).trim()==='1' || r[2]===1 || r[2]===true) ? 1 : 0;
+      if(!MENU_PERMS[k]) MENU_PERMS[k] = {};
+      MENU_PERMS[k][item] = v;
+    });
+  }catch(e){ MENU_PERMS = {}; } // aba ainda não criada → tudo liberado
+}
+
+// deixa "apagado e travado" (não abre) os itens que o setor não pode acessar.
+// O item continua aparecendo no Menu, igual aos "em breve".
+function aplicarPermsMenu(){
+  if(!userAtual) return;
+  const k = _setorKey(userAtual.setor);
+  const gestor = (k==='gestor');
+  const m = MENU_PERMS[k] || {};
+  document.querySelectorAll('#tab-menu [data-menu]').forEach(function(card){
+    const item = card.getAttribute('data-menu');
+    const bloqueado = (!gestor && m[item]===0);   // explicitamente desligado
+    const ehSoon = card.classList.contains('soon'); // "em breve" já fica apagado sozinho
+    const trancar = bloqueado && !ehSoon;
+    card.classList.toggle('locked', trancar);
+    // limpa rótulo anterior de "sem acesso" (pra ficar certo se trocar de usuário)
+    const velho = card.querySelector('.qlockmsg');
+    if(velho) velho.remove();
+    if(trancar){
+      const s = document.createElement('span');
+      s.className = 'qsoon qlockmsg';
+      s.textContent = 'sem acesso';
+      card.appendChild(s);
+    }
+  });
+}
+
+// ── editor (só o gestor) ──
+function abrirPermsMenu(){
+  if(!ehGestor()){ toast('Apenas o Gestor/Master pode mexer aqui'); return; }
+  const box = document.getElementById('perms-itens');
+  if(box) box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando…</div>';
+  document.getElementById('modal-perms').classList.add('open');
+  permsCarregarMenu().then(function(){
+    permsEdit = {};
+    PERMS_SETORES.forEach(function(s){
+      permsEdit[s.key] = {};
+      const m = MENU_PERMS[s.key];
+      MENU_ITENS.forEach(function(it){
+        permsEdit[s.key][it.k] = (m && m[it.k]===0) ? 0 : 1; // padrão ligado
+      });
+    });
+    permsSetorSel = 'gerente';
+    permsRenderChips();
+    permsRenderItens();
+  });
+}
+function fecharPermsMenu(){ document.getElementById('modal-perms').classList.remove('open'); }
+
+function permsRenderChips(){
+  const c = document.getElementById('perms-chips');
+  if(!c) return;
+  c.innerHTML = PERMS_SETORES.map(function(s){
+    const on = s.key===permsSetorSel;
+    return '<div onclick="permsSelSetor(\''+s.key+'\')" style="font-size:12px;padding:6px 12px;border-radius:999px;cursor:pointer;border:1px solid '
+      + (on?'#185FA5':'#e0e0e0') + ';background:' + (on?'#185FA5':'#f8f8f8') + ';color:' + (on?'#fff':'#666') + '">' + s.nome + '</div>';
+  }).join('');
+}
+function permsSelSetor(k){ permsSetorSel = k; permsRenderChips(); permsRenderItens(); }
+
+function permsRenderItens(){
+  const box = document.getElementById('perms-itens');
+  if(!box) return;
+  const st = permsEdit[permsSetorSel] || {};
+  box.innerHTML = MENU_ITENS.map(function(it){
+    const on = st[it.k]?1:0;
+    const cor = on ? '#1D9E75' : '#d3d1c7';
+    const left = on ? '20px' : '2px';
+    const soon = it.soon ? '<div class="row-sub">em breve</div>' : '';
+    return '<div class="row-card" style="gap:10px;cursor:pointer" onclick="permsToggle(\''+it.k+'\')">'
+      + '<i class="ti '+it.ic+'" style="font-size:19px;color:#888780;width:22px;text-align:center;flex:none"></i>'
+      + '<div style="flex:1;min-width:0"><div class="row-label">'+it.nm+'</div>'+soon+'</div>'
+      + '<div style="width:42px;height:24px;border-radius:999px;background:'+cor+';position:relative;flex:none;transition:.15s">'
+      +   '<span style="position:absolute;top:2px;left:'+left+';width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s"></span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+function permsToggle(k){
+  const st = permsEdit[permsSetorSel]; if(!st) return;
+  st[k] = st[k] ? 0 : 1;
+  permsRenderItens();
+}
+
+async function salvarPermsMenu(){
+  const btn = document.getElementById('perms-btn');
+  const t = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'perms_save', sheetId:SHEET_ID, matriz:permsEdit})
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.erro||'falha');
+    toast('✓ Permissões salvas');
+    fecharPermsMenu();
+    await permsCarregarMenu();   // recarrega e reaplica (vale já pro próprio gestor; os outros pegam no próximo login)
+    aplicarPermsMenu();
+  }catch(e){ console.error('salvarPermsMenu:', e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
+  btn.disabled=false; btn.textContent=t;
 }
 
 // ══════════════════════════════════════════════════════
