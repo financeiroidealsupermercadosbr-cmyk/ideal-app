@@ -373,6 +373,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .chip-lbl{font-size:11px;color:#999;display:flex;align-items:center;gap:4px}
 .chip-val{font-size:18px;font-weight:500;margin-top:3px}
 .chip-val.green{color:#0F6E56}.chip-val.red{color:#A32D2D}
+.spin{width:16px;height:16px;border:2px solid rgba(22,38,122,0.2);border-top-color:#16267A;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle}
+.loadrow{display:flex;align-items:center;gap:10px;padding:16px 2px;color:#888780;font-size:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -497,7 +500,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
-      <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirRelatorios()"><i class="ti ti-chart-bar" style="font-size:22px;color:#16267A;margin-right:10px"></i><div style="flex:1"><div class="row-label">Relatórios por setor</div><div class="row-sub">Faturamento de cada setor · toque para ver</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
+      <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirRelatorios()"><i class="ti ti-chart-bar" style="font-size:22px;color:#16267A;margin-right:10px"></i><div style="flex:1"><div class="row-label">Vendas por setor</div><div class="row-sub">Faturamento de cada setor · toque para ver</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <!-- BARRA DE PERÍODO + FILTRO (fatia 3) -->
       <div class="flt-periodo" id="flt-periodBtn">
         <i class="ti ti-filter"></i>
@@ -813,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.0 — código REFER + busca no editor</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.2 — editar a estrutura direto no relatório</div></div>
     </div>
   </div>
 </div>
@@ -988,13 +991,18 @@ function doPost(e) {
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Relatórios por setor</div>
+      <div style="font-size:16px;font-weight:600;color:#16267A">Vendas por setor</div>
       <div style="font-size:11.5px;color:#888780" id="rel-sub">Carregando…</div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="relAtualizar()" title="Atualizar"></i>
   </div>
 
   <div id="rel-lista-view" style="padding:0 14px 90px">
+    <div style="display:flex;gap:8px;margin:12px 0">
+      <input id="rel-busca" type="text" placeholder="Buscar produto por nome ou código" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){relBuscar();}">
+      <button class="btn-primary" style="width:auto;padding:0 14px" onclick="relBuscar()" aria-label="Buscar"><i class="ti ti-search"></i></button>
+    </div>
+    <div id="rel-busca-res"></div>
     <div style="background:#F1F4FB;border-radius:10px;padding:12px;margin:12px 0">
       <div style="font-size:11.5px;color:#888780">Faturamento total · últimos 30 dias</div>
       <div style="font-size:22px;font-weight:600;color:#16267A" id="rel-total">—</div>
@@ -2968,7 +2976,7 @@ function abrirEstrutura(){
 async function estResumo(){
   if(estCacheResumo){ estRenderResumo(estCacheResumo); return; }
   document.getElementById('est-sub').textContent='Carregando…';
-  document.getElementById('est-setores').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando setores…</div>';
+  document.getElementById('est-setores').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando setores…</div>';
   try{
     const d = await _estPost({acao:'estrutura_resumo'});
     if(!d.ok) throw new Error(d.erro||'falha');
@@ -3005,7 +3013,7 @@ async function estAbrirSetor(setor){
     estRenderItens(estCacheSetor[setor]); return;
   }
   document.getElementById('est-setor-cont').textContent = 'Carregando…';
-  document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando produtos…</div>';
+  document.getElementById('est-itens').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>';
   try{
     const acao = (setor==='A REVISAR') ? 'estrutura_revisar' : 'estrutura_setor';
     const d = await _estPost({acao:acao, setor:setor, limite:300});
@@ -3105,9 +3113,30 @@ function _relMoney(n){ return 'R$ '+Math.round(n).toLocaleString('pt-BR'); }
 
 function abrirRelatorios(){
   show('s-relatorios');
+  var bi=document.getElementById('rel-busca'); if(bi) bi.value='';
+  var br=document.getElementById('rel-busca-res'); if(br) br.innerHTML='';
   document.getElementById('rel-lista-view').style.display='block';
   document.getElementById('rel-setor-view').style.display='none';
   relSetores();
+}
+async function relBuscar(){
+  const termo=(document.getElementById('rel-busca').value||'').trim();
+  const box=document.getElementById('rel-busca-res');
+  if(termo.length<2){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="loadrow"><span class="spin"></span> Buscando…</div>';
+  try{
+    const d=await _estPost({acao:'relatorio_buscar', termo:termo, limite:60});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    const itens=d.itens||[];
+    if(!itens.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado para "'+_estEsc(termo)+'".</div>'; return; }
+    let tot=0; itens.forEach(function(x){ tot+=x.fat; });
+    let html='<div class="row-sub" style="padding:4px 2px 6px">'+itens.length+' produto(s) · '+_relMoney(tot)+'</div>';
+    itens.forEach(function(x){
+      const nome=(x.setor==='A REVISAR')?'Não classificados':_estCap(x.setor||'');
+      html+='<div class="row-card" style="display:block;margin-bottom:6px"><div style="display:flex;align-items:center"><span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+_estEsc(x.codbarras)+'</span><span style="flex:1;font-size:13px;margin:0 8px">'+_estEsc(x.desc)+'</span><span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div><div style="font-size:11px;color:#888780;margin-top:3px;margin-left:58px">'+nome+'</div></div>';
+    });
+    box.innerHTML=html;
+  }catch(e){ console.error('relBuscar:',e); box.innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui buscar. Verifique a internet.</div>'; }
 }
 function relAtualizar(){
   relCacheSetores=null; relCacheItens={}; toast('Atualizando…');
@@ -3117,7 +3146,7 @@ function relAtualizar(){
 async function relSetores(){
   if(relCacheSetores){ relRenderSetores(relCacheSetores); return; }
   document.getElementById('rel-sub').textContent='Carregando…';
-  document.getElementById('rel-setores').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando setores…</div>';
+  document.getElementById('rel-setores').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando setores…</div>';
   try{
     const d = await _estPost({acao:'relatorio_setores'});
     if(!d.ok) throw new Error(d.erro||'falha');
@@ -3150,7 +3179,7 @@ async function relAbrirSetor(setor){
   document.getElementById('rel-setor-nome').textContent = (setor==='A REVISAR')?'Não classificados':_estCap(setor);
   if(relCacheItens[setor]){ relRenderItens(relCacheItens[setor]); return; }
   document.getElementById('rel-setor-cont').textContent='Carregando…';
-  document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Carregando produtos…</div>';
+  document.getElementById('rel-itens').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>';
   try{
     const d = await _estPost({acao:'relatorio_setor_itens', setor:setor});
     if(!d.ok) throw new Error(d.erro||'falha');
@@ -3162,13 +3191,53 @@ function relRenderItens(itens){
   let tot=0; itens.forEach(function(x){ tot+=x.fat; });
   document.getElementById('rel-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos vendidos · '+_relMoney(tot);
   if(!itens.length){ document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhuma venda neste setor.</div>'; return; }
+  const inEst='width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;margin-top:4px;font-size:13px;box-sizing:border-box';
   let html='';
   itens.forEach(function(x){
-    html += '<div class="row-card" style="margin-bottom:6px"><span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+_estEsc(x.codbarras||x.codigo)+'</span>'
-      + '<span style="flex:1;font-size:13px;margin:0 8px">'+_estEsc(x.desc)+'</span>'
-      + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>';
+    const cod=_estEsc(x.codigo), vis=_estEsc(x.codbarras||x.codigo), desc=_estEsc(x.desc), grp=_estEsc(x.grupo||'');
+    html += '<div class="row-card" id="relrow-'+cod+'" style="display:block;margin-bottom:6px">'
+      + '<div style="display:flex;align-items:center;cursor:pointer" onclick="relToggle(\''+cod+'\')">'
+      + '<span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+vis+'</span>'
+      + '<span style="flex:1;font-size:13px;margin:0 8px">'+desc+'</span>'
+      + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>'
+      + '<div id="reledit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
+      + '<label style="font-size:11px;color:#888780">Setor</label>'
+      + '<select id="relsel-'+cod+'" style="'+inEst+'">'+estOpcoesSetor(relSetorAtual)+'</select>'
+      + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
+      + '<input id="relgrp-'+cod+'" type="text" value="'+grp+'" placeholder="ex.: Bovina, Cervejas, Biscoitos…" style="'+inEst+'">'
+      + '<button class="btn-primary" style="margin-top:10px" id="relbtn-'+cod+'" onclick="relSalvar(\''+cod+'\')">Salvar mudança</button>'
+      + '</div></div>';
   });
   document.getElementById('rel-itens').innerHTML = html;
+}
+function relToggle(cod){
+  const el=document.getElementById('reledit-'+cod);
+  if(el) el.style.display=(el.style.display==='none')?'block':'none';
+}
+async function relSalvar(cod){
+  const sel=document.getElementById('relsel-'+cod), grp=document.getElementById('relgrp-'+cod), btn=document.getElementById('relbtn-'+cod);
+  if(!sel) return;
+  const novoSetor=sel.value, novoGrupo=grp?grp.value.trim():'';
+  const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando…';
+  try{
+    const d=await _estPost({acao:'estrutura_save', codigo:cod, setor:novoSetor, grupo:novoGrupo, usuario:(userAtual&&userAtual.usuario)||''});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    toast('✓ Movido para '+_estCap(novoSetor));
+    estCacheResumo=null; estCacheSetor={};   // o editor reflete a mudança
+    if(novoSetor!==relSetorAtual){
+      if(relCacheItens[relSetorAtual]) relCacheItens[relSetorAtual]=relCacheItens[relSetorAtual].filter(function(x){ return String(x.codigo)!==String(cod); });
+      delete relCacheItens[novoSetor];
+      relCacheSetores=null;                   // os totais por setor mudam
+      const row=document.getElementById('relrow-'+cod); if(row) row.remove();
+      const lista=relCacheItens[relSetorAtual]||[];
+      let tt=0; lista.forEach(function(x){ tt+=x.fat; });
+      document.getElementById('rel-setor-cont').textContent = lista.length.toLocaleString('pt-BR')+' produtos vendidos · '+_relMoney(tt);
+    } else {
+      if(relCacheItens[relSetorAtual]) relCacheItens[relSetorAtual].forEach(function(x){ if(String(x.codigo)===String(cod)) x.grupo=novoGrupo; });
+      relToggle(cod);
+    }
+  }catch(e){ console.error('relSalvar:',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
+  if(btn){ btn.disabled=false; btn.textContent=t; }
 }
 function relVoltar(){
   document.getElementById('rel-setor-view').style.display='none';
