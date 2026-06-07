@@ -896,10 +896,8 @@ let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url') || 'https://script
 //   [8]=DESCONTO [9]=TOTAL_PAGO [10]=STATUS [11]=BANCO [12]=LOJA
 // ══════════════════════════════════════════════════════
 
-const USUARIOS = {
-  'gilberto': {senha:'ideal123', nome:'Gilberto Arruda', nivel:'gestor', loja:'all'},
-  'fiscal2':  {senha:'loja2',    nome:'Fiscal Loja 2',   nivel:'fiscal', loja:'l2'},
-};
+// Os usuários agora ficam na planilha (aba "Usuarios") e o login é conferido
+// pelo Apps Script. As senhas não ficam mais dentro do app. (Fase 1 — gestão de usuários)
 
 let lojaAtual     = 'l2';
 let userAtual     = null;
@@ -1029,15 +1027,43 @@ function togglePass(el){
   if(inp.type==='password'){ inp.type='text'; el.className='ti ti-eye-off login2-eye'; }
   else { inp.type='password'; el.className='ti ti-eye login2-eye'; }
 }
-function fazerLogin() {
+async function fazerLogin() {
   const u   = document.getElementById('login-user').value.trim().toLowerCase();
   const p   = document.getElementById('login-pass').value;
   const l   = document.getElementById('login-loja').value;
   const err = document.getElementById('login-err');
   const etx = document.getElementById('login-err-txt');
   if (!u||!p||!l) { err.style.display='flex'; etx.textContent='Preencha todos os campos.'; return; }
-  const usr = USUARIOS[u];
-  if (!usr||usr.senha!==p) { err.style.display='flex'; etx.textContent='Usuário ou senha incorretos.'; return; }
+  const btn = document.querySelector('.btn-login');
+  const btnHTML = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
+  err.style.display='none';
+  // O login é conferido pela planilha (Apps Script). A senha não fica mais dentro do app.
+  let usr;
+  try {
+    const urlLogin = APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+    const res = await fetch(urlLogin, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'login', usuario:u, senha:p, sheetId:SHEET_ID})
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if(!data.ok){
+      if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
+      err.style.display='flex'; etx.textContent = data.erro || 'Usuário ou senha incorretos.'; return;
+    }
+    if(!data.nome || !data.nivel){
+      if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
+      err.style.display='flex'; etx.textContent = 'Não consegui confirmar seu acesso agora. Tente de novo em instantes.'; return;
+    }
+    usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u };
+  } catch(e){
+    console.error('Falha no login:', e);
+    if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
+    err.style.display='flex'; etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; return;
+  }
+  if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
   if (usr.nivel==='fiscal'&&l!==usr.loja) { err.style.display='flex'; etx.textContent='Acesso não permitido.'; return; }
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
