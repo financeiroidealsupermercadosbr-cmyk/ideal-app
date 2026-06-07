@@ -321,7 +321,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 /* Modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
-.modal-card{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:400px}
+.modal-card{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:400px;max-height:92vh;overflow-y:auto}
 .modal-title{font-size:16px;font-weight:600;color:#1a1a1a;margin-bottom:16px;font-family:Arial,sans-serif}
 .modal-info{background:#f8f8f8;border-radius:10px;padding:12px;margin-bottom:16px}
 .modal-info-row{display:flex;justify-content:space-between;font-size:13px;color:#1a1a1a;margin-bottom:6px}
@@ -481,6 +481,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     <div id="tab-menu" class="content" style="display:none">
       <div class="cart-loja" style="margin:12px 12px 4px"><i class="ti ti-building-store"></i><span class="cl-nm" id="m-store">Loja 2 — Melhor QS8</span><i class="ti ti-chevron-down"></i></div>
       <div class="qgrid">
+        <div class="qcard" onclick="abrirMeuPerfil()"><i class="ti ti-user-circle"></i><span class="qnm">Meu perfil</span></div>
         <div class="qcard" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
@@ -886,7 +887,7 @@ function doPost(e) {
     <div id="usr-senha-hint" style="display:none;font-size:11px;color:#888780;margin:-8px 0 12px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Deixe em branco para manter a senha atual.</div>
     <div class="field-group"><label>Nome completo</label><input type="text" id="usr-nome" placeholder="ex.: João da Silva"></div>
     <div class="field-group"><label>Setor</label>
-      <select id="usr-setor"><option>Gerentes</option><option>Fiscal de caixa</option><option>Financeiro</option><option>Gestor/Master</option></select>
+      <select id="usr-setor"><option>Gerentes</option><option>Fiscal de caixa</option><option>Financeiro</option><option>Dono/Proprietário</option><option>Gestor/Master</option></select>
     </div>
     <div class="field-group"><label>Loja</label>
       <select id="usr-loja"><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="bolos">Ideal Bolos</option><option value="all">Todas as lojas</option></select>
@@ -900,6 +901,22 @@ function doPost(e) {
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="fecharModalUsuario()">Cancelar</button>
       <button class="btn-confirmar" id="usr-btn-salvar" onclick="salvarUsuario()">✓ Salvar usuário</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-perfil">
+  <div class="modal-card">
+    <div class="modal-title">Meu perfil</div>
+    <div class="row-card" style="margin-bottom:14px"><div><div class="row-label" id="perfil-setor-loja">—</div><div class="row-sub" id="perfil-login">—</div></div></div>
+    <div class="field-group"><label>Nome completo</label><input type="text" id="perfil-nome"></div>
+    <div class="field-group"><label>Telefone</label><input type="text" id="perfil-tel" placeholder="(61) 9...."></div>
+    <div class="field-group"><label>E-mail</label><input type="text" id="perfil-email" placeholder="email@..."></div>
+    <div class="field-group"><label>Nova senha</label><input type="text" id="perfil-senha" placeholder="deixe em branco pra manter a atual" autocomplete="off"></div>
+    <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:2px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>O seu setor e a sua loja só o gestor pode alterar.</div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharMeuPerfil()">Cancelar</button>
+      <button class="btn-confirmar" id="perfil-btn" onclick="salvarMeuPerfil()">✓ Salvar</button>
     </div>
   </div>
 </div>
@@ -1091,28 +1108,25 @@ async function fazerLogin() {
       if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
       err.style.display='flex'; etx.textContent = 'Não consegui confirmar seu acesso agora. Tente de novo em instantes.'; return;
     }
-    usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u };
+    usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u, telefone:data.telefone||'', email:data.email||'' };
   } catch(e){
     console.error('Falha no login:', e);
     if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
     err.style.display='flex'; etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; return;
   }
   if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-  if (usr.nivel==='fiscal'&&l!==usr.loja) { err.style.display='flex'; etx.textContent='Acesso não permitido.'; return; }
+  if (usr.loja!=='all' && l!==usr.loja) { err.style.display='flex'; etx.textContent='Acesso não permitido para esta loja.'; return; }
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
   document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
   dreLoja = lojaAtual;
-  document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.nivel==='gestor'?'Gestor':'Fiscal');
-  document.getElementById('h-store').textContent = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
-  document.getElementById('loja-sel').style.display = usr.nivel==='fiscal'?'none':'flex';
-  if (usr.nivel==='fiscal') {
-    document.querySelectorAll('.nav-btn').forEach((b,i)=>{ b.style.display=i===1?'flex':'none'; });
-    showTab('lancar',document.querySelectorAll('.nav-btn')[1]);
-    setSubTab(document.querySelectorAll('.tab')[2],'sub-despesa');
-  }
+  const _lojaNome = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
+  document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.setor||'');
+  document.getElementById('h-store').textContent = _lojaNome;
+  const _ms0 = document.getElementById('m-store'); if(_ms0) _ms0.textContent = _lojaNome;
+  aplicarPermissoes(usr, l);
   // Restaurar URL do Apps Script
   const savedUrl = localStorage.getItem('apps_script_url')||'';
   document.getElementById('cfg-script-url').value = savedUrl || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
@@ -1622,6 +1636,74 @@ function dreNoPeriodo(dataBR){
 function ehGestor(){ return !!(userAtual && userAtual.nivel==='gestor'); }
 
 // ══════════════════════════════════════════════════════
+// PERMISSÕES POR SETOR (Fase 3 · Parte 1)
+// ══════════════════════════════════════════════════════
+function permsDoSetor(setor){
+  const s = String(setor||'').toLowerCase();
+  if(s.indexOf('master')>=0 || s.indexOf('gestor')>=0) return {painel:1,dre:1,menu:1,config:1};
+  if(s.indexOf('dono')>=0   || s.indexOf('propriet')>=0) return {painel:1,dre:1,menu:1,config:0};
+  if(s.indexOf('financ')>=0)  return {painel:0,dre:1,menu:1,config:0};
+  if(s.indexOf('gerente')>=0) return {painel:0,dre:0,menu:1,config:0};
+  if(s.indexOf('fiscal')>=0)  return {painel:0,dre:0,menu:1,config:0};
+  return {painel:0,dre:0,menu:1,config:0}; // padrão: o mais restrito
+}
+
+function aplicarPermissoes(usr, l){
+  const p = permsDoSetor(usr.setor);
+  usr.perms = p;
+  const map = {painel:'nav-painel', dre:'nav-dre', menu:'nav-menu', config:'nav-config'};
+  Object.keys(map).forEach(function(k){
+    const b = document.getElementById(map[k]);
+    if(b) b.style.display = p[k] ? 'flex' : 'none';
+  });
+  const ordem = ['painel','dre','menu','config'];
+  let primeira = 'menu';
+  for(let i=0;i<ordem.length;i++){ if(p[ordem[i]]){ primeira = ordem[i]; break; } }
+  showTab(primeira, document.getElementById(map[primeira]));
+  // seletor de loja só pra quem vê Painel ou DRE e tem acesso a todas as lojas
+  const mostrarSel = (p.painel || p.dre) && usr.loja==='all';
+  const sel = document.getElementById('loja-sel');
+  if(sel) sel.style.display = mostrarSel ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════════════
+// MEU PERFIL (Fase 3 · Parte 1) — todos os setores
+// ══════════════════════════════════════════════════════
+function abrirMeuPerfil(){
+  if(!userAtual) return;
+  const lj = LOJA_NOMES[userAtual.loja] || userAtual.loja || '';
+  document.getElementById('perfil-setor-loja').textContent = (userAtual.setor||'—') + (lj?(' · '+lj):'');
+  document.getElementById('perfil-login').textContent = 'Usuário: ' + (userAtual.usuario||'');
+  document.getElementById('perfil-nome').value = userAtual.nome||'';
+  document.getElementById('perfil-tel').value = userAtual.telefone||'';
+  document.getElementById('perfil-email').value = userAtual.email||'';
+  document.getElementById('perfil-senha').value = '';
+  document.getElementById('modal-perfil').classList.add('open');
+}
+function fecharMeuPerfil(){ document.getElementById('modal-perfil').classList.remove('open'); }
+async function salvarMeuPerfil(){
+  const nome = document.getElementById('perfil-nome').value.trim();
+  const tel  = document.getElementById('perfil-tel').value.trim();
+  const email= document.getElementById('perfil-email').value.trim();
+  const senha= document.getElementById('perfil-senha').value;
+  if(!nome){ toast('⚠ Informe o nome'); return; }
+  const btn = document.getElementById('perfil-btn'); const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'perfil_save', sheetId:SHEET_ID, usuario:userAtual.usuario, nome:nome, telefone:tel, email:email, senha:senha})
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.erro||'falha');
+    userAtual.nome=nome; userAtual.telefone=tel; userAtual.email=email;
+    const hu = document.getElementById('h-user'); if(hu) hu.textContent = userAtual.nome+' · '+(userAtual.setor||'');
+    toast('✓ Perfil atualizado');
+    fecharMeuPerfil();
+  }catch(e){ console.error('salvarMeuPerfil:',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
+  btn.disabled=false; btn.textContent=t;
+}
+
+// ══════════════════════════════════════════════════════
 // GESTÃO DE USUÁRIOS (Fase 2) — só o gestor chega na Config
 // ══════════════════════════════════════════════════════
 function _urlApps(){ return APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec'; }
@@ -1688,6 +1770,7 @@ function renderUsuarios(arr){
 function _matchSetor(s){
   s = String(s||'').toLowerCase();
   if(s.indexOf('gestor')>=0||s.indexOf('master')>=0) return 'Gestor/Master';
+  if(s.indexOf('dono')>=0||s.indexOf('propriet')>=0) return 'Dono/Proprietário';
   if(s.indexOf('financ')>=0) return 'Financeiro';
   if(s.indexOf('fiscal')>=0) return 'Fiscal de caixa';
   return 'Gerentes';
