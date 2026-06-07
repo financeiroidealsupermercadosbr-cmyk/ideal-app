@@ -813,7 +813,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v3.9 — relatórios de faturamento por setor</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.0 — código REFER + busca no editor</div></div>
     </div>
   </div>
 </div>
@@ -958,6 +958,11 @@ function doPost(e) {
 
   <!-- VISÃO 1: resumo -->
   <div id="est-resumo-view" style="padding:0 14px 90px">
+    <div style="display:flex;gap:8px;margin:12px 0">
+      <input id="est-busca" type="text" placeholder="Buscar por nome ou código" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box" onkeydown="if(event.key==='Enter'){estBuscar();}">
+      <button class="btn-primary" style="width:auto;padding:0 14px" onclick="estBuscar()" aria-label="Buscar"><i class="ti ti-search"></i></button>
+    </div>
+    <div id="est-busca-res"></div>
     <div style="cursor:pointer;border:1px solid #E0B23C;border-radius:10px;padding:12px;background:#FFF8E6;margin:12px 0" onclick="estAbrirSetor('A REVISAR')">
       <div style="display:flex;align-items:center;gap:9px">
         <i class="ti ti-alert-triangle" style="font-size:19px;color:#9A6B00"></i>
@@ -2953,6 +2958,8 @@ async function _estPost(payload){
 function abrirEstrutura(){
   if(!ehGestor()){ toast('Só o gestor pode organizar a estrutura'); return; }
   show('s-estrutura');
+  var bi=document.getElementById('est-busca'); if(bi) bi.value='';
+  var br=document.getElementById('est-busca-res'); if(br) br.innerHTML='';
   document.getElementById('est-resumo-view').style.display='block';
   document.getElementById('est-setor-view').style.display='none';
   estResumo();
@@ -3016,26 +3023,45 @@ function estOpcoesSetor(atual){
   return o;
 }
 
-function estRenderItens(itens){
-  if(!itens.length){ document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum produto aqui.</div>'; return; }
+function estRenderItens(itens, target){
+  target = target || 'est-itens';
+  const el = document.getElementById(target);
+  if(!itens.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum produto aqui.</div>'; return; }
   const inEst = 'width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;margin-top:4px;font-size:13px;box-sizing:border-box';
   let html='';
   itens.forEach(function(it){
-    const cod=_estEsc(it.codigo), desc=_estEsc(it.descricao), grp=_estEsc(it.grupo||'');
+    const cod=_estEsc(it.codigo), vis=_estEsc(it.cod||it.codigo), desc=_estEsc(it.descricao), grp=_estEsc(it.grupo||'');
+    const selSetor = it.setor || estSetorAtual;
     html += '<div class="row-card" id="estrow-'+cod+'" style="display:block;margin-bottom:6px">'
       + '<div style="display:flex;align-items:center;gap:9px;cursor:pointer" onclick="estToggle(\''+cod+'\')">'
-      + '<span style="font-size:11px;color:#888780;font-family:monospace;min-width:46px">'+cod+'</span>'
+      + '<span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+vis+'</span>'
       + '<span style="flex:1;font-size:13px">'+desc+(grp?' <span style="color:#888780;font-size:11px">· '+grp+'</span>':'')+'</span>'
       + '<i class="ti ti-dots-vertical" style="color:#888780"></i></div>'
       + '<div id="estedit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
       + '<label style="font-size:11px;color:#888780">Setor</label>'
-      + '<select id="estsel-'+cod+'" style="'+inEst+'">'+estOpcoesSetor(estSetorAtual)+'</select>'
+      + '<select id="estsel-'+cod+'" style="'+inEst+'">'+estOpcoesSetor(selSetor)+'</select>'
       + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
       + '<input id="estgrp-'+cod+'" type="text" value="'+grp+'" placeholder="ex.: Bovina, Cervejas, Biscoitos…" style="'+inEst+'">'
       + '<button class="btn-primary" style="margin-top:10px" id="estbtn-'+cod+'" onclick="estSalvar(\''+cod+'\')">Salvar mudança</button>'
       + '</div></div>';
   });
-  document.getElementById('est-itens').innerHTML = html;
+  el.innerHTML = html;
+}
+
+async function estBuscar(){
+  const termo=(document.getElementById('est-busca').value||'').trim();
+  const box=document.getElementById('est-busca-res');
+  if(termo.length<2){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="row-sub" style="padding:6px 2px">Buscando…</div>';
+  try{
+    const d=await _estPost({acao:'estrutura_buscar', termo:termo, limite:60});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    const itens=d.itens||[];
+    estSetorAtual='';
+    if(!itens.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado para "'+_estEsc(termo)+'".</div>'; return; }
+    box.innerHTML='<div class="row-sub" style="padding:4px 2px 6px">'+itens.length+' resultado(s) · toque para reclassificar</div><div id="est-busca-list"></div>';
+    estRenderItens(itens, 'est-busca-list');
+  }catch(e){ console.error('estBuscar:',e); box.innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui buscar. Verifique a internet.</div>'; }
 }
 
 function estToggle(cod){
@@ -3052,7 +3078,10 @@ async function estSalvar(cod){
     const d = await _estPost({acao:'estrutura_save', codigo:cod, setor:novoSetor, grupo:novoGrupo, usuario:(userAtual&&userAtual.usuario)||''});
     if(!d.ok) throw new Error(d.erro||'falha');
     toast('✓ Movido para '+_estCap(novoSetor));
-    if(novoSetor!==estSetorAtual){
+    if(estSetorAtual===''){
+      estCacheResumo=null; estCacheSetor={};   // veio da busca: recarrega contagens frescas
+      const row=document.getElementById('estrow-'+cod); if(row) row.remove();
+    } else if(novoSetor!==estSetorAtual){
       if(estCacheSetor[estSetorAtual]) estCacheSetor[estSetorAtual]=estCacheSetor[estSetorAtual].filter(function(x){ return String(x.codigo)!==String(cod); });
       delete estCacheSetor[novoSetor];   // o setor destino recarrega fresco quando abrir
       if(estCacheResumo){
@@ -3135,7 +3164,7 @@ function relRenderItens(itens){
   if(!itens.length){ document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhuma venda neste setor.</div>'; return; }
   let html='';
   itens.forEach(function(x){
-    html += '<div class="row-card" style="margin-bottom:6px"><span style="font-size:11px;color:#888780;font-family:monospace;min-width:46px">'+_estEsc(x.codigo)+'</span>'
+    html += '<div class="row-card" style="margin-bottom:6px"><span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+_estEsc(x.codbarras||x.codigo)+'</span>'
       + '<span style="flex:1;font-size:13px;margin:0 8px">'+_estEsc(x.desc)+'</span>'
       + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>';
   });
