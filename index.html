@@ -1192,7 +1192,7 @@ async function carregarSheets() {
   try {
     const [vendas, contas, meta] = await Promise.all([
       fetchRange('Lancamento_Diario!A:P'),
-      fetchRange('Contas_Pagar!A:M'),
+      fetchRange('Contas_Pagar!A:N'),
       fetchRange('Metadados!A:B'),
     ]);
 
@@ -1216,7 +1216,7 @@ async function carregarSheets() {
 
     // ── CONTAS — índices corretos ──
     // [0]=NUM [1]=DT_EMIS [2]=DT_VENCTO [3]=DT_PAGTO
-    // [4]=FORNECEDOR [5]=DOCUMENTO [6]=VALOR [10]=STATUS [11]=BANCO
+    // [4]=FORNECEDOR [5]=DOCUMENTO [6]=VALOR [10]=STATUS [11]=BANCO [13]=BAIXA_POR
     dadosContas = contas.slice(1).filter(r=>r[4]).map((r,i)=>{
       const chave = (r[5]||'')+'|'+(r[4]||'').toString().toUpperCase().trim()+'|'+(r[2]||'');
       const pagoSheet = !!(r[10]&&r[10].toString().toUpperCase().includes('PAGO'));
@@ -1230,6 +1230,7 @@ async function carregarSheets() {
         valor: N(r[6]),   // VALOR = coluna G = índice 6
         pago:  pagoSheet || baixasLocais.has(chave),
         banco: r[11]||'',
+        baixaPor: r[13]||'',  // quem deu baixa (coluna N = índice 13) — Fase 5
         chave: chave,
         cat:   categoriaConta(r[4]||''),  // CMV / imposto / despesa, pelo nome do fornecedor
       };
@@ -1583,6 +1584,10 @@ function filtrar() {
       ? '<button class="btn-baixa" disabled>✓ Pago</button>'
       : `<button class="btn-baixa" onclick="abrirModalBaixa(${b.idx})">Dar baixa</button>`;
 
+    const baixaInfo = (b.pago && b.baixaPor)
+      ? `<div style="font-size:10px;color:#0F6E56;margin-top:5px"><i class="ti ti-user-check" style="font-size:12px;vertical-align:-1px"></i> baixa por ${_escUsr(b.baixaPor)}</div>`
+      : '';
+
     return `
       <div class="boleto" id="bol-${b.idx}">
         <div class="boleto-top">
@@ -1593,6 +1598,7 @@ function filtrar() {
           <div class="boleto-data"><i class="ti ti-calendar" style="font-size:12px;vertical-align:-1px"></i> ${b.venc}</div>
           <div style="display:flex;gap:5px;align-items:center">${chk}${badge}${btnBaixa}</div>
         </div>
+        ${baixaInfo}
       </div>`;
   }).join('');
 }
@@ -2268,10 +2274,10 @@ function caixaNoPeriodo(raw){
 }
 async function dreCarregarCaixa(){
   try {
-    const rows = await fetchRange('Despesas_Caixa!A:G'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS
+    const rows = await fetchRange('Despesas_Caixa!A:H'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS [7]=LANCADO_POR
     dadosCaixa = rows.slice(1).filter(r=>r[0]&&r[4]).map(r=>({
       data: r[0], loja: r[1]||'l2', categoria: r[2]||'Outros', valor: (dreParseValor(r[4])||0),
-      desc: r[3]||'', resp: r[5]||'', ts: r[6]||''
+      desc: r[3]||'', resp: r[5]||'', ts: r[6]||'', lancadoPor: r[7]||''
     }));
     return true;
   } catch(e){ dadosCaixa = []; return false; } // aba ainda não existe → sem despesas de caixa
@@ -2411,7 +2417,8 @@ function renderDRE(){
             ${g.itens.map(it=>{
               const obs = (it.desc&&String(it.desc).trim()) ? dreEsc(it.desc) : '(sem descrição)';
               const meta = [dreDataBR(it.data), dreHora(it.ts), (it.resp&&String(it.resp).trim())?dreEsc(it.resp):''].filter(Boolean).join(' · ');
-              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div></div><div class="dli-val">${brlC(it.valor)}</div></div>`;
+              const lanc = (it.lancadoPor&&String(it.lancadoPor).trim()) ? `<div class="dli-meta" style="color:#185FA5"><i class="ti ti-user-check"></i>lançado por ${dreEsc(it.lancadoPor)}</div>` : '';
+              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div>${lanc}</div><div class="dli-val">${brlC(it.valor)}</div></div>`;
             }).join('')}
           </div>
         </div>`).join('')}
@@ -2608,13 +2615,15 @@ async function confirmarBaixaMassa() {
 
   const indices = [...selecionados];
   let salvos=0, erros=0;
+  const baixaPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
 
   for(const idx of indices) {
     const b = dadosContas.find(x=>x.idx===idx);
     if(!b) continue;
     b.pago=true;
+    b.baixaPor = baixaPor;
     try {
-      await salvarBaixaSheets(b.linha, dataPag, banco, 'Baixa em massa');
+      await salvarBaixaSheets(b.linha, dataPag, banco, 'Baixa em massa', baixaPor);
       if(b.chave) baixasLocais.add(b.chave);
       salvos++;
     } catch(e) { erros++; }
@@ -2663,8 +2672,10 @@ async function confirmarBaixa() {
   const obs     = document.getElementById('modal-obs').value;
 
   boletoCurrent.pago=true;
+  const baixaPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
+  boletoCurrent.baixaPor = baixaPor;
   try {
-    await salvarBaixaSheets(boletoCurrent.linha, dataPag, banco, obs);
+    await salvarBaixaSheets(boletoCurrent.linha, dataPag, banco, obs, baixaPor);
     if(boletoCurrent.chave) baixasLocais.add(boletoCurrent.chave);
     toast('✓ Baixa registrada com sucesso!');
   } catch(e) {
@@ -2678,12 +2689,12 @@ async function confirmarBaixa() {
 // ══════════════════════════════════════════════════════
 // APPS SCRIPT — ESCRITA NO SHEETS
 // ══════════════════════════════════════════════════════
-async function salvarBaixaSheets(linha, dataPag, banco, obs) {
+async function salvarBaixaSheets(linha, dataPag, banco, obs, baixaPor) {
   if(!APPS_SCRIPT_URL) return; // sem URL = só local
   const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({acao:'baixa', linha, dataPag, banco, obs, sheetId:SHEET_ID})
+    body: JSON.stringify({acao:'baixa', linha, dataPag, banco, obs, baixaPor:baixaPor||'', sheetId:SHEET_ID})
   });
   if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
 }
@@ -2714,9 +2725,10 @@ async function salvarDespesa() {
   if(!resp)          { toast('⚠ Informe o responsável'); return; }
   const btn = document.getElementById('btn-desp');
   btn.disabled=true; btn.textContent='Salvando...';
+  const lancadoPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
   try {
-    await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp});
-    dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor, desc, resp, ts:new Date().toLocaleString('pt-BR')}); // reflete na DRE na hora
+    await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp, lancadoPor});
+    dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor, desc, resp, lancadoPor, ts:new Date().toLocaleString('pt-BR')}); // reflete na DRE na hora
     renderDRE();
     toast('✓ Despesa registrada'+(APPS_SCRIPT_URL?' no Sheets!':' localmente!'));
     document.getElementById('desp-desc').value='';
