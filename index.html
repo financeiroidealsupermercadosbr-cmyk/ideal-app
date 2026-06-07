@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.2 — editar a estrutura direto no relatório</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.3 — sugestões de grupo por setor</div></div>
     </div>
   </div>
 </div>
@@ -3031,6 +3031,30 @@ function estOpcoesSetor(atual){
   return o;
 }
 
+// Grupos conhecidos por setor (sugestões do campo Grupo)
+const EST_GRUPOS = {
+  'ACOUGUE':['Bovina','Aves','Suína','Miúdos','Salgados e defumados','Linguiças e temperados','Ovinos'],
+  'PADARIA':['Pães','Bolos e tortas','Pão de queijo'],
+  'HORTIFRUTI':['Frutas','Legumes e verduras','Ovos'],
+  'FRIOS E LATICINIOS':['Queijos','Frios e embutidos','Iogurtes','Leite','Manteiga e margarina'],
+  'CONGELADOS':['Congelados diversos'],
+  'PEIXARIA':['Peixes e frutos do mar'],
+  'MERCEARIA SALGADA':['Massas','Arroz','Feijão e grãos','Óleos e azeites','Enlatados e conservas','Molhos e temperos','Farináceos','Sal','Salgadinhos e pipoca','Sopas'],
+  'MERCEARIA DOCE':['Chocolates e bombons','Balas, gomas e pirulitos','Biscoitos e bolachas','Café e achocolatados','Açúcar e adoçantes','Sobremesas e gelatinas','Cereais e matinais','Doces e geleias'],
+  'BEBIDAS':['Cervejas','Refrigerantes','Águas','Sucos e refrescos','Energéticos e isotônicos','Vinhos e espumantes','Destilados'],
+  'LIMPEZA':['Detergente e lava-louças','Sabão e amaciante','Desinfetante e multiuso','Utensílios de limpeza','Inseticidas','Descartáveis e papel','Ceras e lustra','Diversos'],
+  'HIGIENE E PERFUMARIA':['Sabonetes','Cabelos','Higiene bucal','Absorventes e fraldas','Papel higiênico e lenços','Desodorantes','Barbearia','Perfumaria e cosméticos','Algodão e curativos'],
+  'BAZAR E UTILIDADES':['Pilhas, lâmpadas e elétrico','Papelaria','Utensílios de cozinha','Descartáveis e embalagem','Bazar diversos'],
+  'PET':['Pet diversos']
+};
+function _gruposOpts(setor){
+  const arr=EST_GRUPOS[setor]||[];
+  return arr.map(function(g){ return '<option value="'+_estEsc(g)+'">'; }).join('');
+}
+function gruposFill(dlId, setor){
+  const dl=document.getElementById(dlId); if(dl) dl.innerHTML=_gruposOpts(setor);
+}
+
 function estRenderItens(itens, target){
   target = target || 'est-itens';
   const el = document.getElementById(target);
@@ -3047,9 +3071,10 @@ function estRenderItens(itens, target){
       + '<i class="ti ti-dots-vertical" style="color:#888780"></i></div>'
       + '<div id="estedit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
       + '<label style="font-size:11px;color:#888780">Setor</label>'
-      + '<select id="estsel-'+cod+'" style="'+inEst+'">'+estOpcoesSetor(selSetor)+'</select>'
+      + '<select id="estsel-'+cod+'" onchange="gruposFill(\'estgrpdl-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(selSetor)+'</select>'
       + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
-      + '<input id="estgrp-'+cod+'" type="text" value="'+grp+'" placeholder="ex.: Bovina, Cervejas, Biscoitos…" style="'+inEst+'">'
+      + '<input id="estgrp-'+cod+'" list="estgrpdl-'+cod+'" type="text" value="'+grp+'" placeholder="escolha ou digite o grupo" style="'+inEst+'">'
+      + '<datalist id="estgrpdl-'+cod+'">'+_gruposOpts(selSetor)+'</datalist>'
       + '<button class="btn-primary" style="margin-top:10px" id="estbtn-'+cod+'" onclick="estSalvar(\''+cod+'\')">Salvar mudança</button>'
       + '</div></div>';
   });
@@ -3202,9 +3227,10 @@ function relRenderItens(itens){
       + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>'
       + '<div id="reledit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
       + '<label style="font-size:11px;color:#888780">Setor</label>'
-      + '<select id="relsel-'+cod+'" style="'+inEst+'">'+estOpcoesSetor(relSetorAtual)+'</select>'
+      + '<select id="relsel-'+cod+'" onchange="gruposFill(\'relgrpdl-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(relSetorAtual)+'</select>'
       + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
-      + '<input id="relgrp-'+cod+'" type="text" value="'+grp+'" placeholder="ex.: Bovina, Cervejas, Biscoitos…" style="'+inEst+'">'
+      + '<input id="relgrp-'+cod+'" list="relgrpdl-'+cod+'" type="text" value="'+grp+'" placeholder="escolha ou digite o grupo" style="'+inEst+'">'
+      + '<datalist id="relgrpdl-'+cod+'">'+_gruposOpts(relSetorAtual)+'</datalist>'
       + '<button class="btn-primary" style="margin-top:10px" id="relbtn-'+cod+'" onclick="relSalvar(\''+cod+'\')">Salvar mudança</button>'
       + '</div></div>';
   });
