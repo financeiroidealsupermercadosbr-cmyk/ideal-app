@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.1 — Lista de Cotação (parte 2: coletas salvas + PDF)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.3 — Cotação: item manual (sem cadastro)</div></div>
     </div>
   </div>
 </div>
@@ -1070,6 +1070,7 @@ function doPost(e) {
       <button class="btn-primary" style="width:52px;padding:0;margin-top:0" onclick="cotScanAbrir()" aria-label="Escanear código de barras"><i class="ti ti-barcode" style="font-size:23px"></i></button>
     </div>
     <div id="cot-busca-res"></div>
+    <div style="text-align:center;margin-top:8px;cursor:pointer" onclick="cotAddManual()"><span style="font-size:12.5px;color:#0F6E56"><i class="ti ti-pencil-plus" style="vertical-align:-2px"></i> Lançar item manual (sem cadastro)</span></div>
 
     <div style="font-size:11px;color:#888780;margin:14px 0 6px">Itens da coleta</div>
     <div id="cot-itens"><div class="row-sub" style="padding:6px 2px">Nenhum item ainda. Busque ou bipe um produto e toque em Adicionar.</div></div>
@@ -1096,7 +1097,8 @@ function doPost(e) {
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="colAtualizar()" title="Atualizar"></i>
   </div>
   <div id="col-lista-view" style="padding:0 14px 90px">
-    <div id="col-lista" style="margin-top:12px"><div class="loadrow"><span class="spin"></span> Carregando coletas…</div></div>
+    <button class="btn-primary" style="margin-top:12px;background:#0F6E56" onclick="colCruzar()"><i class="ti ti-arrows-right-left"></i> Cruzar coletas (achar repetidos)</button>
+    <div id="col-lista" style="margin-top:10px"><div class="loadrow"><span class="spin"></span> Carregando coletas…</div></div>
   </div>
   <div id="col-detalhe-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div></div>
@@ -1105,6 +1107,11 @@ function doPost(e) {
       <button class="btn-primary" style="flex:1;margin-top:0" onclick="colPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
       <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="colExcluir()"><i class="ti ti-trash"></i> Excluir</button>
     </div>
+  </div>
+  <div id="col-cruza-view" style="display:none;padding:0 14px 90px">
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
+    <div id="col-cruza-itens"></div>
+    <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
   </div>
 </div>
 
@@ -3816,8 +3823,8 @@ function cotBuscar(){
   for(var i=0;i<PRODUTOS.length && res.length<40;i++){ var p=PRODUTOS[i]; if(p.n.indexOf(termo)>=0 || (ehNum&&(p.c===termo||p.b===termo))) res.push(p); }
   res.sort(function(a,b){ var ax=(a.c===termo||a.b===termo)?0:1,bx=(b.c===termo||b.b===termo)?0:1; if(ax!==bx)return ax-bx; return a.d<b.d?-1:(a.d>b.d?1:0); });
   if(!res.length){
-    if(/^\d{8,}$/.test(termo)) box.innerHTML='<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:10px;padding:10px;font-size:12.5px;color:#9A6B00;margin-top:6px">Código '+_precoEsc(termo)+' não encontrado na base. Pode ser produto novo (atualize na Busca de Preço) ou sem cadastro.</div>';
-    else box.innerHTML='<div class="row-sub" style="padding:8px 2px">Nada encontrado pra "'+_precoEsc(termo)+'".</div>';
+    if(/^\d{8,}$/.test(termo)) box.innerHTML='<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:10px;padding:10px;font-size:12.5px;color:#9A6B00;margin-top:6px">Código '+_precoEsc(termo)+' não encontrado na base. Pode ser produto novo (atualize na Busca de Preço) ou sem cadastro.<div style="margin-top:8px"><button onclick="cotAddManual()" style="background:#0F6E56;color:#fff;border:none;border-radius:8px;height:32px;padding:0 12px;font-size:13px"><i class="ti ti-pencil-plus"></i> Lançar manual</button></div></div>';
+    else box.innerHTML='<div class="row-sub" style="padding:8px 2px">Nada encontrado pra "'+_precoEsc(termo)+'".</div><div style="margin-top:4px"><button onclick="cotAddManual()" style="background:#0F6E56;color:#fff;border:none;border-radius:8px;height:32px;padding:0 12px;font-size:13px"><i class="ti ti-pencil-plus"></i> Lançar "'+_precoEsc(termo)+'" manual</button></div>';
     return;
   }
   var h='';
@@ -3843,6 +3850,18 @@ function cotAdd(cod){
   cotRenderItens(); cotSub();
   toast('Adicionado: '+p.d);
 }
+function cotAddManual(){
+  var bi=document.getElementById('cot-busca');
+  var txt=((bi&&bi.value)||'').trim();
+  if(txt.length<2 || /^\d+$/.test(txt)){ txt=((window.prompt('Nome do produto (lançar manual, sem cadastro):', /^\d+$/.test(txt)?'':txt)||'')).trim(); }
+  if(txt.length<2){ toast('Digite o nome do produto.'); return; }
+  var id='MAN'+Date.now()+Math.floor(Math.random()*1000);
+  COT_ITENS.push({cod:id, desc:txt, barras:'', qtd:1, un:'UN', varejo:null, atacado:null, manual:true});
+  if(bi){ bi.value=''; bi.focus(); }
+  var box=document.getElementById('cot-busca-res'); if(box) box.innerHTML='';
+  cotRenderItens(); cotSub();
+  toast('Item manual adicionado: '+txt);
+}
 function cotQtd(cod, delta){
   for(var i=0;i<COT_ITENS.length;i++){ if(COT_ITENS[i].cod===String(cod)){ COT_ITENS[i].qtd=Math.max(1,(COT_ITENS[i].qtd||1)+delta); break; } }
   cotRenderItens();
@@ -3864,7 +3883,7 @@ function cotRenderItens(){
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
       +'<div style="display:flex;align-items:flex-start;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
-      +'<div style="font-size:10px;color:#9a988f;margin-top:2px">cód '+cod+' · varejo '+_precoBRL(it.varejo)+'</div></div>'
+      +'<div style="font-size:10px;color:#9a988f;margin-top:2px">'+(it.manual?'<span style="color:#9A6B00"><i class="ti ti-pencil" style="font-size:11px;vertical-align:-1px"></i> manual · sem cadastro</span>':('cód '+cod+' · varejo '+_precoBRL(it.varejo)))+'</div></div>'
       +'<i class="ti ti-trash" style="font-size:17px;color:#A32D2D;cursor:pointer" onclick="cotRemover(\''+cod+'\')" aria-label="Remover"></i>'
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:7px;margin-top:9px">'
@@ -3967,7 +3986,7 @@ function colAbrir(id){
   for(var j=0;j<c.itens.length;j++){ var it=c.itens[j];
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:9px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
-      +'<div style="font-size:10px;color:#9a988f">cód '+_precoEsc(it.cod)+' · varejo '+_precoBRL(it.varejo)+'</div></div>'
+      +'<div style="font-size:10px;color:#9a988f">'+(it.manual?'✎ manual · sem cadastro':('cód '+_precoEsc(it.cod)+' · varejo '+_precoBRL(it.varejo)))+'</div></div>'
       +'<div style="font-size:14px;font-weight:600;color:#16267A;white-space:nowrap">'+(Number(it.qtd)||0)+' '+_precoEsc(it.un||'UN')+'</div>'
       +'</div>';
   }
@@ -3989,7 +4008,7 @@ function _colGerarPDF(obs, usuario, data, itens){
   var agora = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   var linhas=''; var refTot=0;
   for(var i=0;i<itens.length;i++){ var it=itens[i]; refTot += (Number(it.varejo)||0)*(Number(it.qtd)||0);
-    linhas += '<tr><td class="n">'+(i+1)+'</td><td>'+_precoEsc(it.desc)+'<div class="cod">cód '+_precoEsc(it.cod)+(it.barras?' · '+_precoEsc(it.barras):'')+'</div></td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_precoEsc(it.un||'UN')+'</td><td class="v">'+_precoBRL(it.varejo)+'</td></tr>';
+    linhas += '<tr><td class="n">'+(i+1)+'</td><td>'+_precoEsc(it.desc)+'<div class="cod">'+(it.manual?'manual · sem cadastro':('cód '+_precoEsc(it.cod)+(it.barras?' · '+_precoEsc(it.barras):'')))+'</div></td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_precoEsc(it.un||'UN')+'</td><td class="v">'+(it.manual?'—':_precoBRL(it.varejo))+'</td></tr>';
   }
   var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lista de Cotacao — Ideal</title>'
     + '<style>'
@@ -4020,6 +4039,109 @@ function _colGerarPDF(obs, usuario, data, itens){
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
     + '</body></html>';
   var win = window.open('', '_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
+}
+
+// ── Parte 3: cruzar coletas (produtos repetidos entre coletas) ──
+function _colCruzarDados(){
+  var map={}, ordem=[];
+  for(var i=0;i<COLETAS.length;i++){ var c=COLETAS[i];
+    for(var j=0;j<c.itens.length;j++){ var it=c.itens[j];
+      var key = it.manual ? ('M:'+_precoNorm(it.desc||'')) : ('C:'+String(it.cod||''));
+      if(!map[key]){ map[key]={cod:(it.manual?'manual':String(it.cod||'')), desc:it.desc, barras:it.barras||'', manual:!!it.manual, entries:[]}; ordem.push(key); }
+      map[key].entries.push({usuario:c.usuario, data:(c.data||'').slice(0,16), qtd:(Number(it.qtd)||0), un:it.un||'UN', obs:c.obs});
+    }
+  }
+  var arr=ordem.map(function(k){return map[k];});
+  var rep=arr.filter(function(x){return x.entries.length>=2;}).sort(function(a,b){ return b.entries.length-a.entries.length || (a.desc<b.desc?-1:(a.desc>b.desc?1:0)); });
+  var uni=arr.filter(function(x){return x.entries.length<2;}).sort(function(a,b){ return a.desc<b.desc?-1:(a.desc>b.desc?1:0); });
+  return {rep:rep, uni:uni};
+}
+async function colCruzar(){
+  if(!COLETAS.length){ try{ await _colCarregar(); }catch(e){} }
+  document.getElementById('col-lista-view').style.display='none';
+  document.getElementById('col-detalhe-view').style.display='none';
+  document.getElementById('col-cruza-view').style.display='block';
+  colRenderCruza();
+}
+function colCruzaVoltar(){
+  document.getElementById('col-cruza-view').style.display='none';
+  document.getElementById('col-lista-view').style.display='block';
+}
+function colRenderCruza(){
+  var d=_colCruzarDados();
+  var sub=document.getElementById('col-cruza-sub'); if(sub) sub.textContent = d.rep.length+' repetido(s) · '+(d.rep.length+d.uni.length)+' produtos no total';
+  var h='';
+  h+='<div style="font-size:13px;font-weight:600;color:#9A6B00;margin:12px 0 6px;display:flex;align-items:center;gap:6px"><i class="ti ti-alert-triangle"></i> Repetidos em 2+ coletas ('+d.rep.length+')</div>';
+  if(!d.rep.length){ h+='<div class="row-sub" style="padding:4px 2px 8px">Nenhum produto repetido entre as coletas.</div>'; }
+  for(var i=0;i<d.rep.length;i++){ var p=d.rep[i];
+    h+='<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:10px;padding:10px;margin-bottom:8px">'
+      +'<div style="font-size:13px;font-weight:600;color:#1a1a1a">'+_precoEsc(p.desc)+' <span style="font-size:11px;color:#9A6B00;font-weight:500">· '+p.entries.length+' coletas</span></div>'
+      +'<div style="font-size:10px;color:#9a988f;margin-bottom:4px">'+(p.manual?'✎ manual · sem cadastro':('cód '+_precoEsc(p.cod)))+'</div>';
+    for(var e=0;e<p.entries.length;e++){ var en=p.entries[e];
+      h+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#5F5E5A;padding:4px 0;border-top:1px solid #F0E4C0">'
+        +'<i class="ti ti-user" style="font-size:13px;color:#9A6B00"></i><span style="flex:1">'+_precoEsc(en.usuario||'—')+'<span style="color:#b7b5ac"> · '+_precoEsc(en.data)+'</span></span>'
+        +'<span style="font-weight:600;color:#16267A;white-space:nowrap">'+en.qtd+' '+_precoEsc(en.un)+'</span></div>';
+    }
+    h+='</div>';
+  }
+  h+='<div style="font-size:13px;font-weight:600;color:#16267A;margin:14px 0 6px;display:flex;align-items:center;gap:6px"><i class="ti ti-list"></i> Demais produtos ('+d.uni.length+')</div>';
+  if(!d.uni.length){ h+='<div class="row-sub" style="padding:4px 2px">—</div>'; }
+  for(var u=0;u<d.uni.length;u++){ var q=d.uni[u]; var en0=q.entries[0];
+    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:12.5px;color:#1a1a1a;line-height:1.25">'+_precoEsc(q.desc)+'</div>'
+      +'<div style="font-size:10px;color:#9a988f">'+_precoEsc(en0.usuario||'—')+' · '+_precoEsc(en0.data)+'</div></div>'
+      +'<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+en0.qtd+' '+_precoEsc(en0.un)+'</span></div>';
+  }
+  document.getElementById('col-cruza-itens').innerHTML=h;
+}
+function colCruzaPDF(){ _colGerarPDFCruza(_colCruzarDados()); }
+
+function _colGerarPDFCruza(d){
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var rep='';
+  for(var i=0;i<d.rep.length;i++){ var p=d.rep[i]; var linhas='';
+    for(var e=0;e<p.entries.length;e++){ var en=p.entries[e]; linhas+='<tr><td>'+_precoEsc(en.usuario||'—')+'</td><td class="c">'+en.qtd+' '+_precoEsc(en.un)+'</td><td class="v">'+_precoEsc(en.data)+'</td></tr>'; }
+    rep+='<div class="rep"><div class="repname">'+_precoEsc(p.desc)+' <span>&middot; '+p.entries.length+' coletas &middot; '+(p.manual?'manual':('c&oacute;d '+_precoEsc(p.cod)))+'</span></div><table class="mini"><tr><th>Quem coletou</th><th class="c">Qtd</th><th class="v">Data</th></tr>'+linhas+'</table></div>';
+  }
+  if(!d.rep.length) rep='<p class="none">Nenhum produto repetido entre as coletas.</p>';
+  var uni='';
+  for(var u=0;u<d.uni.length;u++){ var q=d.uni[u]; var en0=q.entries[0]; uni+='<tr><td>'+_precoEsc(q.desc)+'</td><td>'+_precoEsc(en0.usuario||'—')+'</td><td class="c">'+en0.qtd+' '+_precoEsc(en0.un)+'</td><td class="v">'+_precoEsc(en0.data)+'</td></tr>'; }
+  if(!d.uni.length) uni='<tr><td colspan="4" class="none">—</td></tr>';
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Cruzamento de Coletas — Ideal</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    + '.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    + '.sec{font-size:13px;font-weight:bold;margin:16px 0 6px}.sec.r{color:#9A6B00}.sec.o{color:#16267A}'
+    + '.rep{border:1px solid #E0B23C;background:#FFF8E6;border-radius:8px;padding:10px;margin-bottom:8px}'
+    + '.repname{font-size:13px;font-weight:bold;color:#16267A}.repname span{font-weight:normal;font-size:11px;color:#9A6B00}'
+    + 'table{width:100%;border-collapse:collapse}table.mini{margin-top:6px}'
+    + 'th{font-size:10px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:5px 4px;border-bottom:1px solid #E0D6B0}'
+    + 'td{padding:6px 4px;font-size:12.5px;border-bottom:1px solid #f1f1f1;vertical-align:top;color:#1a1a1a}'
+    + 'td.c,th.c{text-align:center;white-space:nowrap}td.v,th.v{text-align:right;white-space:nowrap;color:#5F5E5A}'
+    + 'table.big th{border-bottom:2px solid #C9D6EC}'
+    + '.none{font-size:12px;color:#888780;padding:4px 2px}'
+    + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
+    + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    + '</style></head><body><div class="sheet">'
+    + '<div class="hd"><h1>Cruzamento de Coletas</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    + '<div class="body">'
+    + '<div class="meta"><b>Produtos repetidos entre coletas em destaque</b><br>Repetidos: '+d.rep.length+' &middot; Produtos no total: '+(d.rep.length+d.uni.length)+'<br>Gerado em '+agora+'</div>'
+    + '<div class="sec r">Repetidos em 2 ou mais coletas ('+d.rep.length+')</div>'+rep
+    + '<div class="sec o">Demais produtos ('+d.uni.length+')</div>'
+    + '<table class="big"><tr><th>Produto</th><th>Quem coletou</th><th class="c">Qtd</th><th class="v">Data</th></tr>'+uni+'</table>'
+    + '<div class="foot">Repetido = mesmo produto em 2+ coletas, listado por coleta (sem somar). Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    + '</div></div>'
+    + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    + '</body></html>';
+  var win=window.open('', '_blank');
   if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
   win.document.open(); win.document.write(html); win.document.close();
 }
