@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.8 — Busca de Preço (varejo+atacado, busca e leitor de código)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.8 — Busca de Preço (busca + leitor + aviso de não cadastrado)</div></div>
     </div>
   </div>
 </div>
@@ -3458,7 +3458,21 @@ function precoBuscar(){
 
 function precoRender(list, termo){
   var box = document.getElementById('preco-res');
-  if(!list.length){ box.innerHTML = '<div class="row-sub" style="padding:10px 2px">Nada encontrado pra "'+_precoEsc(termo)+'". Confira a escrita ou tente outro pedaço do nome.</div>'; return; }
+  if(!list.length){
+    if(/^\d{8,}$/.test(termo)){
+      box.innerHTML = '<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:12px;padding:14px;margin:6px 0">'
+        + '<div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#9A6B00"><i class="ti ti-alert-triangle" style="font-size:19px"></i> Código não encontrado</div>'
+        + '<div style="font-size:12.5px;color:#9A6B00;margin-top:6px;line-height:1.5">O código <b>'+_precoEsc(termo)+'</b> não está na base. Pode ser um <b>produto novo</b> que a esteira ainda não trouxe (toque em Atualizar) ou um produto <b>sem cadastro</b> no sistema.</div>'
+        + '<div style="display:flex;gap:8px;margin-top:12px">'
+        +   '<button class="btn-primary" style="flex:1;margin-top:0;background:#16267A" onclick="precoAtualizar()"><i class="ti ti-refresh"></i> Atualizar</button>'
+        +   '<button class="btn-primary" style="flex:1;margin-top:0;background:#0F6E56" onclick="precoScanAbrir()"><i class="ti ti-barcode"></i> Escanear outro</button>'
+        + '</div>'
+        + '</div>';
+    } else {
+      box.innerHTML = '<div class="row-sub" style="padding:10px 2px">Nada encontrado pra "'+_precoEsc(termo)+'". Confira a escrita ou tente outro pedaço do nome.</div>';
+    }
+    return;
+  }
   var h = '<div class="row-sub" style="padding:4px 2px 8px">'+list.length+(list.length>=80?'+':'')+' produto(s)</div>';
   for(var i=0;i<list.length;i++){
     var p = list[i];
