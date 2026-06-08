@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.3 — Cotação: item manual (sem cadastro)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.3.1 — Cotação: item manual (caixinha no app)</div></div>
     </div>
   </div>
 </div>
@@ -3852,15 +3852,32 @@ function cotAdd(cod){
 }
 function cotAddManual(){
   var bi=document.getElementById('cot-busca');
-  var txt=((bi&&bi.value)||'').trim();
-  if(txt.length<2 || /^\d+$/.test(txt)){ txt=((window.prompt('Nome do produto (lançar manual, sem cadastro):', /^\d+$/.test(txt)?'':txt)||'')).trim(); }
-  if(txt.length<2){ toast('Digite o nome do produto.'); return; }
+  var t=((bi&&bi.value)||'').trim();
+  var pre=(t.length>=2 && !/^\d+$/.test(t)) ? t : '';
+  var box=document.getElementById('cot-busca-res'); if(!box) return;
+  box.innerHTML='<div style="border:1px solid #0F6E56;border-radius:10px;padding:10px;margin-top:8px;background:#F2FBF7">'
+    +'<div style="font-size:12px;color:#0F6E56;font-weight:600;margin-bottom:6px"><i class="ti ti-pencil-plus"></i> Lançar item manual (sem cadastro)</div>'
+    +'<input id="cot-manual-nome" type="text" autocomplete="off" placeholder="Nome do produto" value="'+_precoEsc(pre).replace(/"/g,'&quot;')+'" style="width:100%;padding:10px;border:1px solid #cfe6db;border-radius:8px;font-size:15px;box-sizing:border-box" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cotManualConfirmar();}">'
+    +'<div style="display:flex;gap:8px;margin-top:8px">'
+    +'<button onclick="cotManualConfirmar()" style="flex:1;background:#0F6E56;color:#fff;border:none;border-radius:8px;height:38px;font-size:14px"><i class="ti ti-plus"></i> Adicionar à coleta</button>'
+    +'<button onclick="cotManualCancelar()" style="background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:8px;height:38px;padding:0 14px;font-size:14px">Cancelar</button>'
+    +'</div></div>';
+  var inp=document.getElementById('cot-manual-nome'); if(inp){ inp.focus(); try{ var L=inp.value.length; inp.setSelectionRange(L,L); }catch(e){} }
+}
+function cotManualConfirmar(){
+  var inp=document.getElementById('cot-manual-nome');
+  var txt=((inp&&inp.value)||'').trim();
+  if(txt.length<2){ toast('Digite o nome do produto.'); if(inp) inp.focus(); return; }
   var id='MAN'+Date.now()+Math.floor(Math.random()*1000);
   COT_ITENS.push({cod:id, desc:txt, barras:'', qtd:1, un:'UN', varejo:null, atacado:null, manual:true});
-  if(bi){ bi.value=''; bi.focus(); }
+  var bi=document.getElementById('cot-busca'); if(bi) bi.value='';
   var box=document.getElementById('cot-busca-res'); if(box) box.innerHTML='';
   cotRenderItens(); cotSub();
   toast('Item manual adicionado: '+txt);
+}
+function cotManualCancelar(){
+  var box=document.getElementById('cot-busca-res'); if(box) box.innerHTML='';
+  var bi=document.getElementById('cot-busca'); if(bi) bi.focus();
 }
 function cotQtd(cod, delta){
   for(var i=0;i<COT_ITENS.length;i++){ if(COT_ITENS[i].cod===String(cod)){ COT_ITENS[i].qtd=Math.max(1,(COT_ITENS[i].qtd||1)+delta); break; } }
