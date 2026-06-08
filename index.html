@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.0 — Lista de Cotação (parte 1: montar e salvar coleta)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.0 — Lista de Cotação (parte 1: montar e salvar, com unidade)</div></div>
     </div>
   </div>
 </div>
@@ -3745,6 +3745,29 @@ async function sincronizarInicio(){
 let COT_ITENS = [];   // [{cod,desc,barras,qtd,varejo,atacado}]
 let COT_ID = '';      // id da coleta atual ('' = nova, ainda não salva)
 let _cotTimer = null;
+const COT_UNS = ['UN','CX','FD','DP','CJ','PCT','KG','DZ','SC'];
+function _cotUnDefault(pu){
+  var u=String(pu||'').toUpperCase().replace(/[^A-Z]/g,'');
+  if(!u) return 'UN';
+  if(u.indexOf('UN')===0) return 'UN';
+  if(u.indexOf('CX')===0 || u.indexOf('CAI')===0) return 'CX';
+  if(u.indexOf('FD')===0 || u.indexOf('FARD')===0) return 'FD';
+  if(u.indexOf('DP')===0 || u.indexOf('DISP')===0) return 'DP';
+  if(u.indexOf('CJ')===0 || u.indexOf('CONJ')===0) return 'CJ';
+  if(u.indexOf('PC')===0 || u.indexOf('PAC')===0) return 'PCT';
+  if(u==='KG' || u.indexOf('KILO')===0 || u.indexOf('QUILO')===0) return 'KG';
+  if(u.indexOf('DZ')===0 || u.indexOf('DUZ')===0) return 'DZ';
+  if(u.indexOf('SC')===0 || u.indexOf('SAC')===0) return 'SC';
+  return 'UN';
+}
+function _cotUnOpts(sel){
+  var o=''; for(var i=0;i<COT_UNS.length;i++){ var u=COT_UNS[i]; o+='<option value="'+u+'"'+(u===sel?' selected':'')+'>'+u+'</option>'; }
+  if(sel && COT_UNS.indexOf(sel)<0){ o='<option value="'+_precoEsc(sel)+'" selected>'+_precoEsc(sel)+'</option>'+o; }
+  return o;
+}
+function cotUnSet(cod, val){
+  for(var i=0;i<COT_ITENS.length;i++){ if(COT_ITENS[i].cod===String(cod)){ COT_ITENS[i].un=val; break; } }
+}
 
 async function abrirCotacao(){
   show('s-cotacao');
@@ -3791,7 +3814,7 @@ function cotAdd(cod){
   if(COT_ITENS.some(function(x){return x.cod===cod;})) return;
   var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
   if(!p) return;
-  COT_ITENS.push({cod:p.c, desc:p.d, barras:p.b, qtd:1, varejo:p.v, atacado:p.a});
+  COT_ITENS.push({cod:p.c, desc:p.d, barras:p.b, qtd:1, un:_cotUnDefault(p.u), varejo:p.v, atacado:p.a});
   var bi=document.getElementById('cot-busca'); if(bi){ bi.value=''; bi.focus(); }
   document.getElementById('cot-busca-res').innerHTML='';
   cotRenderItens(); cotSub();
@@ -3815,15 +3838,19 @@ function cotRenderItens(){
   if(!COT_ITENS.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum item ainda. Busque ou bipe um produto e toque em Adicionar.</div>'; return; }
   var h='';
   for(var i=0;i<COT_ITENS.length;i++){ var it=COT_ITENS[i]; var cod=_precoEsc(it.cod);
-    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:9px 10px;margin-bottom:7px;display:flex;align-items:center;gap:8px">'
+    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
+      +'<div style="display:flex;align-items:flex-start;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
-      +'<div style="font-size:10px;color:#9a988f">cód '+cod+' · varejo '+_precoBRL(it.varejo)+'</div></div>'
-      +'<div style="display:flex;align-items:center;gap:6px">'
-      +'<button onclick="cotQtd(\''+cod+'\',-1)" style="width:28px;height:28px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:16px;color:#16267A">−</button>'
-      +'<input type="tel" value="'+(it.qtd||1)+'" onchange="cotQtdSet(\''+cod+'\',this.value)" style="width:42px;text-align:center;font-size:15px;font-weight:500;border:0.5px solid #e0e0e0;border-radius:7px;padding:5px 0;box-sizing:border-box">'
-      +'<button onclick="cotQtd(\''+cod+'\',1)" style="width:28px;height:28px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:16px;color:#16267A">+</button>'
-      +'</div>'
+      +'<div style="font-size:10px;color:#9a988f;margin-top:2px">cód '+cod+' · varejo '+_precoBRL(it.varejo)+'</div></div>'
       +'<i class="ti ti-trash" style="font-size:17px;color:#A32D2D;cursor:pointer" onclick="cotRemover(\''+cod+'\')" aria-label="Remover"></i>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-top:9px">'
+      +'<button onclick="cotQtd(\''+cod+'\',-1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">−</button>'
+      +'<input type="tel" value="'+(it.qtd||1)+'" onchange="cotQtdSet(\''+cod+'\',this.value)" style="width:46px;text-align:center;font-size:15px;font-weight:500;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 0;box-sizing:border-box">'
+      +'<button onclick="cotQtd(\''+cod+'\',1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">+</button>'
+      +'<select onchange="cotUnSet(\''+cod+'\',this.value)" style="height:32px;border:0.5px solid #D3D1C7;border-radius:7px;font-size:13px;padding:0 6px;color:#16267A;background:#fff">'+_cotUnOpts(it.un||'UN')+'</select>'
+      +'<span style="flex:1"></span>'
+      +'</div>'
       +'</div>';
   }
   el.innerHTML=h;
