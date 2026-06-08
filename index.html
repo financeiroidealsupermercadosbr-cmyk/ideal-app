@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.4.1 — busca de produto também por período</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.4.3 — Vendas por setor: sincroniza ao abrir + cache</div></div>
     </div>
   </div>
 </div>
@@ -3354,7 +3354,7 @@ function relAplicarCustom(){
   var bt2=document.getElementById('rel-busca'); if(bt2 && bt2.value.trim().length>=2) relBuscar();
 }
 
-function abrirRelatorios(){
+async function abrirRelatorios(){
   show('s-relatorios');
   var bi=document.getElementById('rel-busca'); if(bi) bi.value='';
   var br=document.getElementById('rel-busca-res'); if(br) br.innerHTML='';
@@ -3362,6 +3362,11 @@ function abrirRelatorios(){
   document.getElementById('rel-setor-view').style.display='none';
   if(!relDe){ relPeriodo='mes'; var r=_relPeriodoRange('mes'); relDe=r.de; relAte=r.ate; }
   relRenderChips();
+  if(!VD_BASE.length){
+    _syncSplash(true, 'Baixando vendas por dia (1ª vez)…');
+    try{ await _estReady(); await _vdReady(); }catch(e){ console.error('abrirRelatorios sync',e); }
+    _syncSplash(false);
+  }
   relCarregarPeriodo();
 }
 async function relBuscar(){
@@ -3370,7 +3375,8 @@ async function relBuscar(){
   if(termo.length<2){ box.innerHTML=''; return; }
   box.innerHTML='<div class="loadrow"><span class="spin"></span> Buscando…</div>';
   try{
-    const d=await _estPost({acao:'relatorio_buscar_periodo', termo:termo, de:relDe, ate:relAte, limite:60});
+    await _estReady(); await _vdReady();
+    const d=_relBuscarLocal(relDe, relAte, termo, 60);
     if(!d.ok) throw new Error(d.erro||'falha');
     const itens=d.itens||[];
     if(!itens.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado para "'+_estEsc(termo)+'" em '+_relPeriodoLabel()+'.</div>'; return; }
@@ -3399,10 +3405,11 @@ async function relCarregarPeriodo(){
   document.getElementById('rel-total').textContent='—';
   document.getElementById('rel-setores').innerHTML='<div class="loadrow"><span class="spin"></span> Calculando o período…</div>';
   try{
-    const d = await _estPost({acao:'relatorio_setores_periodo', de:relDe, ate:relAte});
+    await _estReady(); await _vdReady();
+    const d = _relSetoresLocal(relDe, relAte);
     if(!d.ok) throw new Error(d.erro||'falha');
     relCacheSetores[key] = d; relRenderSetores(d);
-  }catch(e){ console.error('relCarregarPeriodo:',e); document.getElementById('rel-setores').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui calcular o período. Verifique a internet e tente de novo.</div>'; }
+  }catch(e){ console.error('relCarregarPeriodo:',e); document.getElementById('rel-setores').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui calcular o período. Toque em ↻ ou verifique a internet.</div>'; }
 }
 function relRenderSetores(d){
   const setores=d.setores||[], total=d.total||0;
@@ -3434,11 +3441,12 @@ async function relAbrirSetor(setor){
   document.getElementById('rel-setor-cont').textContent='Carregando…';
   document.getElementById('rel-itens').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>';
   try{
-    const d = await _estPost({acao:'relatorio_setor_itens_periodo', setor:setor, de:relDe, ate:relAte});
+    await _estReady(); await _vdReady();
+    const d = _relItensLocal(relDe, relAte, setor);
     if(!d.ok) throw new Error(d.erro||'falha');
     relCacheItens[key]=d.itens||[];
     relRenderItens(relCacheItens[key]);
-  }catch(e){ console.error('relAbrirSetor:',e); document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Verifique a internet e tente de novo.</div>'; }
+  }catch(e){ console.error('relAbrirSetor:',e); document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em ↻ ou verifique a internet.</div>'; }
 }
 function relRenderItens(itens){
   let tot=0; itens.forEach(function(x){ tot+=x.fat; });
@@ -3725,7 +3733,7 @@ function precoScanFechar(){
 // (os renderizadores não mudam). Editar continua gravando no servidor e atualiza
 // a cópia local na hora. ↻ força um recarregamento fresco do servidor.
 // ══════════════════════════════════════════════════════
-let EST_BASE = [], VEN_BASE = [], ESTMAP = null, _estLoaded = false, _estSyncing = false;
+let EST_BASE = [], VEN_BASE = [], VD_BASE = [], ESTMAP = null, _estLoaded = false, _estSyncing = false;
 const EST_FRESCO_MS = 3 * 60 * 60 * 1000;
 
 function _syncSplash(mostrar, sub){
@@ -3736,22 +3744,23 @@ function _syncSplash(mostrar, sub){
 
 function _estBuildMap(){
   ESTMAP = {};
-  for(var i=0;i<EST_BASE.length;i++){ var e=EST_BASE[i]; ESTMAP[e.codigo] = {setor:e.setor||'A REVISAR', grupo:e.grupo, codbarras:e.cod}; }
+  for(var i=0;i<EST_BASE.length;i++){ var e=EST_BASE[i]; ESTMAP[e.codigo] = {setor:e.setor||'A REVISAR', grupo:e.grupo, codbarras:e.cod, descricao:e.descricao}; }
 }
 
 async function estSync(force){
   try{
     if(!force){
       var meta=null; try{ meta = await _precoGet('est_meta'); }catch(e){}
-      if(meta && meta.ts && (Date.now()-meta.ts) < EST_FRESCO_MS && meta.n){
+      if(meta && meta.ts && (Date.now()-meta.ts) < EST_FRESCO_MS && meta.n && meta.nv2){
         if(!EST_BASE.length){ var a = await _precoGet('est_all').catch(function(){return null;}); if(a&&a.length) EST_BASE=a; }
         if(!VEN_BASE.length){ var b = await _precoGet('ven_all').catch(function(){return null;}); if(b) VEN_BASE=b; }
+        if(!VD_BASE.length){ var c = await _precoGet('vd_all').catch(function(){return null;}); if(c) VD_BASE=c; }
         if(EST_BASE.length){ _estBuildMap(); _estLoaded=true; return; }
       }
     }
     _estSyncing = true;
-    var par = await Promise.all([ fetchRange('Estrutura_Produtos!A:J'), fetchRange('Vendas_Codigo!A:D').catch(function(){return [];}) ]);
-    var est=par[0], ven=par[1];
+    var par = await Promise.all([ fetchRange('Estrutura_Produtos!A:J'), fetchRange('Vendas_Codigo!A:D').catch(function(){return [];}), fetchRange('Vendas_Diaria!A:D').catch(function(){return [];}) ]);
+    var est=par[0], ven=par[1], vd=par[2];
     var eb=[];
     for(var i=1;i<est.length;i++){ var r=est[i]; var cod=String(r[0]||'').trim(); if(!cod) continue;
       var desc=String(r[1]||''); var bar=String(r[2]||'').trim();
@@ -3762,9 +3771,15 @@ async function estSync(force){
     for(var j=0;j<ven.length;j++){ var rv=ven[j]; var cv=String(rv[0]||'').trim(); if(!cv || isNaN(parseFloat(cv))) continue;
       vb.push({codigo:cv, desc:String(rv[1]||''), qtd:N(rv[2]), fat:N(rv[3])});
     }
+    var vdb=[];
+    for(var z=0;z<vd.length;z++){ var rd=vd[z]; var iso=_vdIso(rd[0]); if(!iso) continue;
+      var cd=String(rd[1]||'').trim(); if(!cd || isNaN(parseFloat(cd))) continue;
+      vdb.push({iso:iso, codigo:cd, qtd:N(rd[2]), fat:N(rd[3])});
+    }
     if(eb.length){ EST_BASE=eb; await _precoSet('est_all',eb).catch(function(){}); }
     VEN_BASE=vb; await _precoSet('ven_all',vb).catch(function(){});
-    await _precoSet('est_meta',{ts:Date.now(), n:eb.length, nv:vb.length}).catch(function(){});
+    VD_BASE=vdb; await _precoSet('vd_all',vdb).catch(function(){});
+    await _precoSet('est_meta',{ts:Date.now(), n:eb.length, nv:vb.length, nv2:vdb.length}).catch(function(){});
     _estBuildMap(); _estLoaded=true;
   }catch(e){
     console.error('estSync', e);
@@ -3778,7 +3793,17 @@ async function _estReady(){
   if(_estLoaded && EST_BASE.length) return;
   if(!EST_BASE.length){ var a = await _precoGet('est_all').catch(function(){return null;}); if(a&&a.length) EST_BASE=a; }
   if(!VEN_BASE.length){ var b = await _precoGet('ven_all').catch(function(){return null;}); if(b) VEN_BASE=b; }
+  if(!VD_BASE.length){ var c = await _precoGet('vd_all').catch(function(){return null;}); if(c) VD_BASE=c; }
   if(EST_BASE.length){ _estBuildMap(); _estLoaded=true; return; }
+  await estSync(true);
+}
+// garante a base de vendas por dia no celular (baixa 1x; não refaz a cada toque)
+let _vdTried=false;
+async function _vdReady(){
+  if(VD_BASE.length) return;
+  var c = await _precoGet('vd_all').catch(function(){return null;}); if(c&&c.length){ VD_BASE=c; return; }
+  if(_vdTried) return;
+  _vdTried=true;
   await estSync(true);
 }
 
@@ -3829,6 +3854,56 @@ async function _estLocal(p){
   return {ok:false, erro:'ação local desconhecida'};
 }
 
+// ── Vendas por setor POR PERÍODO, calculado localmente (offline-first · chat 21) ──
+function _vdIso(s){
+  if(s instanceof Date){ return s.getFullYear()+'-'+_relPad2(s.getMonth()+1)+'-'+_relPad2(s.getDate()); }
+  s=String(s||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})/); if(m) return m[3]+'-'+m[2]+'-'+m[1];
+  return '';
+}
+function _relSetoresLocal(de, ate){
+  var acc={}, tot=0, datas={};
+  for(var i=0;i<VD_BASE.length;i++){ var v=VD_BASE[i];
+    if(de && v.iso<de) continue; if(ate && v.iso>ate) continue;
+    datas[v.iso]=1;
+    var info=ESTMAP?ESTMAP[v.codigo]:null; var s=info?info.setor:'(fora da estrutura)';
+    if(!acc[s]) acc[s]={fat:0,qtd:0,cods:{}}; acc[s].fat+=v.fat; acc[s].qtd+=v.qtd; acc[s].cods[v.codigo]=1; tot+=v.fat;
+  }
+  var ls=[]; for(var k in acc) ls.push({setor:k, fat:acc[k].fat, qtd:acc[k].qtd, itens:Object.keys(acc[k].cods).length});
+  ls.sort(function(a,b){ return b.fat-a.fat; });
+  return {ok:true, total:tot, setores:ls, de:de, ate:ate, dias:Object.keys(datas).length};
+}
+function _relItensLocal(de, ate, setor){
+  var alvo=String(setor||'').trim().toUpperCase(); var agg={};
+  for(var i=0;i<VD_BASE.length;i++){ var v=VD_BASE[i];
+    if(de && v.iso<de) continue; if(ate && v.iso>ate) continue;
+    var info=ESTMAP?ESTMAP[v.codigo]:null; var s=info?info.setor:'(fora da estrutura)';
+    if(s!==alvo) continue;
+    if(!agg[v.codigo]) agg[v.codigo]={fat:0,qtd:0}; agg[v.codigo].fat+=v.fat; agg[v.codigo].qtd+=v.qtd;
+  }
+  var out=[]; for(var cod in agg){ var inf=(ESTMAP&&ESTMAP[cod])||{};
+    out.push({codigo:cod, codbarras:(inf.codbarras||cod), desc:(inf.descricao||''), fat:agg[cod].fat, qtd:agg[cod].qtd, grupo:(inf.grupo||'')}); }
+  out.sort(function(a,b){ return b.fat-a.fat; });
+  return {ok:true, setor:setor, total:out.length, itens:out};
+}
+function _relBuscarLocal(de, ate, termo, lim){
+  var t=_precoNorm(String(termo||'').trim()); if(t.length<2) return {ok:true, itens:[]};
+  lim=lim||60; var agg={};
+  for(var i=0;i<VD_BASE.length;i++){ var v=VD_BASE[i];
+    if(de && v.iso<de) continue; if(ate && v.iso>ate) continue;
+    if(!agg[v.codigo]) agg[v.codigo]={fat:0,qtd:0}; agg[v.codigo].fat+=v.fat; agg[v.codigo].qtd+=v.qtd;
+  }
+  var out=[];
+  for(var cod in agg){ var inf=(ESTMAP&&ESTMAP[cod])||{}; var desc=(inf.descricao||''); var cb=_precoNorm(inf.codbarras||'');
+    if(_precoNorm(desc).indexOf(t)>=0 || _precoNorm(cod)===t || cb.indexOf(t)>=0)
+      out.push({codbarras:(inf.codbarras||cod), desc:desc, fat:agg[cod].fat, qtd:agg[cod].qtd, setor:(inf.setor||'(fora da estrutura)'), grupo:(inf.grupo||'')});
+  }
+  out.sort(function(a,b){ return b.fat-a.fat; });
+  if(out.length>lim) out=out.slice(0,lim);
+  return {ok:true, termo:termo, total:out.length, itens:out};
+}
+
 // depois de salvar uma reclassificação no servidor, atualiza a base local na hora
 function _estAtualizarLocal(cod, setor, grupo){
   cod=String(cod); setor=String(setor||'').trim().toUpperCase();
@@ -3845,7 +3920,7 @@ async function sincronizarInicio(){
     try{ pm = await _precoGet('meta'); }catch(e){}
     try{ em = await _precoGet('est_meta'); }catch(e){}
     var pFresco = pm && pm.ts && (Date.now()-pm.ts)<PRECO_FRESCO_MS && pm.n;
-    var eFresco = em && em.ts && (Date.now()-em.ts)<EST_FRESCO_MS && em.n;
+    var eFresco = em && em.ts && (Date.now()-em.ts)<EST_FRESCO_MS && em.n && em.nv2;
     precisa = !(pFresco && eFresco);
   }catch(e){ precisa=true; }
   if(precisa) _syncSplash(true, 'Baixando produtos, estrutura e vendas…');
