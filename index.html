@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.5 — Painel lê faturamento da ponte (com CAIXA6)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.6 — clientes/ticket da ponte (todos os caixas)</div></div>
     </div>
   </div>
 </div>
@@ -1269,7 +1269,7 @@ async function carregarSheets() {
       fetchRange('Lancamento_Diario!A:P'),
       fetchRange('Contas_Pagar!A:N'),
       fetchRange('Metadados!A:B'),
-      fetchRange('Faturamento_Diario!A:B').catch(()=>[]),
+      fetchRange('Faturamento_Diario!A:C').catch(()=>[]),
     ]);
 
     // ── VENDAS — índices corretos conforme sincronizar_sheets.py ──
@@ -1290,9 +1290,9 @@ async function carregarSheets() {
       clientes:  N(r[10]),
     }));
 
-    // ── FATURAMENTO PELA PONTE (banco) — sobrescreve o total de cada dia ──
-    // Vem da aba Faturamento_Diario: [0]=data, [1]=total. Inclui TODOS os caixas
-    // (o sistema antigo deixava o CAIXA6 de fora). Clientes seguem do antigo (ticket/cupons).
+    // ── FATURAMENTO PELA PONTE (banco) — sobrescreve total E clientes de cada dia ──
+    // Vem da aba Faturamento_Diario: [0]=data, [1]=total, [2]=clientes. Inclui TODOS
+    // os caixas (o sistema antigo deixava o CAIXA6 de fora), inclusive na contagem de clientes.
     (function(){
       const mapaFat = {};
       (fatBanco||[]).forEach(function(r){
@@ -1302,15 +1302,18 @@ async function carregarSheets() {
         if(m){ br = ('0'+m[3]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[1]; }
         else { m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ br = ('0'+m[1]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[3]; } }
         if(!br) return;
-        mapaFat[br] = N(r[1]);
+        mapaFat[br] = { total:N(r[1]), clientes:N(r[2]) };
       });
       dadosVendas.forEach(function(r){
-        if(mapaFat[r.data] !== undefined) r.total = mapaFat[r.data];
+        if(mapaFat[r.data] !== undefined){
+          r.total = mapaFat[r.data].total;
+          if(mapaFat[r.data].clientes > 0) r.clientes = mapaFat[r.data].clientes;
+        }
       });
-      // dias que o banco tem e o antigo não: adiciona (sem clientes — não afeta ticket)
+      // dias que o banco tem e o antigo não: adiciona (com clientes do banco)
       Object.keys(mapaFat).forEach(function(br){
         if(!dadosVendas.some(function(x){ return x.data===br; })){
-          dadosVendas.push({data:br, total:mapaFat[br], dinheiro:0, debito:0, credito:0, pix:0, aliment:0, perdidos:0, parcelado:0, clientes:0});
+          dadosVendas.push({data:br, total:mapaFat[br].total, dinheiro:0, debito:0, credito:0, pix:0, aliment:0, perdidos:0, parcelado:0, clientes:mapaFat[br].clientes});
         }
       });
     })();
