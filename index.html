@@ -820,7 +820,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.6.4 — Barra do banco mais fina + botão atualizar compacto</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.6.5 — Lucratividade mostra só o código de barras (sem código interno)</div></div>
     </div>
   </div>
 </div>
@@ -4203,7 +4203,7 @@ function lucAbrirSetor(setor){
   out.forEach(function(x){
     var inf=(ESTMAP&&ESTMAP[x.cod])||{}; var barras=inf.codbarras||'';
     html+='<div class="row-card" style="display:block;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px">'+_estEsc(x.desc||x.cod)+'</span><span style="font-size:13px;font-weight:600;color:#1B3A9E;white-space:nowrap">'+_relMoney(x.lucro)+'</span></div>'
-      +'<div style="font-size:11px;color:#16267A;margin-top:3px;font-family:monospace">cód '+_estEsc(x.cod)+(barras?(' · barras '+_estEsc(barras)):'')+'</div>'
+      +(barras?('<div style="font-size:11px;color:#16267A;margin-top:3px;font-family:monospace">barras '+_estEsc(barras)+'</div>'):'')
       +'<div style="font-size:11px;color:#888780;margin-top:2px">qtd '+x.qtd.toLocaleString('pt-BR')+' · fat. '+_relMoney(x.fat)+' · custo '+_precoBRL(x.custo)+' · margem '+_lucPct(x.margem)+'</div></div>';
   });
   if(!out.length) html='<div class="row-sub" style="padding:6px 2px">Nenhum produto com custo neste setor.</div>';
@@ -4226,7 +4226,7 @@ function lucAbrirArrumar(){
     var nome=(x.setor==='A REVISAR')?'Não classificados':_estCap(x.setor||'');
     var inf=(ESTMAP&&ESTMAP[x.codigo])||{}; var barras=inf.codbarras||'';
     html+='<div class="row-card" style="display:block;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px">'+_estEsc(x.desc||x.codigo)+'</span>'+tag+'</div>'
-      +'<div style="font-size:11px;color:#16267A;margin-top:3px;font-family:monospace">cód '+_estEsc(x.codigo)+(barras?(' · barras '+_estEsc(barras)):'')+'</div>'
+      +(barras?('<div style="font-size:11px;color:#16267A;margin-top:3px;font-family:monospace">barras '+_estEsc(barras)+'</div>'):'')
       +'<div style="font-size:11px;color:#888780;margin-top:2px">'+_estEsc(nome)+' · vendeu '+x.qtd.toLocaleString('pt-BR')+' · fat. '+_relMoney(x.fat)+' · '+det+'</div></div>';
   });
   if(!pl.length) html='<div class="row-sub" style="padding:6px 2px">Nenhum produto a revisar neste período.</div>';
