@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.6 — clientes/ticket da ponte (todos os caixas)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.7 — cupons/ticket do Painel só do mês corrente</div></div>
     </div>
   </div>
 </div>
@@ -1484,7 +1484,8 @@ function renderVendas(dH, dO, ds) {
   // Ticket médio do MÊS (acumulado): total de vendas ÷ total de clientes — só dias que têm cupom lançado.
   // Mais estável que o diário e não some se faltar o cupom de um dia.
   let _accV=0,_accC=0;
-  dadosVendas.forEach(r=>{ if(r.clientes>0){ _accV+=r.total; _accC+=r.clientes; } });
+  const _mm=ag.getMonth(), _yy=ag.getFullYear();
+  dadosVendas.forEach(r=>{ const _d=parseDataBR(r.data); if(_d && _d.getMonth()===_mm && _d.getFullYear()===_yy && r.clientes>0){ _accV+=r.total; _accC+=r.clientes; } });
   document.getElementById('p-ticket').textContent = _accC>0 ? 'R$ '+(_accV/_accC).toFixed(2).replace('.',',') : '—';
   document.getElementById('p-cupons').textContent = _accC>0 ? _accC.toLocaleString('pt-BR') : '—';
 
@@ -1614,19 +1615,22 @@ function renderizarPainel() {
   document.getElementById('c-hoje').textContent = brl(cpHoje);
   document.getElementById('c-mes').textContent  = brl(dadosContas.reduce((s,b)=>s+b.valor,0));
 
-  const totV=dadosVendas.reduce((s,r)=>s+r.total,0);
-  const totCu=dadosVendas.reduce((s,r)=>s+r.clientes,0);
+  // Resumo "<mês> — até hoje": só dias do mês corrente (dadosVendas agora traz vários meses pela ponte)
+  const _rmm=agora.getMonth(), _ryy=agora.getFullYear();
+  const vMes=dadosVendas.filter(r=>{ const _d=parseDataBR(r.data); return _d && _d.getMonth()===_rmm && _d.getFullYear()===_ryy; });
+  const totV=vMes.reduce((s,r)=>s+r.total,0);
+  const totCu=vMes.reduce((s,r)=>s+r.clientes,0);
   document.getElementById('r-total').textContent  = brl(totV);
   document.getElementById('r-cupons').textContent = totCu.toLocaleString('pt-BR');
   let _tkV=0,_tkCu=0;
-  dadosVendas.forEach(r=>{ if(r.clientes>0){ _tkV+=r.total; _tkCu+=r.clientes; } });
+  vMes.forEach(r=>{ if(r.clientes>0){ _tkV+=r.total; _tkCu+=r.clientes; } });
   document.getElementById('r-ticket').textContent = _tkCu>0?'R$ '+(_tkV/_tkCu).toFixed(2).replace('.',','): '—';
-  document.getElementById('r-perd').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.perdidos,0));
-  document.getElementById('r-deb').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.debito,0));
-  document.getElementById('r-cred').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.credito,0));
-  document.getElementById('r-pix').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.pix,0));
-  document.getElementById('r-din').textContent    = brl(dadosVendas.reduce((s,r)=>s+r.dinheiro,0));
-  document.getElementById('r-tick').textContent   = brl(dadosVendas.reduce((s,r)=>s+r.aliment,0));
+  document.getElementById('r-perd').textContent   = brl(vMes.reduce((s,r)=>s+r.perdidos,0));
+  document.getElementById('r-deb').textContent    = brl(vMes.reduce((s,r)=>s+r.debito,0));
+  document.getElementById('r-cred').textContent   = brl(vMes.reduce((s,r)=>s+r.credito,0));
+  document.getElementById('r-pix').textContent    = brl(vMes.reduce((s,r)=>s+r.pix,0));
+  document.getElementById('r-din').textContent    = brl(vMes.reduce((s,r)=>s+r.dinheiro,0));
+  document.getElementById('r-tick').textContent   = brl(vMes.reduce((s,r)=>s+r.aliment,0));
   document.getElementById('r-cp-tot').textContent  = brl(dadosContas.reduce((s,b)=>s+b.valor,0));
   document.getElementById('r-cp-pend').textContent = brl(dadosContas.filter(b=>!b.pago).reduce((s,b)=>s+b.valor,0));
 }
