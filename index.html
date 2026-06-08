@@ -491,6 +491,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="transf"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
         <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
+        <div class="qcard" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora de preço</span></div>
         <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_temp"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
@@ -816,7 +817,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.4.3 — Vendas por setor: sincroniza ao abrir + cache</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.5 — Calculadora de preço/margem + "última atualização" pelo banco</div></div>
     </div>
   </div>
 </div>
@@ -1056,6 +1057,59 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- TELA: Calculadora de Preço de Venda / Margem (chat 22) -->
+<div class="screen" id="s-calc">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Calculadora de Preço</div>
+      <div style="font-size:11.5px;color:#888780">Custo + margem = preço de venda</div>
+    </div>
+    <i class="ti ti-calculator" style="font-size:20px;color:#16267A"></i>
+  </div>
+
+  <div style="padding:0 14px 90px">
+    <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:#16267A">Preço de custo</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:15px;color:#888780">R$</span>
+      <input id="calc-custo" type="number" inputmode="decimal" placeholder="0,00" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
+    </div>
+
+    <div style="margin:16px 0 6px;font-size:12px;font-weight:600;color:#16267A">Margem desejada (sobre o custo)</div>
+    <div id="calc-chips" style="display:flex;gap:8px;margin-bottom:8px">
+      <div class="dre-chip" data-m="50" onclick="calcChip(50)" style="flex:1;text-align:center">50%</div>
+      <div class="dre-chip" data-m="70" onclick="calcChip(70)" style="flex:1;text-align:center">70%</div>
+      <div class="dre-chip" data-m="100" onclick="calcChip(100)" style="flex:1;text-align:center">100%</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12.5px;color:#888780">Outra:</span>
+      <input id="calc-margem" type="number" inputmode="decimal" placeholder="ex.: 65" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
+      <span style="font-size:15px;color:#888780">%</span>
+    </div>
+
+    <div style="margin-top:18px;background:#f8f8f8;border:1px solid rgba(22,38,122,0.10);border-radius:14px;padding:16px">
+      <div style="font-size:12px;color:#888780;margin-bottom:4px">Preço de venda</div>
+      <div id="calc-pv" style="font-size:30px;font-weight:600;color:#1B3A9E;line-height:1.1">R$ 0,00</div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <div style="flex:1;background:#f8f8f8;border-radius:10px;padding:12px">
+        <div style="font-size:11px;color:#888780;margin-bottom:3px">Lucro por unidade</div>
+        <div id="calc-lucro" style="font-size:18px;font-weight:600;color:#16267A">R$ 0,00</div>
+      </div>
+      <div style="flex:1;background:#f8f8f8;border-radius:10px;padding:12px">
+        <div style="font-size:11px;color:#888780;margin-bottom:3px">Margem sobre a venda</div>
+        <div id="calc-msv" style="font-size:18px;font-weight:600;color:#16267A">0,0%</div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;font-size:11.5px;color:#888780;line-height:1.5">
+      A margem é calculada <b>sobre o custo</b> (markup): custo R$ 10 + 50% = vende a R$ 15.
+      Embaixo mostramos quanto isso representa <b>sobre a venda</b>, para comparar.
+    </div>
+  </div>
+</div>
+
 <!-- TELA: Lista de Cotação (chat 20) -->
 <div class="screen" id="s-cotacao">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
@@ -1201,6 +1255,47 @@ function statusB(b) {
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+
+// ── CALCULADORA DE PREÇO DE VENDA / MARGEM (markup sobre o custo) ──
+const brl2 = v => 'R$ ' + (Math.round((v||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function abrirCalc(){ show('s-calc'); calcRecalc(); window.scrollTo(0,0); }
+function calcChip(m){
+  var inp=document.getElementById('calc-margem');
+  if(inp) inp.value=m;
+  calcRecalc();
+}
+function calcRecalc(){
+  var c=N(document.getElementById('calc-custo').value);
+  var m=N(document.getElementById('calc-margem').value);
+  var pv=c*(1+m/100);
+  var lucro=pv-c;
+  var msv=pv>0 ? (lucro/pv*100) : 0;
+  document.getElementById('calc-pv').textContent=brl2(pv);
+  document.getElementById('calc-lucro').textContent=brl2(lucro);
+  document.getElementById('calc-msv').textContent=(Math.round(msv*10)/10).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  // realça o chip que bate com a margem digitada
+  document.querySelectorAll('#calc-chips .dre-chip').forEach(function(ch){
+    var on = parseFloat(ch.getAttribute('data-m'))===m;
+    ch.style.background = on ? '#FFC400' : '';
+    ch.style.fontWeight = on ? '600' : '';
+  });
+}
+
+// ── "Última atualização" do Painel pela PONTE (banco), não pelo arquivo antigo ──
+// Pega a data mais recente do Faturamento_Diario (que vem do BANCOGPS via ponte).
+function ultimaDataBanco(fatBanco){
+  var best=null;
+  (fatBanco||[]).forEach(function(r){
+    var s=String((r&&r[0])||'').trim();
+    var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    var d=null;
+    if(m){ d=new Date(+m[1], +m[2]-1, +m[3]); }
+    else { m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ d=new Date(+m[3], +m[2]-1, +m[1]); } }
+    if(d && !isNaN(d) && (!best || d>best)) best=d;
+  });
+  if(!best) return '';
+  return ('0'+best.getDate()).slice(-2)+'/'+('0'+(best.getMonth()+1)).slice(-2)+'/'+best.getFullYear();
 }
 function abrirCartoes() {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
@@ -1476,7 +1571,12 @@ async function carregarSheets() {
     (meta||[]).forEach(r=>{if(r[0]&&r[1])mm[r[0]]=r[1];});
     const ult = mm['ultima_atualizacao']||'—';
     document.getElementById('cfg-ultima').textContent = ult;
-    setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
+    const dataBanco = ultimaDataBanco(fatBanco);
+    if(dataBanco){
+      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Banco atualizado até ${dataBanco} <span style="opacity:.65">(via ponte)</span>`);
+    } else {
+      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
+    }
 
     renderizarPainel();
     filtrar();
