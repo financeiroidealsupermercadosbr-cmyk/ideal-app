@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.4 — Vendas por setor com filtro de período</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.4.1 — busca de produto também por período</div></div>
     </div>
   </div>
 </div>
@@ -3343,6 +3343,7 @@ function relSetPeriodo(key){
   relPeriodo=key; if(custom) custom.style.display='none';
   var r=_relPeriodoRange(key); relDe=r.de; relAte=r.ate;
   relRenderChips(); relCarregarPeriodo();
+  var bt=document.getElementById('rel-busca'); if(bt && bt.value.trim().length>=2) relBuscar();
 }
 function relAplicarCustom(){
   var di=document.getElementById('rel-de'), ai=document.getElementById('rel-ate');
@@ -3350,6 +3351,7 @@ function relAplicarCustom(){
   if(!de||!ate){ toast('Escolha as duas datas.'); return; }
   if(de>ate){ var t=de; de=ate; ate=t; }
   relDe=de; relAte=ate; relPeriodo='custom'; relRenderChips(); relCarregarPeriodo();
+  var bt2=document.getElementById('rel-busca'); if(bt2 && bt2.value.trim().length>=2) relBuscar();
 }
 
 function abrirRelatorios(){
@@ -3368,12 +3370,12 @@ async function relBuscar(){
   if(termo.length<2){ box.innerHTML=''; return; }
   box.innerHTML='<div class="loadrow"><span class="spin"></span> Buscando…</div>';
   try{
-    const d=await _estLocal({acao:'relatorio_buscar', termo:termo, limite:60});
+    const d=await _estPost({acao:'relatorio_buscar_periodo', termo:termo, de:relDe, ate:relAte, limite:60});
     if(!d.ok) throw new Error(d.erro||'falha');
     const itens=d.itens||[];
-    if(!itens.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado para "'+_estEsc(termo)+'".</div>'; return; }
+    if(!itens.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado para "'+_estEsc(termo)+'" em '+_relPeriodoLabel()+'.</div>'; return; }
     let tot=0; itens.forEach(function(x){ tot+=x.fat; });
-    let html='<div class="row-sub" style="padding:4px 2px 6px">'+itens.length+' produto(s) · '+_relMoney(tot)+'</div>';
+    let html='<div class="row-sub" style="padding:4px 2px 6px">'+itens.length+' produto(s) · '+_relMoney(tot)+' · '+_relPeriodoLabel()+'</div>';
     itens.forEach(function(x){
       const nome=(x.setor==='A REVISAR')?'Não classificados':_estCap(x.setor||'');
       html+='<div class="row-card" style="display:block;margin-bottom:6px"><div style="display:flex;align-items:center"><span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+_estEsc(x.codbarras)+'</span><span style="flex:1;font-size:13px;margin:0 8px">'+_estEsc(x.desc)+'</span><span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div><div style="font-size:11px;color:#888780;margin-top:3px;margin-left:58px">'+nome+'</div></div>';
