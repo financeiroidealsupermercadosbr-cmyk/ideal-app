@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.0 — Lista de Cotação (parte 1: montar e salvar, com unidade)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.1 — Lista de Cotação (parte 2: coletas salvas + PDF)</div></div>
     </div>
   </div>
 </div>
@@ -1082,6 +1082,29 @@ function doPost(e) {
       <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:#16267A;border:1px solid #16267A" onclick="cotPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
     </div>
     <div style="text-align:center;margin-top:14px;cursor:pointer" onclick="abrirColetas()"><span style="font-size:13px;color:#16267A"><i class="ti ti-folder" style="vertical-align:-2px"></i> Ver coletas salvas (todos)</span></div>
+  </div>
+</div>
+
+<!-- TELA: Coletas salvas (Lista de Cotação · parte 2) -->
+<div class="screen" id="s-coletas">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Coletas salvas</div>
+      <div style="font-size:11.5px;color:#888780" id="col-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="colAtualizar()" title="Atualizar"></i>
+  </div>
+  <div id="col-lista-view" style="padding:0 14px 90px">
+    <div id="col-lista" style="margin-top:12px"><div class="loadrow"><span class="spin"></span> Carregando coletas…</div></div>
+  </div>
+  <div id="col-detalhe-view" style="display:none;padding:0 14px 90px">
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div></div>
+    <div id="col-det-itens"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-primary" style="flex:1;margin-top:0" onclick="colPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+      <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="colExcluir()"><i class="ti ti-trash"></i> Excluir</button>
+    </div>
   </div>
 </div>
 
@@ -3881,8 +3904,125 @@ function cotNova(){
   cotRenderItens(); cotSub();
   toast('Nova coleta iniciada');
 }
-function cotPDF(){ toast('Exportar PDF entra na Parte 2 — já já.'); }
-function abrirColetas(){ toast('Ver coletas salvas entra na Parte 2 — já já.'); }
+function cotPDF(){
+  if(!COT_ITENS.length){ toast('Adicione itens antes de exportar.'); return; }
+  var obs=(document.getElementById('cot-obs').value||'').trim();
+  _colGerarPDF(obs, (userAtual&&userAtual.usuario)||'', new Date().toLocaleString('pt-BR'), COT_ITENS);
+}
+
+// ── Parte 2: coletas salvas (compartilhadas) + PDF ──
+let COLETAS = [], _colAtual = null;
+
+async function _colCarregar(){
+  var rows = await fetchRange('Coletas!A:G').catch(function(){return [];});
+  var out=[];
+  for(var i=1;i<rows.length;i++){ var r=rows[i]; var id=String(r[0]||'').trim(); if(!id) continue;
+    if(String(r[6]||'').toUpperCase()==='REMOVIDO') continue;
+    var itens=[]; try{ itens=JSON.parse(r[4]||'[]'); }catch(e){ itens=[]; }
+    out.push({id:id, usuario:String(r[1]||''), data:String(r[2]||''), obs:String(r[3]||''), n:(parseInt(r[5],10)||itens.length), itens:itens});
+  }
+  out.sort(function(a,b){ return (parseInt(b.id.replace(/\D/g,''),10)||0)-(parseInt(a.id.replace(/\D/g,''),10)||0); });
+  COLETAS=out; return out;
+}
+async function abrirColetas(){
+  show('s-coletas');
+  document.getElementById('col-lista-view').style.display='block';
+  document.getElementById('col-detalhe-view').style.display='none';
+  document.getElementById('col-lista').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando coletas…</div>';
+  document.getElementById('col-sub').textContent='Carregando…';
+  try{ await _colCarregar(); colRenderLista(); }
+  catch(e){ console.error('abrirColetas',e); document.getElementById('col-lista').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em ↻ ou verifique a internet.</div>'; }
+}
+function colAtualizar(){ abrirColetas(); }
+function colRenderLista(){
+  var el=document.getElementById('col-lista');
+  document.getElementById('col-sub').textContent = COLETAS.length+' coleta(s) salva(s) · de todos';
+  if(!COLETAS.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhuma coleta salva ainda.</div>'; return; }
+  var h='';
+  for(var i=0;i<COLETAS.length;i++){ var c=COLETAS[i];
+    var quem=_precoEsc(c.usuario||'—'); var data=_precoEsc((c.data||'').slice(0,16)); var obs=_precoEsc(c.obs||'');
+    h+='<div class="row-card" style="display:block;cursor:pointer;margin-bottom:7px" onclick="colAbrir(\''+_precoEsc(c.id)+'\')">'
+      +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-clipboard-list" style="color:#16267A;font-size:18px"></i>'
+      +'<span style="flex:1;font-size:13.5px;font-weight:500;color:#1a1a1a">'+(obs||'Coleta sem observação')+'</span>'
+      +'<span style="font-size:12px;color:#16267A;font-weight:600;white-space:nowrap">'+c.n+' itens</span>'
+      +'<i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>'
+      +'<div style="font-size:11px;color:#888780;margin-top:4px;margin-left:26px"><i class="ti ti-user" style="font-size:12px;vertical-align:-1px"></i> '+quem+' · '+data+'</div>'
+      +'</div>';
+  }
+  el.innerHTML=h;
+}
+function colVoltar(){
+  document.getElementById('col-detalhe-view').style.display='none';
+  document.getElementById('col-lista-view').style.display='block';
+}
+function colAbrir(id){
+  var c=null; for(var i=0;i<COLETAS.length;i++){ if(COLETAS[i].id===String(id)){ c=COLETAS[i]; break; } }
+  if(!c) return;
+  _colAtual=c;
+  document.getElementById('col-lista-view').style.display='none';
+  document.getElementById('col-detalhe-view').style.display='block';
+  document.getElementById('col-det-titulo').textContent = c.obs || 'Coleta sem observação';
+  document.getElementById('col-det-sub').textContent = (c.usuario||'—')+' · '+(c.data||'').slice(0,16)+' · '+c.n+' itens';
+  var h='';
+  for(var j=0;j<c.itens.length;j++){ var it=c.itens[j];
+    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:9px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
+      +'<div style="font-size:10px;color:#9a988f">cód '+_precoEsc(it.cod)+' · varejo '+_precoBRL(it.varejo)+'</div></div>'
+      +'<div style="font-size:14px;font-weight:600;color:#16267A;white-space:nowrap">'+(Number(it.qtd)||0)+' '+_precoEsc(it.un||'UN')+'</div>'
+      +'</div>';
+  }
+  document.getElementById('col-det-itens').innerHTML = h || '<div class="row-sub" style="padding:6px 2px">Coleta sem itens.</div>';
+}
+function colExcluir(){
+  if(!_colAtual) return;
+  if(!confirm('Excluir esta coleta? Isso não pode ser desfeito.')) return;
+  _estPost({acao:'coleta_del', id:_colAtual.id}).then(function(d){
+    if(d && d.ok){ toast('Coleta excluída'); abrirColetas(); }
+    else toast('Não consegui excluir.');
+  }).catch(function(){ toast('Não consegui excluir. Verifique a internet.'); });
+}
+function colPDF(){ if(_colAtual) _colGerarPDF(_colAtual.obs, _colAtual.usuario, _colAtual.data, _colAtual.itens); }
+
+// Gera o PDF de uma coleta (abre numa aba e manda imprimir/salvar — igual à DRE)
+function _colGerarPDF(obs, usuario, data, itens){
+  itens = itens || [];
+  var agora = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var linhas=''; var refTot=0;
+  for(var i=0;i<itens.length;i++){ var it=itens[i]; refTot += (Number(it.varejo)||0)*(Number(it.qtd)||0);
+    linhas += '<tr><td class="n">'+(i+1)+'</td><td>'+_precoEsc(it.desc)+'<div class="cod">cód '+_precoEsc(it.cod)+(it.barras?' · '+_precoEsc(it.barras):'')+'</div></td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_precoEsc(it.un||'UN')+'</td><td class="v">'+_precoBRL(it.varejo)+'</td></tr>';
+  }
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lista de Cotacao — Ideal</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    + '.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px}'
+    + 'th{font-size:11px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:6px 4px;border-bottom:2px solid #C9D6EC}'
+    + 'td{padding:8px 4px;font-size:13px;border-bottom:1px solid #f1f1f1;vertical-align:top;color:#1a1a1a}'
+    + 'td.n,th.n{width:28px;text-align:center;color:#888780}td.c,th.c{text-align:center;white-space:nowrap}td.v,th.v{text-align:right;white-space:nowrap;color:#5F5E5A}'
+    + '.cod{font-size:10px;color:#9a988f;margin-top:2px}'
+    + '.tot{display:flex;justify-content:space-between;margin-top:14px;padding:12px 16px;border-radius:10px;background:#E6F1FB;font-size:13px;font-weight:bold}'
+    + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
+    + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    + '</style></head><body><div class="sheet">'
+    + '<div class="hd"><h1>Lista de Cotacao</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    + '<div class="body">'
+    + '<div class="meta"><b>'+(_precoEsc(obs)||'Coleta sem observacao')+'</b><br>Coletado por: '+(_precoEsc(usuario)||'—')+' &middot; '+_precoEsc((data||'').slice(0,16))+'<br>Itens: '+itens.length+' &middot; Gerado em '+agora+'</div>'
+    + '<table><tr><th class="n">#</th><th>Produto</th><th class="c">Qtd</th><th class="c">Un</th><th class="v">Varejo (ref.)</th></tr>'+linhas+'</table>'
+    + '<div class="tot"><span>Valor de referencia (varejo &times; qtd)</span><span>'+_precoBRL(refTot)+'</span></div>'
+    + '<div class="foot">Precos de varejo apenas como referencia. Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    + '</div></div>'
+    + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    + '</body></html>';
+  var win = window.open('', '_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
+}
 </script>
 
 
