@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.3.1 — Cotação: item manual (caixinha no app)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.3.2 — confirmações no estilo do app</div></div>
     </div>
   </div>
 </div>
@@ -1251,6 +1251,25 @@ function toast(msg, dur=2800) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
+}
+// Confirmação no estilo do app (substitui o confirm() feio do navegador)
+function appConfirm(msg, onYes, opts){
+  opts=opts||{};
+  var ok=opts.okText||'Confirmar', danger=!!opts.danger;
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px 18px 14px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;line-height:1.45;white-space:pre-line">'+_precoEsc(msg)+'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:16px">'
+    +'<button id="_ac_no" style="flex:1;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px">Cancelar</button>'
+    +'<button id="_ac_yes" style="flex:1;background:'+(danger?'#A32D2D':'#16267A')+';color:#fff;border:none;border-radius:9px;height:42px;font-size:14px;font-weight:500">'+_precoEsc(ok)+'</button>'
+    +'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_ac_no').onclick=close;
+  card.querySelector('#_ac_yes').onclick=function(){ close(); try{ onYes&&onYes(); }catch(e){ console.error(e); } };
 }
 function setSyncBar(tipo, msg) {
   document.getElementById('sync-bar').className = 'sync-bar ' + tipo;
@@ -2251,17 +2270,18 @@ async function removerUsuario(login, nome){
   if(userAtual && String(login).toLowerCase()===String(userAtual.usuario||'').toLowerCase()){
     toast('⚠ Você não pode remover o seu próprio usuário'); return;
   }
-  if(!confirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)')) return;
-  try{
-    const res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({acao:'usuario_del', sheetId:SHEET_ID, usuario:login})
-    });
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.erro||'falha');
-    toast('✓ Acesso removido');
-    carregarUsuarios();
-  }catch(e){ console.error('removerUsuario:', e); toast('⚠ Não consegui remover. Verifique a internet.'); }
+  appConfirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)', async function(){
+    try{
+      const res = await fetch(_urlApps(), {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({acao:'usuario_del', sheetId:SHEET_ID, usuario:login})
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.erro||'falha');
+      toast('✓ Acesso removido');
+      carregarUsuarios();
+    }catch(e){ console.error('removerUsuario:', e); toast('⚠ Não consegui remover. Verifique a internet.'); }
+  }, {danger:true, okText:'Remover'});
 }
 
 function dreCarregarGrupos(){ // cache local (instantâneo)
@@ -3932,7 +3952,10 @@ async function cotSalvar(){
   if(btn){ btn.disabled=false; btn.innerHTML=t; }
 }
 function cotNova(){
-  if(COT_ITENS.length && !confirm('Iniciar uma nova coleta? Confirme que você já salvou a atual.')) return;
+  if(COT_ITENS.length){ appConfirm('Iniciar uma nova coleta?\nConfirme que você já salvou a atual.', _cotNovaDo, {okText:'Nova coleta'}); }
+  else _cotNovaDo();
+}
+function _cotNovaDo(){
   COT_ITENS=[]; COT_ID='';
   var o=document.getElementById('cot-obs'); if(o) o.value='';
   var b=document.getElementById('cot-busca'); if(b) b.value='';
@@ -4011,11 +4034,12 @@ function colAbrir(id){
 }
 function colExcluir(){
   if(!_colAtual) return;
-  if(!confirm('Excluir esta coleta? Isso não pode ser desfeito.')) return;
-  _estPost({acao:'coleta_del', id:_colAtual.id}).then(function(d){
-    if(d && d.ok){ toast('Coleta excluída'); abrirColetas(); }
-    else toast('Não consegui excluir.');
-  }).catch(function(){ toast('Não consegui excluir. Verifique a internet.'); });
+  appConfirm('Excluir esta coleta?\nIsso não pode ser desfeito.', function(){
+    _estPost({acao:'coleta_del', id:_colAtual.id}).then(function(d){
+      if(d && d.ok){ toast('Coleta excluída'); abrirColetas(); }
+      else toast('Não consegui excluir.');
+    }).catch(function(){ toast('Não consegui excluir. Verifique a internet.'); });
+  }, {danger:true, okText:'Excluir'});
 }
 function colPDF(){ if(_colAtual) _colGerarPDF(_colAtual.obs, _colAtual.usuario, _colAtual.data, _colAtual.itens); }
 
