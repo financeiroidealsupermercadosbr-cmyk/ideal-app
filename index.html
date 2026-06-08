@@ -486,7 +486,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="qgrid">
         <div class="qcard" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
-        <div class="qcard" data-menu="cotacao" onclick="toast(&#39;Lista de cotação — em breve&#39;)"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
+        <div class="qcard" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
         <div class="qcard soon" data-menu="sangrias"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="transf"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.9 — Estrutura e Vendas por setor offline (instantâneo) + tela Sincronizando</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.0 — Lista de Cotação (parte 1: montar e salvar coleta)</div></div>
     </div>
   </div>
 </div>
@@ -1046,6 +1046,42 @@ function doPost(e) {
       <div style="position:absolute;width:80%;max-width:320px;height:120px;border:3px solid #FFC400;border-radius:14px"></div>
     </div>
     <div id="preco-scan-msg" style="padding:14px 16px;background:#000;color:#fff;font-size:13px;text-align:center;min-height:20px"></div>
+  </div>
+</div>
+
+<!-- TELA: Lista de Cotação (chat 20) -->
+<div class="screen" id="s-cotacao">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Lista de Cotação</div>
+      <div style="font-size:11.5px;color:#888780" id="cot-sub">Coleta em andamento</div>
+    </div>
+    <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirColetas()" title="Coletas salvas"></i>
+  </div>
+
+  <div style="padding:0 14px 90px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px">
+      <span style="font-size:13px;font-weight:600;color:#16267A">Coleta em andamento</span>
+      <span style="font-size:12px;color:#16267A;cursor:pointer" onclick="cotNova()"><i class="ti ti-plus" style="vertical-align:-2px"></i> Nova coleta</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="cot-busca" type="text" inputmode="search" autocomplete="off" placeholder="Buscar produto pra adicionar" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box" oninput="cotBuscarDebounce()">
+      <button class="btn-primary" style="width:52px;padding:0;margin-top:0" onclick="cotScanAbrir()" aria-label="Escanear código de barras"><i class="ti ti-barcode" style="font-size:23px"></i></button>
+    </div>
+    <div id="cot-busca-res"></div>
+
+    <div style="font-size:11px;color:#888780;margin:14px 0 6px">Itens da coleta</div>
+    <div id="cot-itens"><div class="row-sub" style="padding:6px 2px">Nenhum item ainda. Busque ou bipe um produto e toque em Adicionar.</div></div>
+
+    <div style="font-size:11px;color:#888780;margin:14px 0 4px">Observação desta coleta</div>
+    <input id="cot-obs" type="text" placeholder="ex.: cotação semana 23 — limpeza" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box">
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-primary" style="flex:1;margin-top:0" id="cot-btn-salvar" onclick="cotSalvar()"><i class="ti ti-device-floppy"></i> Salvar coleta</button>
+      <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:#16267A;border:1px solid #16267A" onclick="cotPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+    </div>
+    <div style="text-align:center;margin-top:14px;cursor:pointer" onclick="abrirColetas()"><span style="font-size:13px;color:#16267A"><i class="ti ti-folder" style="vertical-align:-2px"></i> Ver coletas salvas (todos)</span></div>
   </div>
 </div>
 
@@ -3502,7 +3538,7 @@ function precoRender(list, termo){
 }
 
 // ── Leitor de código de barras pela câmera ──
-let _precoStream=null, _precoDetector=null, _precoScanLoop=null, _precoZx=null;
+let _precoStream=null, _precoDetector=null, _precoScanLoop=null, _precoZx=null, _scanOnHit=null;
 
 function precoScanAbrir(){
   var ov = document.getElementById('preco-scan'); ov.style.display='flex';
@@ -3549,7 +3585,9 @@ function _precoScanZxing(v){
 function precoScanHit(code){
   code = String(code||'').replace(/\D/g,'');
   if(!code) return;
+  var cb = _scanOnHit;
   precoScanFechar();
+  if(typeof cb === 'function'){ cb(code); return; }
   var inp = document.getElementById('preco-busca'); if(inp){ inp.value = code; }
   precoBuscar();
 }
@@ -3559,6 +3597,7 @@ function precoScanFechar(){
   if(_precoZx){ try{ _precoZx.reset(); }catch(e){} _precoZx=null; }
   if(_precoStream){ _precoStream.getTracks().forEach(function(t){ t.stop(); }); _precoStream=null; }
   _precoDetector = null;
+  _scanOnHit = null;
 }
 
 // ══════════════════════════════════════════════════════
@@ -3697,6 +3736,126 @@ async function sincronizarInicio(){
   clearTimeout(safety);
   _syncSplash(false);
 }
+
+// ══════════════════════════════════════════════════════
+// LISTA DE COTAÇÃO (chat 20 · parte 1: montar + salvar coleta)
+// Reaproveita a base offline PRODUTOS e o leitor de câmera da Busca de Preço.
+// Coletas são salvas no servidor (coleta_save) na aba Coletas (compartilhada).
+// ══════════════════════════════════════════════════════
+let COT_ITENS = [];   // [{cod,desc,barras,qtd,varejo,atacado}]
+let COT_ID = '';      // id da coleta atual ('' = nova, ainda não salva)
+let _cotTimer = null;
+
+async function abrirCotacao(){
+  show('s-cotacao');
+  var bi=document.getElementById('cot-busca'); if(bi) bi.value='';
+  document.getElementById('cot-busca-res').innerHTML='';
+  cotRenderItens(); cotSub();
+  if(!PRODUTOS.length){
+    var c = await _precoGet('all').catch(function(){return null;});
+    if(c && c.length){ PRODUTOS=c; } else { await precoSync(true); }
+  }
+}
+function cotSub(){
+  var el=document.getElementById('cot-sub'); if(!el) return;
+  el.textContent = COT_ITENS.length ? (COT_ITENS.length+' item(ns) na coleta') : 'Coleta em andamento';
+}
+function cotBuscarDebounce(){ clearTimeout(_cotTimer); _cotTimer=setTimeout(cotBuscar,160); }
+function cotBuscar(){
+  var termo=_precoNorm((document.getElementById('cot-busca').value||'').trim());
+  var box=document.getElementById('cot-busca-res');
+  if(termo.length<2){ box.innerHTML=''; return; }
+  if(!PRODUTOS.length){ box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>'; return; }
+  var ehNum=/^\d+$/.test(termo); var res=[];
+  for(var i=0;i<PRODUTOS.length && res.length<40;i++){ var p=PRODUTOS[i]; if(p.n.indexOf(termo)>=0 || (ehNum&&(p.c===termo||p.b===termo))) res.push(p); }
+  res.sort(function(a,b){ var ax=(a.c===termo||a.b===termo)?0:1,bx=(b.c===termo||b.b===termo)?0:1; if(ax!==bx)return ax-bx; return a.d<b.d?-1:(a.d>b.d?1:0); });
+  if(!res.length){
+    if(/^\d{8,}$/.test(termo)) box.innerHTML='<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:10px;padding:10px;font-size:12.5px;color:#9A6B00;margin-top:6px">Código '+_precoEsc(termo)+' não encontrado na base. Pode ser produto novo (atualize na Busca de Preço) ou sem cadastro.</div>';
+    else box.innerHTML='<div class="row-sub" style="padding:8px 2px">Nada encontrado pra "'+_precoEsc(termo)+'".</div>';
+    return;
+  }
+  var h='';
+  for(var j=0;j<res.length;j++){ var q=res[j]; var jaTem=COT_ITENS.some(function(x){return x.cod===q.c;});
+    h+='<div style="border:0.5px solid #B5D4F4;background:#F2F8FE;border-radius:10px;margin-bottom:6px;padding:8px 10px;display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.25">'+_precoEsc(q.d)+'</div>'
+      +'<div style="font-size:10.5px;color:#9a988f">cód '+_precoEsc(q.c)+(q.b?' · '+_precoEsc(q.b):'')+' · varejo '+_precoBRL(q.v)+'</div></div>'
+      +(jaTem
+        ? '<span style="font-size:12px;color:#0F6E56;white-space:nowrap"><i class="ti ti-check"></i> na lista</span>'
+        : '<button onclick="cotAdd(\''+_precoEsc(q.c)+'\')" style="background:#0F6E56;color:#fff;border:none;border-radius:8px;height:32px;padding:0 12px;font-size:13px;white-space:nowrap"><i class="ti ti-plus"></i> Adicionar</button>')
+      +'</div>';
+  }
+  box.innerHTML=h;
+}
+function cotAdd(cod){
+  cod=String(cod);
+  if(COT_ITENS.some(function(x){return x.cod===cod;})) return;
+  var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
+  if(!p) return;
+  COT_ITENS.push({cod:p.c, desc:p.d, barras:p.b, qtd:1, varejo:p.v, atacado:p.a});
+  var bi=document.getElementById('cot-busca'); if(bi){ bi.value=''; bi.focus(); }
+  document.getElementById('cot-busca-res').innerHTML='';
+  cotRenderItens(); cotSub();
+  toast('Adicionado: '+p.d);
+}
+function cotQtd(cod, delta){
+  for(var i=0;i<COT_ITENS.length;i++){ if(COT_ITENS[i].cod===String(cod)){ COT_ITENS[i].qtd=Math.max(1,(COT_ITENS[i].qtd||1)+delta); break; } }
+  cotRenderItens();
+}
+function cotQtdSet(cod, val){
+  var n=parseInt(String(val).replace(/\D/g,''),10); if(isNaN(n)||n<1) n=1;
+  for(var i=0;i<COT_ITENS.length;i++){ if(COT_ITENS[i].cod===String(cod)){ COT_ITENS[i].qtd=n; break; } }
+  cotSub();
+}
+function cotRemover(cod){
+  COT_ITENS=COT_ITENS.filter(function(x){return x.cod!==String(cod);});
+  cotRenderItens(); cotSub();
+}
+function cotRenderItens(){
+  var el=document.getElementById('cot-itens'); if(!el) return;
+  if(!COT_ITENS.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum item ainda. Busque ou bipe um produto e toque em Adicionar.</div>'; return; }
+  var h='';
+  for(var i=0;i<COT_ITENS.length;i++){ var it=COT_ITENS[i]; var cod=_precoEsc(it.cod);
+    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:9px 10px;margin-bottom:7px;display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
+      +'<div style="font-size:10px;color:#9a988f">cód '+cod+' · varejo '+_precoBRL(it.varejo)+'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<button onclick="cotQtd(\''+cod+'\',-1)" style="width:28px;height:28px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:16px;color:#16267A">−</button>'
+      +'<input type="tel" value="'+(it.qtd||1)+'" onchange="cotQtdSet(\''+cod+'\',this.value)" style="width:42px;text-align:center;font-size:15px;font-weight:500;border:0.5px solid #e0e0e0;border-radius:7px;padding:5px 0;box-sizing:border-box">'
+      +'<button onclick="cotQtd(\''+cod+'\',1)" style="width:28px;height:28px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:16px;color:#16267A">+</button>'
+      +'</div>'
+      +'<i class="ti ti-trash" style="font-size:17px;color:#A32D2D;cursor:pointer" onclick="cotRemover(\''+cod+'\')" aria-label="Remover"></i>'
+      +'</div>';
+  }
+  el.innerHTML=h;
+}
+function cotScanAbrir(){
+  _scanOnHit = function(code){ var inp=document.getElementById('cot-busca'); if(inp) inp.value=code; cotBuscar(); };
+  precoScanAbrir();
+}
+async function cotSalvar(){
+  if(!COT_ITENS.length){ toast('Adicione pelo menos 1 item antes de salvar.'); return; }
+  var btn=document.getElementById('cot-btn-salvar'); var t=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
+  try{
+    var obs=(document.getElementById('cot-obs').value||'').trim();
+    var d=await _estPost({acao:'coleta_save', id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS});
+    if(!d.ok) throw new Error(d.erro||'falha');
+    COT_ID = d.id || COT_ID;
+    toast('✓ Coleta salva ('+COT_ITENS.length+' itens)');
+  }catch(e){ console.error('cotSalvar',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
+  if(btn){ btn.disabled=false; btn.innerHTML=t; }
+}
+function cotNova(){
+  if(COT_ITENS.length && !confirm('Iniciar uma nova coleta? Confirme que você já salvou a atual.')) return;
+  COT_ITENS=[]; COT_ID='';
+  var o=document.getElementById('cot-obs'); if(o) o.value='';
+  var b=document.getElementById('cot-busca'); if(b) b.value='';
+  document.getElementById('cot-busca-res').innerHTML='';
+  cotRenderItens(); cotSub();
+  toast('Nova coleta iniciada');
+}
+function cotPDF(){ toast('Exportar PDF entra na Parte 2 — já já.'); }
+function abrirColetas(){ toast('Ver coletas salvas entra na Parte 2 — já já.'); }
 </script>
 
 
