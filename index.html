@@ -490,7 +490,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard soon" data-menu="sangrias"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="transf"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon" data-menu="preco"><i class="ti ti-eye"></i><span class="qnm">Consulta de preço</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_temp"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
@@ -816,7 +816,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.7 — cupons/ticket do Painel só do mês corrente</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v4.8 — Busca de Preço (varejo+atacado, busca e leitor de código)</div></div>
     </div>
   </div>
 </div>
@@ -1016,9 +1016,40 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- TELA: Busca de Preço (chat 19) -->
+<div class="screen" id="s-preco">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Busca de Preço</div>
+      <div style="font-size:11.5px;color:#888780" id="preco-sub">Carregando produtos…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="precoAtualizar()" title="Atualizar preços"></i>
+  </div>
+
+  <div style="padding:0 14px 90px">
+    <div style="display:flex;gap:8px;margin:12px 0">
+      <input id="preco-busca" type="text" inputmode="search" autocomplete="off" placeholder="Nome, código ou código de barras" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box" oninput="precoBuscarDebounce()">
+      <button class="btn-primary" style="width:52px;padding:0;margin-top:0" onclick="precoScanAbrir()" aria-label="Escanear código de barras"><i class="ti ti-barcode" style="font-size:23px"></i></button>
+    </div>
+    <div id="preco-res"><div class="row-sub" style="padding:6px 2px">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div></div>
+  </div>
+
+  <!-- leitor de código de barras (câmera) -->
+  <div id="preco-scan" style="display:none;position:fixed;inset:0;background:#000;z-index:70;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#16267A;color:#fff">
+      <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer" onclick="precoScanFechar()"></i>
+      <span style="flex:1;font-size:15px;font-weight:500">Ler código de barras</span>
+    </div>
+    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <video id="preco-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
+      <div style="position:absolute;width:80%;max-width:320px;height:120px;border:3px solid #FFC400;border-radius:14px"></div>
+    </div>
+    <div id="preco-scan-msg" style="padding:14px 16px;background:#000;color:#fff;font-size:13px;text-align:center;min-height:20px"></div>
+  </div>
+</div>
+
 <script>
-// ══════════════════════════════════════════════════════
-// CONFIGURAÇÃO
 // ══════════════════════════════════════════════════════
 const SHEET_ID  = '1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4';
 const API_KEY   = 'AIzaSyCgN7C50SDOe5iNwyD84xn5ERN1ivZWDiw';
@@ -1234,6 +1265,7 @@ async function fazerLogin() {
   dreCarregarGrupos();
   dreCarregarAjustes();
   carregarSheets();
+  if(window.precoSync) precoSync(false);
   if (usr.nivel==='gestor') carregarUsuarios();
 }
 function fazerLogout() {
@@ -1834,7 +1866,7 @@ const MENU_ITENS = [
   {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias', soon:1},
   {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento', soon:1},
   {k:'transf',     ic:'ti-scale',            nm:'Transferência de estoque', soon:1},
-  {k:'preco',      ic:'ti-eye',              nm:'Consulta de preço', soon:1},
+  {k:'preco',      ic:'ti-barcode',          nm:'Busca de preço'},
   {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
   {k:'ck_temp',    ic:'ti-temperature-snow', nm:'Checklist temperatura freezers', soon:1},
   {k:'ck_contas',  ic:'ti-calendar-dollar',  nm:'Checklist contas mensais', soon:1},
@@ -3301,6 +3333,207 @@ async function relSalvar(cod){
 function relVoltar(){
   document.getElementById('rel-setor-view').style.display='none';
   document.getElementById('rel-lista-view').style.display='block';
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════
+// BUSCA DE PREÇO (chat 19) — offline-first + leitor de código
+// Lê a aba Produtos!A:M (A=cod B=desc C=barras D=un E=estoque
+// F=custo G=custo_medio H=VAREJO I=ATACADO J=ncm K=grupo L=secao M=ativo),
+// guarda no celular (IndexedDB) e busca instantâneo. ↻ atualiza.
+// ══════════════════════════════════════════════════════
+let PRODUTOS = [];
+let _precoSyncing = false;
+let _precoTimer = null;
+const PRECO_FRESCO_MS = 3 * 60 * 60 * 1000; // 3h: não re-baixa se já sincronizou faz pouco
+
+function _precoNorm(s){ return String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toUpperCase(); }
+function _precoEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _precoBRL(n){ n=Number(n)||0; return 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// ── IndexedDB (guarda os 42 mil produtos no aparelho) ──
+function _precoDB(){
+  return new Promise(function(resolve,reject){
+    var r = indexedDB.open('ideal_preco', 1);
+    r.onupgradeneeded = function(){ r.result.createObjectStore('kv'); };
+    r.onsuccess = function(){ resolve(r.result); };
+    r.onerror = function(){ reject(r.error); };
+  });
+}
+function _precoGet(key){
+  return _precoDB().then(function(db){ return new Promise(function(res,rej){
+    var q = db.transaction('kv','readonly').objectStore('kv').get(key);
+    q.onsuccess = function(){ res(q.result); };
+    q.onerror = function(){ rej(q.error); };
+  }); });
+}
+function _precoSet(key,val){
+  return _precoDB().then(function(db){ return new Promise(function(res,rej){
+    var q = db.transaction('kv','readwrite').objectStore('kv').put(val,key);
+    q.onsuccess = function(){ res(true); };
+    q.onerror = function(){ rej(q.error); };
+  }); });
+}
+
+async function _precoSub(state){
+  var el = document.getElementById('preco-sub'); if(!el) return;
+  if(state==='sync'){ el.innerHTML = '<span class="spin"></span> Sincronizando produtos…'; return; }
+  if(state==='erro' && !PRODUTOS.length){ el.textContent = 'Sem conexão pra carregar os produtos. Toque em ↻.'; return; }
+  var meta=null; try{ meta = await _precoGet('meta'); }catch(e){}
+  var n = PRODUTOS.length || (meta && meta.n) || 0;
+  var quando = (meta && meta.ts) ? new Date(meta.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+  el.textContent = n ? (n.toLocaleString('pt-BR') + ' produtos' + (quando ? ' · atualizado ' + quando : '')) : 'Toque em ↻ para carregar';
+}
+
+// Baixa a aba Produtos e guarda no aparelho. force=true ignora o "está fresquinho".
+async function precoSync(force){
+  if(_precoSyncing) return;
+  try{
+    if(!force){
+      var meta=null; try{ meta = await _precoGet('meta'); }catch(e){}
+      if(meta && meta.ts && (Date.now()-meta.ts) < PRECO_FRESCO_MS){
+        if(!PRODUTOS.length){ var cache = await _precoGet('all').catch(function(){return null;}); if(cache && cache.length) PRODUTOS = cache; }
+        _precoSub();
+        if(PRODUTOS.length) return; // já temos dados frescos
+      }
+    }
+    _precoSyncing = true; _precoSub('sync');
+    var rows = await fetchRange('Produtos!A:M');
+    var arr = [];
+    for(var i=0;i<rows.length;i++){
+      var r = rows[i]; var cod = String(r[0]||'').trim();
+      if(!/^\d+$/.test(cod)) continue;
+      var desc = String(r[1]||''); var bar = String(r[2]||'').trim();
+      arr.push({ c:cod, d:desc, b:bar, u:String(r[3]||'').trim(), v:N(r[7]), a:N(r[8]), at:String(r[12]||'').trim().toUpperCase(), n:_precoNorm(desc+' '+cod+' '+bar) });
+    }
+    if(arr.length){
+      PRODUTOS = arr;
+      await _precoSet('all', arr).catch(function(){});
+      await _precoSet('meta', {ts:Date.now(), n:arr.length}).catch(function(){});
+    }
+    _precoSub();
+    var inp = document.getElementById('preco-busca');
+    if(inp && inp.value && inp.value.trim().length>=2) precoBuscar();
+  }catch(e){
+    console.error('precoSync', e);
+    if(!PRODUTOS.length){ var c2 = await _precoGet('all').catch(function(){return null;}); if(c2 && c2.length) PRODUTOS = c2; }
+    _precoSub('erro');
+  }finally{ _precoSyncing = false; }
+}
+
+async function abrirPreco(){
+  show('s-preco');
+  var inp = document.getElementById('preco-busca'); if(inp) inp.value='';
+  document.getElementById('preco-res').innerHTML = '<div class="row-sub" style="padding:6px 2px">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div>';
+  if(!PRODUTOS.length){
+    var cache = await _precoGet('all').catch(function(){return null;});
+    if(cache && cache.length){ PRODUTOS = cache; _precoSub(); }
+    else { await precoSync(true); }
+  } else { _precoSub(); }
+  if(inp) setTimeout(function(){ inp.focus(); }, 120);
+}
+function precoAtualizar(){ precoSync(true); }
+
+function precoBuscarDebounce(){ clearTimeout(_precoTimer); _precoTimer = setTimeout(precoBuscar, 160); }
+
+function precoBuscar(){
+  var termo = _precoNorm((document.getElementById('preco-busca').value||'').trim());
+  var box = document.getElementById('preco-res');
+  if(termo.length < 2){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Digite pelo menos 2 letras ou números.</div>'; return; }
+  if(!PRODUTOS.length){ box.innerHTML = '<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>'; return; }
+  var ehNum = /^\d+$/.test(termo);
+  var res = [];
+  for(var i=0;i<PRODUTOS.length && res.length<80;i++){
+    var p = PRODUTOS[i];
+    if(p.n.indexOf(termo) >= 0 || (ehNum && (p.c===termo || p.b===termo))) res.push(p);
+  }
+  res.sort(function(a,b){
+    var ax = (a.c===termo||a.b===termo)?0:1, bx = (b.c===termo||b.b===termo)?0:1;
+    if(ax!==bx) return ax-bx;
+    return a.d<b.d?-1:(a.d>b.d?1:0);
+  });
+  precoRender(res, termo);
+}
+
+function precoRender(list, termo){
+  var box = document.getElementById('preco-res');
+  if(!list.length){ box.innerHTML = '<div class="row-sub" style="padding:10px 2px">Nada encontrado pra "'+_precoEsc(termo)+'". Confira a escrita ou tente outro pedaço do nome.</div>'; return; }
+  var h = '<div class="row-sub" style="padding:4px 2px 8px">'+list.length+(list.length>=80?'+':'')+' produto(s)</div>';
+  for(var i=0;i<list.length;i++){
+    var p = list[i];
+    var inativo = p.at && p.at!=='S' && p.at!=='1' && p.at!=='SIM' && p.at!=='ATIVO';
+    var atac = (p.a > 0) ? _precoBRL(p.a) : '—';
+    h += '<div style="border:1px solid #e8e6dd;border-radius:12px;padding:11px 12px;margin-bottom:8px'+(inativo?';opacity:0.6':'')+'">'
+      + '<div style="font-size:13.5px;font-weight:600;color:#1a1a1a;line-height:1.3">'+_precoEsc(p.d)+(inativo?' <span style="font-size:10px;color:#A32D2D;font-weight:400">(inativo)</span>':'')+'</div>'
+      + '<div style="font-size:10.5px;color:#9a988f;margin-top:3px">cód '+_precoEsc(p.c)+(p.b?' · barras '+_precoEsc(p.b):'')+(p.u?' · '+_precoEsc(p.u):'')+'</div>'
+      + '<div style="display:flex;gap:8px;margin-top:9px">'
+      +   '<div style="flex:1;background:#E6F1FB;border-radius:8px;padding:7px 10px"><div style="font-size:10.5px;color:#185FA5">Varejo</div><div style="font-size:17px;font-weight:600;color:#0C447C">'+_precoBRL(p.v)+'</div></div>'
+      +   '<div style="flex:1;background:#E1F5EE;border-radius:8px;padding:7px 10px"><div style="font-size:10.5px;color:#0F6E56">Atacado · 4+</div><div style="font-size:17px;font-weight:600;color:#085041">'+atac+'</div></div>'
+      + '</div>'
+      + '</div>';
+  }
+  box.innerHTML = h;
+}
+
+// ── Leitor de código de barras pela câmera ──
+let _precoStream=null, _precoDetector=null, _precoScanLoop=null, _precoZx=null;
+
+function precoScanAbrir(){
+  var ov = document.getElementById('preco-scan'); ov.style.display='flex';
+  var msg = document.getElementById('preco-scan-msg'); msg.textContent='Abrindo a câmera…';
+  var v = document.getElementById('preco-video');
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ msg.textContent='Este navegador não permite usar a câmera.'; return; }
+  if('BarcodeDetector' in window){
+    navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}}).then(function(stream){
+      _precoStream = stream; v.srcObject = stream; v.play();
+      msg.textContent = 'Aponte para o código de barras';
+      try{ _precoDetector = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','itf']}); }
+      catch(e){ _precoDetector = new BarcodeDetector(); }
+      _precoDetectarLoop(v);
+    }).catch(function(){ msg.textContent='Não consegui abrir a câmera. Verifique a permissão do navegador.'; });
+  } else {
+    _precoScanZxing(v);
+  }
+}
+function _precoDetectarLoop(v){
+  _precoScanLoop = setInterval(function(){
+    if(!_precoDetector || !v.videoWidth) return;
+    _precoDetector.detect(v).then(function(codes){
+      if(codes && codes.length) precoScanHit(codes[0].rawValue);
+    }).catch(function(){});
+  }, 350);
+}
+function _precoScanZxing(v){
+  var msg = document.getElementById('preco-scan-msg');
+  function start(){
+    try{
+      _precoZx = new ZXing.BrowserMultiFormatReader();
+      _precoZx.decodeFromVideoDevice(null, v, function(result){ if(result) precoScanHit(result.getText()); });
+      msg.textContent = 'Aponte para o código de barras';
+    }catch(e){ msg.textContent='Leitor não disponível neste navegador. Tente digitar o código.'; }
+  }
+  if(window.ZXing){ start(); return; }
+  msg.textContent = 'Carregando o leitor…';
+  var sc = document.createElement('script');
+  sc.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+  sc.onload = start;
+  sc.onerror = function(){ msg.textContent='Não consegui carregar o leitor. Tente digitar o código.'; };
+  document.head.appendChild(sc);
+}
+function precoScanHit(code){
+  code = String(code||'').replace(/\D/g,'');
+  if(!code) return;
+  precoScanFechar();
+  var inp = document.getElementById('preco-busca'); if(inp){ inp.value = code; }
+  precoBuscar();
+}
+function precoScanFechar(){
+  var ov = document.getElementById('preco-scan'); if(ov) ov.style.display='none';
+  if(_precoScanLoop){ clearInterval(_precoScanLoop); _precoScanLoop=null; }
+  if(_precoZx){ try{ _precoZx.reset(); }catch(e){} _precoZx=null; }
+  if(_precoStream){ _precoStream.getTracks().forEach(function(t){ t.stop(); }); _precoStream=null; }
+  _precoDetector = null;
 }
 </script>
 
