@@ -80,13 +80,15 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .header-user{font-size:11px;color:rgba(255,255,255,0.75)}
 .header-logout{background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 10px;cursor:pointer;color:#fff;font-size:12px;display:flex;align-items:center;gap:4px;font-family:Arial,sans-serif}
 
-.sync-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-size:11px;border-bottom:1px solid #eee}
-.sync-bar i{font-size:15px;vertical-align:-2px;margin-right:5px}
+.sync-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;font-size:10px;line-height:1.25;border-bottom:1px solid #eee}
+.sync-bar #sync-txt{flex:1;min-width:0}
+.sync-bar i{font-size:13px;vertical-align:-2px;margin-right:4px}
 .sync-bar.ok{background:#E6F1FB;color:#185FA5}
 .sync-bar.erro{background:#FEF3F2;color:#A32D2D}
 .sync-bar.carregando{background:#EEF2FC;color:#1B3A9E}
 .sync-bar.offline{background:#f8f8f8;color:#888}
-.sync-bar button{font-size:10px;padding:3px 9px;background:#1B3A9E;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif}
+.sync-bar button{flex:0 0 auto;font-size:14px;line-height:1;padding:5px 8px;background:#1B3A9E;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.sync-bar button i{margin:0;font-size:14px;vertical-align:-2px}
 
 .loja-sel{display:flex;gap:8px;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #eee}
 .loja-btn{flex:1;padding:8px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#666;font-size:12px;cursor:pointer;text-align:center;font-family:Arial,sans-serif}
@@ -436,7 +438,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
     <div class="sync-bar offline" id="sync-bar">
       <span id="sync-txt"><i class="ti ti-cloud"></i>Aguardando...</span>
-      <button onclick="carregarSheets()">↻ Atualizar</button>
+      <button onclick="carregarSheets()" title="Atualizar agora" aria-label="Atualizar agora"><i class="ti ti-refresh"></i></button>
     </div>
 
     <div class="loja-sel" id="loja-sel">
@@ -818,7 +820,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.6.2 — Painel: hora do refresh + "via BANCOGPS"</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.6.4 — Barra do banco mais fina + botão atualizar compacto</div></div>
     </div>
   </div>
 </div>
@@ -1635,9 +1637,13 @@ async function carregarSheets() {
     const ult = mm['ultima_atualizacao']||'—';
     document.getElementById('cfg-ultima').textContent = ult;
     const dataBanco = ultimaDataBanco(fatBanco);
+    const carimboBanco = mm['ultima_atualizacao_banco'] || '';
+    const mHora = carimboBanco.match(/(\d{1,2}:\d{2})/);
+    const horaBanco = mHora ? mHora[1] : '';
     const horaSync = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const horaMostrar = horaBanco || horaSync;
     if(dataBanco){
-      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Banco atualizado até ${dataBanco} às ${horaSync} <span style="opacity:.65">· via BANCOGPS</span>`);
+      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Banco atualizado até ${dataBanco} às ${horaMostrar} <span style="opacity:.65">· via BANCOGPS</span>`);
     } else {
       setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
     }
