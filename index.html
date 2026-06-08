@@ -495,6 +495,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora de preço</span></div>
         <div class="qcard" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
+        <div class="qcard" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
         <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_temp"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
@@ -820,7 +821,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.6.5 — Lucratividade mostra só o código de barras (sem código interno)</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.7 — Curva ABC (por faturamento e por lucro) com classes A/B/C</div></div>
     </div>
   </div>
 </div>
@@ -1171,6 +1172,46 @@ function doPost(e) {
       <div id="luc-arrumar-sub" style="font-size:11.5px;color:#888780;margin-bottom:4px"></div>
       <div style="font-size:11px;color:#888780;margin-bottom:8px;line-height:1.5">Tiveram venda no período mas estão <b>sem custo cadastrado</b> ou com <b>custo acima do preço de venda</b>. Pode ser cadastro para arrumar — ou promoção (que eu ainda não tenho como identificar sozinho).</div>
       <div id="luc-arrumar-lista"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TELA: Curva ABC (chat 22) -->
+<div class="screen" id="s-abc">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Curva ABC</div>
+      <div style="font-size:11.5px;color:#888780" id="abc-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="abcAtualizar()" title="Atualizar"></i>
+  </div>
+
+  <div style="padding:0 14px 90px">
+    <div id="abc-chips" style="display:flex;gap:7px;overflow-x:auto;padding:12px 0 2px;-webkit-overflow-scrolling:touch"></div>
+    <div id="abc-custom" style="display:none;gap:7px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <input id="abc-de" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box">
+      <span style="font-size:12px;color:#888780">até</span>
+      <input id="abc-ate" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box">
+      <button class="btn-primary" style="width:auto;padding:8px 14px;margin-top:0" onclick="abcAplicarCustom()">Aplicar</button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="abc-mt-fat" onclick="abcSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Por faturamento</button>
+      <button id="abc-mt-lucro" onclick="abcSetMetric('lucro')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por lucro</button>
+    </div>
+
+    <div id="abc-geral-view">
+      <div id="abc-cob" style="font-size:11px;color:#888780;margin:10px 2px 2px;line-height:1.5;display:none"></div>
+      <div id="abc-cards" style="margin-top:12px"></div>
+      <div style="font-size:11px;color:#888780;margin-top:6px;line-height:1.5">Classe A = poucos produtos que puxam a maior fatia. Classe C = a cauda longa que quase não gira. Toque numa classe para ver os produtos.</div>
+    </div>
+
+    <div id="abc-classe-view" style="display:none">
+      <div onclick="abcVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:#16267A;font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
+      <div id="abc-classe-nome" style="font-size:16px;font-weight:600;color:#16267A"></div>
+      <div id="abc-classe-sub" style="font-size:11.5px;color:#888780;margin-bottom:8px"></div>
+      <div id="abc-classe-lista"></div>
     </div>
   </div>
 </div>
@@ -4258,6 +4299,150 @@ async function abrirLucro(){
     _syncSplash(false);
   }catch(e){ console.error('abrirLucro sync',e); _syncSplash(false); }
   lucCarregar();
+}
+
+// ════════ CURVA ABC (chat 22) — Pareto por faturamento ou por lucro ════════
+// Reaproveita VD_BASE, ESTMAP e o mapa de custo da Lucratividade (_lucCostMap).
+// A = produtos até 80% acumulado · B = até 95% · C = o resto (cauda longa).
+let abcPeriodo='mes', abcDe='', abcAte='', abcMetric='fat', _abcCache={};
+function abcRenderChips(){
+  var el=document.getElementById('abc-chips'); if(!el) return;
+  var h=''; for(var i=0;i<REL_PRESETS.length;i++){ var p=REL_PRESETS[i], on=(p[0]===abcPeriodo);
+    h+='<button onclick="abcSetPeriodo(\''+p[0]+'\')" style="flex:0 0 auto;border:1px solid '+(on?'#16267A':'#D3D1C7')+';background:'+(on?'#16267A':'#fff')+';color:'+(on?'#fff':'#16267A')+';border-radius:999px;height:32px;padding:0 14px;font-size:12.5px;font-weight:500;white-space:nowrap">'+p[1]+'</button>';
+  }
+  el.innerHTML=h;
+}
+function _abcLabel(){
+  var nomes={hoje:'Hoje','7d':'Últimos 7 dias',mes:'Este mês',mespassado:'Mês passado','30d':'Últimos 30 dias',custom:'Período'};
+  return (nomes[abcPeriodo]||'Período')+' · '+_relBR(abcDe)+(abcDe!==abcAte?(' a '+_relBR(abcAte)):'');
+}
+function abcSetPeriodo(key){
+  var c=document.getElementById('abc-custom');
+  if(key==='custom'){ abcPeriodo='custom'; abcRenderChips(); if(c) c.style.display='flex';
+    var di=document.getElementById('abc-de'),ai=document.getElementById('abc-ate');
+    if(di&&!di.value) di.value=abcDe||_relISO(new Date()); if(ai&&!ai.value) ai.value=abcAte||_relISO(new Date()); return; }
+  abcPeriodo=key; if(c) c.style.display='none';
+  var r=_relPeriodoRange(key); abcDe=r.de; abcAte=r.ate; abcRenderChips(); abcCarregar();
+}
+function abcAplicarCustom(){
+  var di=document.getElementById('abc-de'),ai=document.getElementById('abc-ate');
+  var de=(di&&di.value)||'',ate=(ai&&ai.value)||'';
+  if(!de||!ate){ toast('Escolha as duas datas.'); return; }
+  if(de>ate){ var t=de; de=ate; ate=t; }
+  abcDe=de; abcAte=ate; abcPeriodo='custom'; abcRenderChips(); abcCarregar();
+}
+function abcSetMetric(m){ abcMetric=m; abcRenderToggle(); abcCarregar(); }
+function abcRenderToggle(){
+  var f=document.getElementById('abc-mt-fat'), l=document.getElementById('abc-mt-lucro'); if(!f||!l) return;
+  var stOn='flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer';
+  var stOff='flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer';
+  var onF=(abcMetric==='fat'); f.style.cssText=onF?stOn:stOff; l.style.cssText=onF?stOff:stOn;
+}
+function _abcCompute(de,ate,metric){
+  if(!_lucCostMap) _lucBuildCostMap();
+  var agg={};
+  for(var i=0;i<VD_BASE.length;i++){ var v=VD_BASE[i];
+    if(de&&v.iso<de) continue; if(ate&&v.iso>ate) continue;
+    if(!agg[v.codigo]){ var info=ESTMAP?ESTMAP[v.codigo]:null; agg[v.codigo]={fat:0,qtd:0,desc:(info?info.descricao:'')||'',setor:(info?info.setor:'(fora da estrutura)')}; }
+    agg[v.codigo].fat+=v.fat; agg[v.codigo].qtd+=v.qtd;
+  }
+  var itens=[], total=0, semCusto=0, faturamentoTotal=0;
+  for(var cod in agg){ var a=agg[cod]; faturamentoTotal+=a.fat; var val, lucro=0, margem=0, custo=0;
+    if(metric==='lucro'){
+      var cm=_lucCostMap[cod]; custo=cm?cm.custo:0; var venda=cm?cm.venda:0;
+      if(custo<=0 || (venda>0 && custo>venda)){ semCusto+=a.fat; continue; }
+      lucro=a.fat-a.qtd*custo; margem=(a.fat>0?lucro/a.fat*100:0);
+      if(lucro<=0) continue;
+      val=lucro;
+    } else { val=a.fat; }
+    if(val<=0) continue;
+    itens.push({cod:cod, desc:a.desc, setor:a.setor, fat:a.fat, qtd:a.qtd, val:val, lucro:lucro, margem:margem, custo:custo});
+    total+=val;
+  }
+  itens.sort(function(a,b){ return b.val-a.val; });
+  var cum=0, classes={A:{n:0,val:0},B:{n:0,val:0},C:{n:0,val:0}};
+  for(var k=0;k<itens.length;k++){ cum+=itens[k].val; var pct=total>0?cum/total*100:0; itens[k].cum=pct;
+    var cl=pct<=80?'A':(pct<=95?'B':'C'); itens[k].classe=cl; classes[cl].n++; classes[cl].val+=itens[k].val;
+  }
+  return {ok:true, metric:metric, itens:itens, total:total, totalItens:itens.length, classes:classes, faturamentoTotal:faturamentoTotal, cobertura:(faturamentoTotal>0?(faturamentoTotal-semCusto)/faturamentoTotal*100:0)};
+}
+function abcCarregar(){
+  abcVoltarGeral(); abcRenderToggle();
+  var key=abcMetric+'|'+abcDe+'|'+abcAte;
+  document.getElementById('abc-sub').textContent='Calculando… · '+_abcLabel();
+  if(_abcCache[key]){ abcRender(_abcCache[key]); return; }
+  document.getElementById('abc-cards').innerHTML='<div class="loadrow"><span class="spin"></span> Calculando…</div>';
+  try{ var d=_abcCompute(abcDe,abcAte,abcMetric); _abcCache[key]=d; abcRender(d); }
+  catch(e){ console.error('abcCarregar',e); document.getElementById('abc-cards').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui calcular. Toque em ↻.</div>'; }
+}
+function _abcCardHtml(letra, titulo, cor, cl, total, totalItens){
+  var pctVal=total>0?(cl.val/total*100):0, pctItens=totalItens>0?(cl.n/totalItens*100):0;
+  return '<div class="row-card" style="display:block;cursor:pointer;margin-bottom:8px;border-left:4px solid '+cor+'" onclick="abcAbrirClasse(\''+letra+'\')">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<span style="font-size:22px;font-weight:700;color:'+cor+';min-width:22px;text-align:center">'+letra+'</span>'
+    +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#16267A">'+titulo+'</div>'
+    +'<div style="font-size:11px;color:#888780">'+cl.n.toLocaleString('pt-BR')+' produtos · '+pctItens.toFixed(0)+'% dos itens</div></div>'
+    +'<div style="text-align:right"><div style="font-size:14px;font-weight:600;color:'+cor+'">'+_relMoney(cl.val)+'</div><div style="font-size:11px;color:#888780">'+pctVal.toFixed(0)+'% do total</div></div>'
+    +'</div></div>';
+}
+function abcRender(d){
+  document.getElementById('abc-sub').textContent=(d.metric==='lucro'?'Por lucro':'Por faturamento')+' · '+_abcLabel();
+  var cob=document.getElementById('abc-cob');
+  if(cob){ if(d.metric==='lucro'){ cob.style.display='block'; cob.textContent='Ranking pelo lucro dos produtos com custo cadastrado ('+Math.round(d.cobertura)+'% do faturamento).'; } else { cob.style.display='none'; } }
+  var html='';
+  html+=_abcCardHtml('A','Campeões — puxam a maior fatia','#16267A',d.classes.A,d.total,d.totalItens);
+  html+=_abcCardHtml('B','Intermediários','#185FA5',d.classes.B,d.total,d.totalItens);
+  html+=_abcCardHtml('C','Cauda longa — giram pouco','#888780',d.classes.C,d.total,d.totalItens);
+  if(!d.totalItens) html='<div class="row-sub" style="padding:6px 2px">Sem vendas '+(d.metric==='lucro'?'com lucro ':'')+'no período.</div>';
+  document.getElementById('abc-cards').innerHTML=html;
+}
+function abcAbrirClasse(letra){
+  document.getElementById('abc-geral-view').style.display='none';
+  document.getElementById('abc-classe-view').style.display='block';
+  var nomes={A:'Classe A — Campeões',B:'Classe B — Intermediários',C:'Classe C — Cauda longa'};
+  document.getElementById('abc-classe-nome').textContent=nomes[letra]||('Classe '+letra);
+  var key=abcMetric+'|'+abcDe+'|'+abcAte; var d=_abcCache[key]||_abcCompute(abcDe,abcAte,abcMetric);
+  var lista=d.itens.filter(function(x){ return x.classe===letra; });
+  var tot=0; lista.forEach(function(x){ tot+=x.val; });
+  document.getElementById('abc-classe-sub').textContent=lista.length.toLocaleString('pt-BR')+' produtos · '+(d.metric==='lucro'?'lucro ':'fat. ')+_relMoney(tot)+' · '+_abcLabel();
+  var html='';
+  lista.forEach(function(x){
+    var inf=(ESTMAP&&ESTMAP[x.cod])||{}; var barras=inf.codbarras||'';
+    var sub = d.metric==='lucro'
+      ? ('qtd '+x.qtd.toLocaleString('pt-BR')+' · fat. '+_relMoney(x.fat)+' · margem '+_lucPct(x.margem))
+      : ('qtd '+x.qtd.toLocaleString('pt-BR')+' · acumulado '+x.cum.toFixed(1)+'%');
+    html+='<div class="row-card" style="display:block;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13px">'+_estEsc(x.desc||x.cod)+'</span><span style="font-size:13px;font-weight:600;color:#1B3A9E;white-space:nowrap">'+_relMoney(x.val)+'</span></div>'
+      +(barras?('<div style="font-size:11px;color:#16267A;margin-top:3px;font-family:monospace">barras '+_estEsc(barras)+'</div>'):'')
+      +'<div style="font-size:11px;color:#888780;margin-top:2px">'+sub+'</div></div>';
+  });
+  if(!lista.length) html='<div class="row-sub" style="padding:6px 2px">Nenhum produto nesta classe.</div>';
+  document.getElementById('abc-classe-lista').innerHTML=html;
+  window.scrollTo(0,0);
+}
+function abcVoltarGeral(){
+  var cv=document.getElementById('abc-classe-view'); if(cv) cv.style.display='none';
+  var gv=document.getElementById('abc-geral-view'); if(gv) gv.style.display='block';
+}
+async function abcAtualizar(){
+  _abcCache={}; _lucCostMap=null; toast('Atualizando…');
+  try{ await precoSync(true); }catch(e){}
+  try{ await estSync(true); }catch(e){}
+  abcCarregar();
+}
+async function abrirABC(){
+  show('s-abc');
+  if(!abcDe){ abcPeriodo='mes'; var r=_relPeriodoRange('mes'); abcDe=r.de; abcAte=r.ate; }
+  abcRenderChips(); abcRenderToggle(); abcVoltarGeral();
+  document.getElementById('abc-cards').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  try{
+    _syncSplash(true,'Preparando a curva ABC…');
+    await _estReady(); await _vdReady();
+    if(!PRODUTOS.length){ await precoSync(false); }
+    else if(PRODUTOS[0] && PRODUTOS[0].ct===undefined){ await precoSync(true); }
+    _lucCostMap=null;
+    _syncSplash(false);
+  }catch(e){ console.error('abrirABC sync',e); _syncSplash(false); }
+  abcCarregar();
 }
 
 // depois de salvar uma reclassificação no servidor, atualiza a base local na hora
