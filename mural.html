@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mural de Ofertas — Ideal Supermercados</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;width:100%;overflow:hidden;background:#16267A;
+    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  #stage{position:fixed;inset:0;}
+  .slide{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:0 4vw;}
+  .logo{position:absolute;top:2.4vh;left:2.4vw;z-index:5;width:8.4vh;height:8.4vh;
+    border-radius:50%;background:#1565C0;display:flex;align-items:center;justify-content:center;}
+  .logo .inner{width:6.7vh;height:6.7vh;border-radius:50%;background:#E2231A;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;color:#FFC400;font-weight:700;}
+  .logo .cart{font-size:2.6vh;line-height:1;}
+  .logo .nm{font-size:1.6vh;}
+  .footer{position:absolute;bottom:0;left:0;right:0;background:#0e1a52;color:#fff;z-index:5;
+    display:flex;align-items:center;justify-content:space-between;padding:1.1vh 2.5vw;}
+  .footer b{font-size:2vh;font-weight:600;}
+  .footer span{font-size:1.6vh;color:#aab2e0;}
+  .badge{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;z-index:4;}
+  .badge .b{background:#E2231A;color:#fff;font-size:3vh;font-weight:700;letter-spacing:2px;
+    padding:1vh 5vw;border-radius:0 0 2vh 2vh;}
+  .pname{color:#16267A;font-size:7vh;font-weight:700;}
+  .plaque{background:#fff;border-radius:3vh;padding:1.5vh 5vw;margin:2.2vh 0 1.4vh;}
+  .price{color:#E2231A;font-weight:700;font-size:19vh;line-height:1;}
+  .price .rs{font-size:.34em;vertical-align:.85em;}
+  .unit{color:#9a7b00;font-size:4.6vh;}
+  .ititle{color:#FFC400;font-size:5.4vh;font-weight:700;}
+  .isub{color:#cfd6ff;font-size:3vh;}
+  .pillrow{display:flex;gap:1.4vw;flex-wrap:wrap;justify-content:center;margin:2vh 0;}
+  .pill{font-size:2.6vh;padding:1.2vh 2.4vw;border-radius:99px;color:#fff;}
+  .showrow{display:flex;gap:1.2vw;justify-content:center;align-items:stretch;margin-top:2vh;}
+  .scard{width:20vw;border-radius:1.6vh;overflow:hidden;display:flex;flex-direction:column;opacity:0;}
+  .scard .thumb{height:17vh;background-size:cover;background-position:center;}
+  .scard .body{flex:1;padding:1.4vh 1vw;display:flex;flex-direction:column;gap:.6vh;align-items:center;text-align:center;}
+  .scard .dname{font-size:2.6vh;font-weight:700;line-height:1.1;}
+  .scard .dslo{font-size:1.8vh;}
+  .day .dtitle{color:#fff;font-size:5.4vh;font-weight:700;}
+  .day .dsub{font-size:3vh;margin-bottom:1vh;}
+  .minirow{display:flex;gap:1.4vw;flex-wrap:wrap;justify-content:center;}
+  .mini{background:#fff;border-radius:1.6vh;padding:1.4vh 2vw;min-width:11vw;}
+  .mini .mn{color:#16267A;font-size:2.4vh;}
+  .mini .mp{color:#E2231A;font-size:3.6vh;font-weight:700;}
+  .chips{display:flex;gap:1.6vw;flex-wrap:wrap;justify-content:center;margin:1.5vh 0;}
+  .chip{background:#fff;color:#16267A;border-radius:1.8vh;padding:2vh 2.4vw;min-width:13vw;
+    display:flex;flex-direction:column;align-items:center;gap:1vh;}
+  .chip .ic{font-size:4.4vh;}
+  .chip .lb{font-size:2.6vh;font-weight:600;}
+  .hl{background:#FFC400;color:#16267A;border-radius:2.2vh;padding:2.4vh 3.5vw;}
+  .hl .big{font-size:6vh;font-weight:700;line-height:1.05;}
+  .hl .sub{font-size:2.8vh;color:#7a5b00;margin-top:.6vh;}
+  .bgimg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:.22;}
+  .bgfull{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;}
+  .tint{position:absolute;inset:0;z-index:1;}
+  .above{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
+  @keyframes pop{0%{transform:scale(.78);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+  @keyframes rise{0%{transform:translateY(2.2vh);opacity:0}100%{transform:translateY(0);opacity:1}}
+  @keyframes inn{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes fadein{0%{opacity:0}100%{opacity:1}}
+  @keyframes kb{0%{transform:scale(1)}100%{transform:scale(1.06)}}
+</style>
+</head>
+<body>
+  <div class="logo"><div class="inner"><span class="cart">&#128722;</span><span class="nm">ideal</span></div></div>
+  <div id="stage"></div>
+  <div class="footer"><b>Ideal Supermercados</b><span id="ftr">atualiza sozinho pelo cadastro</span></div>
+
+<script>
+(function(){
+  var SHEET_ID='1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4';
+  var API_KEY='AIzaSyCgN7C50SDOe5iNwyD84xn5ERN1ivZWDiw';
+  var ACOUGUE=['261700','263000','009800','264100','262800','265500','265200','261200','260900','264700','260300'];
+  var HORTI=['8','26','56','34','10','35','3'];
+
+  var BASE='https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/img/';
+  var IMAGENS={
+    carne:[
+      BASE+'picanha-grelhada-tradicional-corte-brasileiro-comida-brasileira-cortada-152231825.webp',
+      BASE+'nvnn.jpeg'
+    ],
+    horti:[
+      BASE+'hortifruit-6.jpg',
+      BASE+'Hortifruti-1.jpg'
+    ],
+    fimdesemana:[
+      BASE+'Lorens-Crescimento-do-Hortifruti-no-Brasil-legumes-sortidos-2.jpg',
+      BASE+'hortifruit-6.jpg'
+    ]
+  };
+  var imgIdx={carne:0,horti:0,fimdesemana:0};
+  function pickImg(k){ var a=IMAGENS[k]||[]; if(!a.length) return ''; var u=a[imgIdx[k]%a.length]; imgIdx[k]++; return u; }
+  var IMG_HORTI=BASE+'hortifruit-6.jpg';
+  var IMG_CARNE=BASE+'picanha-grelhada-tradicional-corte-brasileiro-comida-brasileira-cortada-152231825.webp';
+  var IMG_CHURRASCO=BASE+'nvnn.jpeg';
+  var IMG_CORTES=BASE+'cortes%20de%20carne%20bovina.jpg';
+
+  var stage=document.getElementById('stage');
+  var ftr=document.getElementById('ftr');
+  var idx={};
+  var prodAcougue=[], prodHorti=[], prodGeral=[];
+  var gi=0, step=0;
+
+  function range(r){
+    return 'https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(r)+'?key='+API_KEY;
+  }
+  function keysFor(c){
+    c=(''+c).trim();
+    var out=[c];
+    var n=parseInt(c,10);
+    if(!isNaN(n)){ out.push(''+n); out.push((''+n).padStart(6,'0')); }
+    return out;
+  }
+  function addIndex(cod,prod){
+    keysFor(cod).forEach(function(k){ if(k && idx[k]===undefined) idx[k]=prod; });
+  }
+  function lookup(c){
+    var ks=keysFor(c);
+    for(var i=0;i<ks.length;i++){ if(idx[ks[i]]!==undefined) return idx[ks[i]]; }
+    return null;
+  }
+  function num(v){ if(v===undefined||v===null) return 0; var s=(''+v).replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,''); var n=parseFloat(s); return isNaN(n)?0:n; }
+  function brl(v){ return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function unidade(u){ u=(''+u).trim().toUpperCase(); return (u==='KG'||u==='KGS') ? 'o quilo' : 'a unidade'; }
+
+  function buildIndex(rows){
+    idx={};
+    var prods=rows.map(function(r){
+      return { nome:(r[1]||'').trim(), un:(r[3]||''), varejo:num(r[7]),
+               barras:(r[2]==null?'':(''+r[2]).trim()), cod:(r[0]==null?'':(''+r[0]).trim()) };
+    });
+    prods.forEach(function(p){ if(p.barras) addIndex(p.barras,p); });
+    prods.forEach(function(p){ if(p.cod) addIndex(p.cod,p); });
+  }
+  function resolve(){
+    function map(list){ var out=[]; list.forEach(function(c){ var p=lookup(c); if(p && p.varejo>0) out.push(p); }); return out; }
+    prodAcougue=map(ACOUGUE);
+    prodHorti=map(HORTI);
+    prodGeral=prodAcougue.concat(prodHorti);
+    try{ localStorage.setItem('ideal_mural', JSON.stringify({a:prodAcougue,h:prodHorti,t:Date.now()})); }catch(e){}
+  }
+  function loadCache(){
+    try{ var c=JSON.parse(localStorage.getItem('ideal_mural')); if(c&&c.a){ prodAcougue=c.a; prodHorti=c.h; prodGeral=c.a.concat(c.h); return true; } }catch(e){}
+    return false;
+  }
+
+  function fetchData(){
+    fetch(range('Produtos!A:M'),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+      if(j&&j.values){ buildIndex(j.values); resolve(); }
+    }).catch(function(){});
+    fetch(range('Metadados!A:B'),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+      if(j&&j.values){ j.values.forEach(function(row){ if(row[0]==='ultima_atualizacao_banco'&&row[1]) ftr.textContent='Atualizado em '+row[1]; }); }
+    }).catch(function(){});
+  }
+
+  function el(html){ var d=document.createElement('div'); d.className='slide'; d.innerHTML=html; return d; }
+  function anim(node,sel,a){ var e=node.querySelector(sel); if(e){ e.style.animation=a; } }
+
+  function prodSlide(){
+    if(prodGeral.length===0) return instSlide('semana');
+    var p=prodGeral[gi%prodGeral.length]; gi++;
+    var s=el('<div class="badge"><div class="b">OFERTA</div></div>'+
+      '<div class="above" style="background:#FFDD00;position:absolute;inset:0;justify-content:center;">'+
+      '<div class="pname">'+p.nome+'</div>'+
+      '<div class="plaque"><span class="price"><span class="rs">R$</span> '+brl(p.varejo)+'</span></div>'+
+      '<div class="unit">'+unidade(p.un)+'</div></div>');
+    setTimeout(function(){ anim(s,'.price','pop .55s ease'); var pl=s.querySelector('.plaque'); if(pl) setTimeout(function(){pl.style.animation='pulse 2.4s ease-in-out infinite';},600); },30);
+    return s;
+  }
+  function thumb(img){
+    if(img) return '<div class="thumb" style="background-image:url('+img+');"></div>';
+    return '<div class="thumb" style="background:#0a1244;display:flex;align-items:center;justify-content:center;color:#FFC400;font-size:7vh;font-weight:700;">$</div>';
+  }
+  function instSlide(which){
+    if(which==='semana'){
+      var cards=[
+        {bg:'#1f9d3a',tc:'#fff',sc:'#d6f3df',img:IMG_HORTI,name:'Terça Verde',slo:'Hortifrúti selecionado, mais frescor'},
+        {bg:'#8a1420',tc:'#fff',sc:'#f2c9cd',img:IMG_CARNE,name:'Quinta da Carne',slo:'Os melhores cortes pra você'},
+        {bg:'#e9a400',tc:'#3a2a00',sc:'#5a4200',img:IMG_CHURRASCO,name:'Fim de Semana',slo:'Ofertas pra família toda'},
+        {bg:'#0e1a52',tc:'#FFC400',sc:'#cfd6ff',img:'',name:'Dia da Economia',slo:'Preços baixos de verdade'}
+      ];
+      var h='<div class="above"><div class="ititle">Ofertas fixas da semana</div><div class="showrow">';
+      cards.forEach(function(c){
+        h+='<div class="scard" style="background:'+c.bg+';">'+thumb(c.img)+
+           '<div class="body"><div class="dname" style="color:'+c.tc+';">'+c.name+'</div>'+
+           '<div class="dslo" style="color:'+c.sc+';">'+c.slo+'</div></div></div>';
+      });
+      h+='</div><div class="isub" style="margin-top:1.6vh;">Venha conferir e aproveitar as ofertas</div></div>';
+      var s=el(h);
+      setTimeout(function(){ var cs=s.querySelectorAll('.scard'); cs.forEach(function(c2,k){ c2.style.animation='inn .5s ease '+(0.15+k*0.18)+'s both'; }); },30);
+      return s;
+    }
+    return el('<div class="above"><div style="font-size:6vh;color:#FFC400;">&#127942;</div>'+
+      '<div class="ititle" style="color:#fff;">Supermercado Ideal</div>'+
+      '<div class="isub" style="color:#FFC400;">A maior variedade e o menor preço de toda a região. Só aqui!</div></div>');
+  }
+  function cortesSlide(){
+    var s=el('<div class="above" style="z-index:2;"><div class="ititle" style="color:#FFC400;margin-bottom:1.5vh;">Conheça os cortes</div>'+
+      '<div style="width:80vw;height:62vh;background:url('+IMG_CORTES+') center/contain no-repeat;"></div></div>');
+    s.style.background='#16267A';
+    return s;
+  }
+  function bannerSlide(){
+    var s=el('<div class="above" style="z-index:2;width:100%;"><img src="'+BASE+'OFERTAS%20FIXAS%20DA%20SEMANA.png" style="width:96vw;max-height:82vh;object-fit:contain;border-radius:1.2vh;"></div>');
+    s.style.background='#16267A';
+    var im=s.querySelector('img'); if(im){ im.style.animation='kb 7s ease forwards'; }
+    return s;
+  }
+  function pagSlide(){
+    var s=el('<div class="above"><div class="ititle" style="color:#fff;font-size:4.4vh;">Aqui você paga como quiser</div>'+
+      '<div class="chips">'+
+      '<div class="chip"><span class="ic">&#9889;</span><span class="lb">Pix</span></div>'+
+      '<div class="chip"><span class="ic">&#128179;</span><span class="lb">Crédito</span></div>'+
+      '<div class="chip"><span class="ic">&#128181;</span><span class="lb">Débito</span></div>'+
+      '<div class="chip"><span class="ic">&#127915;</span><span class="lb">Voucher</span></div>'+
+      '</div><div class="hl"><div class="big">Parcelamos em 6x sem juros!</div><div class="sub">Leve mais, pague com folga</div></div></div>');
+    setTimeout(function(){
+      var chips=s.querySelectorAll('.chip'); chips.forEach(function(c,k){ c.style.opacity='0'; c.style.animation='pop .5s ease '+(0.2+k*0.16)+'s both'; });
+      var hl=s.querySelector('.hl'); hl.style.opacity='0'; hl.style.animation='pop .6s ease '+(0.2+chips.length*0.16+0.2)+'s both';
+    },30);
+    return s;
+  }
+  function miniList(list){
+    var h=''; list.slice(0,4).forEach(function(p){ h+='<div class="mini"><div class="mn">'+p.nome+'</div><div class="mp">R$ '+brl(p.varejo)+'</div></div>'; });
+    return h;
+  }
+  function diaSlide(){
+    var d=new Date().getDay();
+    var bg='#1f9d3a', tint='rgba(31,157,58,.55)', title='', sub='', list=prodHorti, key='horti';
+    if(d===4){ bg='#E2231A'; tint='rgba(226,35,26,.55)'; title='Hoje é Quinta da Carne!'; sub='Açougue em oferta o dia todo'; list=prodAcougue; key='carne'; }
+    else if(d===5||d===6||d===0){ bg='#0e1a52'; tint='rgba(14,26,82,.6)'; title='Fim de Semana Imbatível!'; sub='Ofertas que só tem aqui no Ideal'; list=prodGeral; key='fimdesemana'; }
+    else if(d===2){ bg='#1f9d3a'; tint='rgba(31,157,58,.55)'; title='Hoje é Terça Verde!'; sub='Hortifrúti com preço de feira — só aqui no Ideal!'; list=prodHorti; key='horti'; }
+    else { bg='#16267A'; tint='rgba(22,38,122,.5)'; title='Ofertas todo dia no Ideal'; sub='Confira nossos preços'; list=prodGeral; key=''; }
+    var img = key ? pickImg(key) : '';
+    var layers = img ? ('<div class="bgfull" style="background-image:url('+img+');"></div><div class="tint" style="background:'+tint+';"></div>') : '';
+    var s=el(layers+'<div class="above day" style="z-index:2;"><div class="dtitle">'+title+'</div><div class="dsub" style="color:rgba(255,255,255,.9);">'+sub+'</div>'+
+      '<div class="minirow">'+miniList(list)+'</div></div>');
+    s.style.background=bg;
+    setTimeout(function(){ var ms=s.querySelectorAll('.mini'); ms.forEach(function(m,k){ m.style.opacity='0'; m.style.animation='rise .5s ease '+(0.15+k*0.13)+'s both'; }); },30);
+    return s;
+  }
+
+  var pattern=['SEMANA','PROD','PROD','PROD','PAG','PROD','PROD','BANNER','PROD','IDEAL','PROD','PROD','CORTES','PROD','PROD','DIA'];
+  function buildSlide(type){
+    if(type==='PROD') return prodSlide();
+    if(type==='SEMANA') return instSlide('semana');
+    if(type==='IDEAL') return instSlide('ideal');
+    if(type==='PAG') return pagSlide();
+    if(type==='CORTES') return cortesSlide();
+    if(type==='BANNER') return bannerSlide();
+    if(type==='DIA') return diaSlide();
+    return prodSlide();
+  }
+  function durFor(type){ if(type==='PROD') return 4500; if(type==='SEMANA'||type==='CORTES'||type==='BANNER') return 7000; if(type==='DIA'||type==='PAG') return 6500; return 5500; }
+
+  function tick(){
+    var type=pattern[step%pattern.length]; step++;
+    var node=buildSlide(type);
+    node.style.animation='fadein .5s ease';
+    stage.appendChild(node);
+    var olds=stage.querySelectorAll('.slide');
+    if(olds.length>1){ for(var i=0;i<olds.length-1;i++){ (function(o){ setTimeout(function(){ if(o.parentNode) o.parentNode.removeChild(o); },600); })(olds[i]); } }
+    setTimeout(tick, durFor(type));
+  }
+
+  if(loadCache()){ tick(); } else { stage.appendChild(el('<div class="above"><div class="ititle">Ideal Supermercados</div><div class="isub">Carregando ofertas...</div></div>')); }
+  fetchData();
+  setTimeout(function(){ if(step===0) tick(); }, 2500);
+  setInterval(fetchData, 600000);
+})();
+</script>
+</body>
+</html>
