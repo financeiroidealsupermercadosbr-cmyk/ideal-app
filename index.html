@@ -1659,6 +1659,7 @@ async function carregarSheets() {
       return {
         idx:   i,
         linha: i+2,       // linha real no Sheets (cabeçalho=1)
+        num:   (r[0]!=null?String(r[0]).trim():''), // NUM do ADIPRON (coluna A) — chave estável p/ baixa
         forn:  r[4]||'—',
         doc:   r[5]||'',
         venc:  r[2]||'',  // DT_VENCTO = coluna C = índice 2
@@ -1955,7 +1956,7 @@ function renderizarPainel() {
   else av.style.display='none';
 
   document.getElementById('c-hoje').textContent = brl(cpHoje);
-  document.getElementById('c-mes').textContent  = brl(dadosContas.reduce((s,b)=>s+b.valor,0));
+  document.getElementById('c-mes').textContent  = brl(dadosContas.filter(b=>!b.pago).reduce((s,b)=>s+b.valor,0));
 
   // Resumo "<mês> — até hoje": só dias do mês corrente (dadosVendas agora traz vários meses pela ponte)
   const _rmm=agora.getMonth(), _ryy=agora.getFullYear();
@@ -2016,6 +2017,10 @@ function filtrar() {
     lista.innerHTML='<div style="text-align:center;padding:20px;color:#999;font-size:13px">Nenhum resultado</div>';
     return;
   }
+
+  // Ordena por VENCIMENTO decrescente (mais recente no topo); desempata por NUM
+  const _vencMs = b=>{ const p=String(b.venc||'').split('/'); return (p.length>=3)? new Date(+p[2],+p[1]-1,+p[0]).getTime() : 0; };
+  items.sort((a,b)=>{ const d=_vencMs(b)-_vencMs(a); return d!==0 ? d : (parseInt(b.num,10)||0)-(parseInt(a.num,10)||0); });
 
   lista.innerHTML = items.map(b=>{
     const st = statusB(b);
@@ -3074,7 +3079,7 @@ async function confirmarBaixaMassa() {
     b.pago=true;
     b.baixaPor = baixaPor;
     try {
-      await salvarBaixaSheets(b.linha, dataPag, banco, 'Baixa em massa', baixaPor);
+      await salvarBaixaSheets(b.num, dataPag, banco, 'Baixa em massa', baixaPor);
       if(b.chave) baixasLocais.add(b.chave);
       salvos++;
     } catch(e) { erros++; }
@@ -3126,7 +3131,7 @@ async function confirmarBaixa() {
   const baixaPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
   boletoCurrent.baixaPor = baixaPor;
   try {
-    await salvarBaixaSheets(boletoCurrent.linha, dataPag, banco, obs, baixaPor);
+    await salvarBaixaSheets(boletoCurrent.num, dataPag, banco, obs, baixaPor);
     if(boletoCurrent.chave) baixasLocais.add(boletoCurrent.chave);
     toast('✓ Baixa registrada com sucesso!');
   } catch(e) {
@@ -3140,12 +3145,12 @@ async function confirmarBaixa() {
 // ══════════════════════════════════════════════════════
 // APPS SCRIPT — ESCRITA NO SHEETS
 // ══════════════════════════════════════════════════════
-async function salvarBaixaSheets(linha, dataPag, banco, obs, baixaPor) {
+async function salvarBaixaSheets(num, dataPag, banco, obs, baixaPor) {
   if(!APPS_SCRIPT_URL) return; // sem URL = só local
   const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({acao:'baixa', linha, dataPag, banco, obs, baixaPor:baixaPor||'', sheetId:SHEET_ID})
+    body: JSON.stringify({acao:'baixa', num, dataPag, banco, obs, baixaPor:baixaPor||'', sheetId:SHEET_ID})
   });
   if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
 }
