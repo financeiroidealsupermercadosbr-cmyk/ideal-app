@@ -3933,7 +3933,7 @@ async function precoSync(force){
     }
     _precoSub();
     var inp = document.getElementById('preco-busca');
-    if(inp && inp.value && inp.value.trim().length>=2) precoBuscar();
+    if(inp && inp.value && inp.value.trim().length>=1) precoBuscar();
   }catch(e){
     console.error('precoSync', e);
     if(!PRODUTOS.length){ var c2 = await _precoGet('all').catch(function(){return null;}); if(c2 && c2.length) PRODUTOS = c2; }
@@ -3959,13 +3959,22 @@ function precoBuscarDebounce(){ clearTimeout(_precoTimer); _precoTimer = setTime
 function precoBuscar(){
   var termo = _precoNorm((document.getElementById('preco-busca').value||'').trim());
   var box = document.getElementById('preco-res');
-  if(termo.length < 2){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Digite pelo menos 2 letras ou números.</div>'; return; }
-  if(!PRODUTOS.length){ box.innerHTML = '<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>'; return; }
   var ehNum = /^\d+$/.test(termo);
+  var minLen = ehNum ? 1 : 2;   // código/balança pode ter 1 dígito (ex.: "8"); texto exige 2 letras
+  if(termo.length < minLen){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Digite pelo menos 2 letras, ou um código.</div>'; return; }
+  if(!PRODUTOS.length){ box.innerHTML = '<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>'; return; }
+  var curto = ehNum && termo.length <= 2;   // 1-2 dígitos = só código/barras EXATO (senão "8" traria milhares)
   var res = [];
   for(var i=0;i<PRODUTOS.length && res.length<80;i++){
     var p = PRODUTOS[i];
-    if(p.n.indexOf(termo) >= 0 || (ehNum && (p.c===termo || p.b===termo))) res.push(p);
+    var ok;
+    if(ehNum){
+      if(curto) ok = (p.c===termo || p.b===termo);                                          // exato
+      else      ok = (p.c===termo || p.b===termo || p.c.indexOf(termo)===0 || p.b.indexOf(termo)===0 || p.n.indexOf(termo)>=0); // exato, começa com, ou no nome
+    } else {
+      ok = (p.n.indexOf(termo) >= 0);
+    }
+    if(ok) res.push(p);
   }
   res.sort(function(a,b){
     var ax = (a.c===termo||a.b===termo)?0:1, bx = (b.c===termo||b.b===termo)?0:1;
