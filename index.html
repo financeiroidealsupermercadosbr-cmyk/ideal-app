@@ -1326,13 +1326,13 @@ function doPost(e) {
       <span id="av-total-perda" style="font-size:18px;font-weight:700;color:#A32D2D">R$ 0,00</span>
     </div>
 
-    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Ocorrência <span style="font-weight:400;color:#9a988f">(o que aconteceu)</span></label>
-    <select id="av-ocorrencia" onchange="avClasseChange('ocorrencia')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
-    <input id="av-ocorrencia-outro" placeholder="Escreva a ocorrência" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
-
     <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Origem <span style="font-weight:400;color:#9a988f">(onde aconteceu)</span></label>
     <select id="av-origem" onchange="avClasseChange('origem')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
     <input id="av-origem-outro" placeholder="Escreva a origem" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
+
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Ocorrência <span style="font-weight:400;color:#9a988f">(o que aconteceu)</span></label>
+    <select id="av-ocorrencia" onchange="avClasseChange('ocorrencia')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
+    <input id="av-ocorrencia-outro" placeholder="Escreva a ocorrência" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
 
     <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Motivo <span style="font-weight:400;color:#9a988f">(causa)</span></label>
     <select id="av-motivo" onchange="avClasseChange('motivo')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
@@ -2935,7 +2935,7 @@ function avRenderSalvos(){
   if(_avView==='resumo'){
     var dim=_avResumoDim;
     var seg='<div style="display:flex;gap:6px;margin-bottom:10px">';
-    ['ocorrencia','origem','motivo'].forEach(function(dd){ var on=(dd===dim);
+    ['origem','ocorrencia','motivo'].forEach(function(dd){ var on=(dd===dim);
       seg+='<button onclick="avResumoDim(\''+dd+'\')" style="flex:1;padding:7px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;'+(on?'background:#A32D2D;color:#fff;border:none':'background:#fff;color:#A32D2D;border:1px solid #A32D2D')+'">'+_avDimNome(dd)+'</button>';
     });
     seg+='</div>';
@@ -3049,7 +3049,7 @@ function avPDF(){
     return '<div style="font-size:12px;font-weight:bold;color:#A32D2D;margin:14px 0 4px">Por '+_avDimNome(dim)+'</div>'
       + '<table><tr><th>'+_avDimNome(dim)+'</th><th class="c">Itens</th><th class="c">%</th><th class="v">Total</th></tr>'+rr+'</table>';
   }
-  var resumos = tabelaResumo('ocorrencia') + tabelaResumo('origem') + tabelaResumo('motivo');
+  var resumos = tabelaResumo('origem') + tabelaResumo('ocorrencia') + tabelaResumo('motivo');
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Controle de Avarias — Ideal</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
