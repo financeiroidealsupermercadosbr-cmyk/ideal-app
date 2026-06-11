@@ -3153,6 +3153,14 @@ async function salvarBaixaSheets(num, dataPag, banco, obs, baixaPor) {
     body: JSON.stringify({acao:'baixa', num, dataPag, banco, obs, baixaPor:baixaPor||'', sheetId:SHEET_ID})
   });
   if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
+  // CONFERE A RESPOSTA: só dá sucesso se o Apps Script realmente gravou.
+  // Se vier HTML (página de login do Apps Script), o JSON.parse falha → erro claro.
+  const txt = await res.text();
+  let j;
+  try { j = JSON.parse(txt); }
+  catch(e){ throw new Error('resposta não-JSON (provável página de login — confira a publicação do Apps Script: Quem tem acesso = Qualquer pessoa)'); }
+  if(!j.ok) throw new Error(j.erro || 'Apps Script não gravou');
+  return j;
 }
 
 async function salvarDespesaSheets(dados) {
