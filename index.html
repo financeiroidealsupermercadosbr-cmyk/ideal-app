@@ -3072,19 +3072,27 @@ async function confirmarBaixaMassa() {
   const banco   = document.getElementById('massa-banco').value;
 
   const indices = [...selecionados];
-  let salvos=0, erros=0;
   const baixaPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
 
+  // Monta a lista de todos os boletos selecionados e marca como pago localmente
+  const itens = [];
   for(const idx of indices) {
     const b = dadosContas.find(x=>x.idx===idx);
     if(!b) continue;
     b.pago=true;
     b.baixaPor = baixaPor;
-    try {
-      await salvarBaixaSheets(b.num, dataPag, banco, 'Baixa em massa', baixaPor);
-      if(b.chave) baixasLocais.add(b.chave);
-      salvos++;
-    } catch(e) { erros++; }
+    if(b.chave) baixasLocais.add(b.chave);
+    itens.push({ num: b.num, dataPag, banco, baixaPor });
+  }
+
+  let salvos=0, erros=0;
+  try {
+    const r = await salvarBaixaMassaSheets(itens, dataPag, banco, baixaPor);
+    salvos = (r && r.gravados!=null) ? r.gravados : itens.length;
+    erros  = (r && r.naoAchados!=null) ? r.naoAchados : 0;
+  } catch(e) {
+    erros = itens.length;   // falhou tudo (sem conexão / sem URL)
+    console.error(e);
   }
 
   selecionados.clear();
@@ -3095,9 +3103,26 @@ async function confirmarBaixaMassa() {
   atualizarContadorSelecionados();
 
   if(erros===0) toast(`✓ ${salvos} boleto(s) marcado(s) como pago!`);
-  else toast(`✓ ${salvos} pagos | ⚠ ${erros} não salvos no Sheets`);
+  else toast(`✓ ${salvos} pagos | ⚠ ${erros} não gravados no Sheets`);
 
   btn.disabled=false; btn.textContent='✓ Confirmar todos';
+}
+
+// Envia TODA a lista de baixas numa ÚNICA chamada (rápido e à prova de oscilação)
+async function salvarBaixaMassaSheets(itens, dataPag, banco, baixaPor) {
+  if(!APPS_SCRIPT_URL) return null; // sem URL = só local
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({acao:'baixa_massa', itens, dataPag, banco, baixaPor, sheetId:SHEET_ID})
+  });
+  if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
+  const txt = await res.text();
+  let j;
+  try { j = JSON.parse(txt); }
+  catch(e){ throw new Error('resposta não-JSON (provável página de login — confira a publicação do Apps Script)'); }
+  if(!j.ok) throw new Error(j.erro || 'Apps Script não gravou');
+  return j;
 }
 
 // ══════════════════════════════════════════════════════
