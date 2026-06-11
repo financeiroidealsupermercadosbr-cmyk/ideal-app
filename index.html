@@ -496,6 +496,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora de preço</span></div>
         <div class="qcard" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
         <div class="qcard" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
+        <div class="qcard" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Situação dos terminais</span></div>
         <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_temp"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
@@ -1288,6 +1289,21 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- TELA: Situação dos terminais (busca-preço) -->
+<div class="screen" id="s-terminais">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="terminaisFechar()"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Situação dos terminais</div>
+      <div style="font-size:11.5px;color:#888780" id="term-sub">Busca-preço da loja</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="terminaisAtualizar()" title="Atualizar"></i>
+  </div>
+  <div style="padding:14px 14px 90px" id="term-lista">
+    <div class="row-sub" style="padding:6px 2px">Carregando…</div>
+  </div>
+</div>
+
 <!-- Tela "Sincronizando dados" (offline-first) -->
 <div id="sync-splash" style="display:none;position:fixed;inset:0;background:#16267A;z-index:90;flex-direction:column;align-items:center;justify-content:center;color:#fff">
   <span class="spin" style="width:34px;height:34px;border-width:3px;border-color:rgba(255,255,255,0.35);border-top-color:#fff"></span>
@@ -1372,6 +1388,69 @@ function show(id) {
 // ── CALCULADORA DE PREÇO DE VENDA / MARGEM (markup sobre o custo) ──
 const brl2 = v => 'R$ ' + (Math.round((v||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function abrirCalc(){ show('s-calc'); calcRecalc(); window.scrollTo(0,0); }
+
+// ══════════════════════════════════════════════════════
+// SITUAÇÃO DOS TERMINAIS (busca-preço) — chat 25
+// Lê a aba Terminais (via Apps Script) e mostra cada terminal verde/vermelho.
+// Verde = deu "oi" nos últimos TERM_OFFLINE_MIN minutos.
+// ══════════════════════════════════════════════════════
+var TERM_OFFLINE_MIN = 6;     // online = sinal nos últimos 6 min
+var _termTimer = null;
+
+function abrirTerminais(){
+  show('s-terminais');
+  window.scrollTo(0,0);
+  terminaisAtualizar();
+  if(_termTimer) clearInterval(_termTimer);
+  _termTimer = setInterval(terminaisAtualizar, 60*1000); // re-checa a cada 1 min
+}
+function terminaisFechar(){
+  if(_termTimer){ clearInterval(_termTimer); _termTimer = null; }
+  show('s-app');
+}
+function _termEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function terminaisAtualizar(){
+  var sub = document.getElementById('term-sub');
+  var box = document.getElementById('term-lista');
+  if(!box) return;
+  try{
+    var res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ acao:'terminais_list', sheetId:SHEET_ID })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var j = await res.json();
+    if(!j || !j.ok) throw new Error((j&&j.erro)||'falha');
+    var lista = (j.terminais||[]).slice().sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
+    if(!lista.length){
+      box.innerHTML = '<div class="row-sub" style="padding:10px 2px">Nenhum terminal ainda. Eles aparecem aqui assim que ligarem (pode levar uns 2 minutos).</div>';
+      if(sub) sub.textContent = '0 terminais';
+      return;
+    }
+    var online = 0;
+    var html = lista.map(function(t){
+      var seg = (t.idadeSeg==null) ? null : Number(t.idadeSeg);
+      var min = (seg==null) ? null : Math.floor(seg/60);
+      var on = (min!=null && min < TERM_OFFLINE_MIN);
+      if(on) online++;
+      var cor = on ? '#1FA85A' : '#C53434';
+      var txt = on ? 'Online' : 'Offline';
+      var visto = (seg==null) ? 'sem registro' : (seg < 60 ? 'agora mesmo' : ('há '+min+' min'));
+      return '<div class="row-card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px">'
+        + '<span style="width:13px;height:13px;border-radius:50%;background:'+cor+';flex:0 0 auto;box-shadow:0 0 0 3px '+cor+'22"></span>'
+        + '<div style="flex:1">'
+        +   '<div class="row-label">'+_termEsc(String(t.id).toUpperCase())+' · <span style="color:'+cor+';font-weight:600">'+txt+'</span></div>'
+        +   '<div class="row-sub">Visto '+visto+(t.info?(' · '+_termEsc(t.info)):'')+'</div>'
+        + '</div></div>';
+    }).join('');
+    box.innerHTML = html;
+    if(sub) sub.textContent = online+' de '+lista.length+' online';
+  }catch(e){
+    box.innerHTML = '<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui ler agora. Toque no atualizar (↻) ali em cima.</div>';
+    if(sub) sub.textContent = 'sem conexão';
+  }
+}
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
