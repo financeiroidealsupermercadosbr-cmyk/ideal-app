@@ -1463,6 +1463,7 @@ function doPost(e) {
         <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total do mês</div><div id="fo-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
         <div id="fo-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 pessoas</div>
       </div>
+      <div id="fo-pagobar" style="display:none;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);font-size:12px"></div>
     </div>
   </div>
 
@@ -3233,6 +3234,7 @@ var _foMesRef=new Date();
 var _foDiaSel=0;
 var _foSetorFiltro='';
 var _foBusca='';
+var _foPagos={};
 var FO_SETOR_ORDEM=['FRENTE DE CAIXA','FISCAIS DE CAIXA','REPOSITORES','AÇOUGUE','PADARIA','LIMPEZA','VERDURÃO','CONFERÊNCIA','ESTAGIÁRIOS','GERÊNCIA'];
 var FO_TIPOS_SUGESTAO=['Salário','Passagem','Quebra de caixa','Auxílio aluguel','Bonificação','Extra','Auxílio cesta','Vale','Comissão'];
 
@@ -3248,6 +3250,7 @@ function _fo5DU(y,m){ var c=0, dim=new Date(y,m+1,0).getDate(); for(var d=1;d<=d
 function _foDiaReal(diaStr,y,m){ diaStr=String(diaStr||'').trim(); if(diaStr==='5DU') return _fo5DU(y,m); var n=parseInt(diaStr,10)||0; if(n<1)return 0; var dim=new Date(y,m+1,0).getDate(); if(n>dim)n=dim; return n; }
 function _foDiaLabel(diaStr){ diaStr=String(diaStr||'').trim(); if(diaStr==='5DU')return '5º dia útil'; var n=parseInt(diaStr,10)||0; return n?('dia '+n):'sem data'; }
 function _foEh5DU(diaStr){ return String(diaStr||'').trim()==='5DU'; }
+function _foPagoMes(pagId){ return !!_foPagos[pagId+'|'+_foMesYM()]; }
 function _foPagsDe(funcId){ return _foPag.filter(function(p){ return p.funcId===funcId; }); }
 function _foTotalFunc(funcId){ var t=0; _foPagsDe(funcId).forEach(function(p){ t+=_foNum(p.valor); }); return t; }
 async function _foPost(payload){
@@ -3281,15 +3284,18 @@ async function foCarregar(){
     var j=await _foPost({acao:'folha_list'});
     if(!j.ok || !Array.isArray(j.funcionarios)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
     _foFunc=j.funcionarios; _foPag=j.pagamentos||[];
+    _foPagos={}; var pgs=j.pagos||[]; for(var pp=0;pp<pgs.length;pp++){ if(pgs[pp].pagId&&pgs[pp].mes) _foPagos[pgs[pp].pagId+'|'+pgs[pp].mes]=true; }
     foRenderTotal();
     if(document.getElementById('fo-tab-cal').style.display!=='none') foRenderCal(); else foRenderLista();
   }catch(e){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">Não consegui carregar. Toque em ↻.</div>'; }
 }
 function foRenderTotal(){
-  var tot=0; _foPag.forEach(function(p){ tot+=_foNum(p.valor); });
+  var tot=0, pagoVal=0; _foPag.forEach(function(p){ var n=_foNum(p.valor); tot+=n; if(_foPagoMes(p.id)) pagoVal+=n; });
   document.getElementById('fo-total').textContent=_precoBRL(tot);
   var semPag=0; _foFunc.forEach(function(f){ if(_foPagsDe(f.id).length===0) semPag++; });
   document.getElementById('fo-qtd').innerHTML=_foFunc.length+' pessoa(s)'+(semPag>0?('<br><span style="opacity:.8">'+semPag+' sem pagamento</span>'):'');
+  var bar=document.getElementById('fo-pagobar');
+  if(bar){ if(_foPag.length){ bar.style.display='flex'; bar.innerHTML='<div><span style="opacity:.8">Pago</span> <b>'+_precoBRL(pagoVal)+'</b></div><div><span style="opacity:.8">Falta</span> <b style="color:#FFD86B">'+_precoBRL(Math.max(0,tot-pagoVal))+'</b></div>'; } else bar.style.display='none'; }
 }
 
 // ── LISTA: agrupada por setor, um cartão por pessoa ──
@@ -3345,8 +3351,11 @@ function _foCardFunc(f,g){
   var linhas='';
   pags.forEach(function(p){
     var amber=_foEh5DU(p.dia);
+    var pago=_foPagoMes(p.id);
+    var pagoBtn='<i class="ti '+(pago?'ti-circle-check':'ti-circle')+'" onclick="foTogglePagoLinha(\''+p.id+'\')" title="'+(pago?'Pago — toque p/ desfazer':'Marcar como pago')+'" style="font-size:19px;cursor:pointer;color:'+(pago?'#1FA85A':'#C8CCD8')+';flex-shrink:0"></i>';
     var acoes=g?('<i class="ti ti-pencil" style="color:#b8b6ad;font-size:15px;cursor:pointer;padding:3px;margin-left:2px" onclick="foEditPag(\''+p.id+'\')"></i><i class="ti ti-x" style="color:#cdaaaa;font-size:16px;cursor:pointer;padding:3px" onclick="foDelPag(\''+p.id+'\')"></i>'):'';
-    linhas+='<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid #EEE;border-radius:9px;margin-bottom:6px">'
+    linhas+='<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid '+(pago?'#CDEBD9':'#EEE')+';background:'+(pago?'#F3FBF6':'#fff')+';border-radius:9px;margin-bottom:6px">'
+      +pagoBtn
       +'<span style="flex:1;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_precoEsc(p.tipo)+'</span>'
       +'<span style="font-size:13px;font-weight:600;white-space:nowrap">'+_precoBRL(_foNum(p.valor))+'</span>'
       +'<span class="fo-chip'+(amber?' fo-chip-amber':'')+'">'+_precoEsc(_foDiaLabel(p.dia))+'</span>'+acoes+'</div>';
@@ -3361,6 +3370,13 @@ function foMesNav(delta){
   _foMesRef=new Date(_foMesRef.getFullYear(), _foMesRef.getMonth()+delta, 1);
   _foDiaSel=0; _foRenderMes(); foRenderTotal();
   if(document.getElementById('fo-tab-cal').style.display!=='none') foRenderCal(); else foRenderLista();
+}
+function foTogglePagoLinha(pagId){
+  var mes=_foMesYM(); var key=pagId+'|'+mes; var novo=!_foPagos[key];
+  if(novo) _foPagos[key]=true; else delete _foPagos[key];
+  foRenderTotal();
+  if(document.getElementById('fo-tab-cal').style.display!=='none') foRenderCal(); else foRenderLista();
+  _foPost({acao:'folhapag_set', pagId:pagId, mes:mes, pago:novo, quem:(userAtual&&userAtual.nome)||''}).then(function(j){ if(!j.ok) toast(j.erro||'Erro ao salvar'); }).catch(function(){ toast('Sem conexão — tente de novo'); });
 }
 function _foPorDia(){
   var y=_foMesRef.getFullYear(), m=_foMesRef.getMonth(), por={};
@@ -3383,8 +3399,10 @@ function foRenderCal(){
   for(var b=0;b<primeiro;b++){ html+='<div></div>'; }
   for(var d=1;d<=dim;d++){
     var info=por[d]; var sel=(d===_foDiaSel);
+    var allPaid=info&&info.pags.length&&info.pags.every(function(p){ return _foPagoMes(p.id); });
     var bg,cor,dotCor,pulse='';
-    if(sel){ bg='#16267A'; cor='#fff'; dotCor='#FFC400'; if(info&&info.has5DU) pulse='fo-dot'; }
+    if(sel){ bg='#16267A'; cor='#fff'; dotCor=allPaid?'#7BE0A6':'#FFC400'; if(info&&info.has5DU&&!allPaid) pulse='fo-dot'; }
+    else if(allPaid){ bg='#DFF5E8'; cor='#0F6E56'; dotCor='#1FA85A'; }
     else if(info&&info.has5DU){ bg='#FFF3C4'; cor='#16267A'; dotCor='#E8A800'; pulse='fo-dot'; }
     else if(info){ bg='#E6E9F5'; cor='#16267A'; dotCor='#16267A'; }
     else { bg='#fff'; cor='#B4B2A9'; dotCor='transparent'; }
@@ -3408,8 +3426,9 @@ function foRenderDia(d){
   var nomeDe={}; _foFunc.forEach(function(f){ nomeDe[f.id]=f.nome; });
   var lista=info.pags.slice().sort(function(a,b){ return String(nomeDe[a.funcId]||'').localeCompare(String(nomeDe[b.funcId]||'')); });
   var tot=0; var html='<div style="font-size:12.5px;color:#16267A;font-weight:600;margin-bottom:8px">'+titulo+' · '+lista.length+' pagamento(s)</div>';
-  lista.forEach(function(p){ var n=_foNum(p.valor); tot+=n;
-    html+='<div class="row-card" style="margin-bottom:8px;align-items:center"><div style="flex:1;min-width:0"><div class="row-label" style="font-size:13px">'+_precoEsc(nomeDe[p.funcId]||'?')+'</div><div class="row-sub">'+_precoEsc(p.tipo)+'</div></div><span style="font-size:13.5px;font-weight:600;color:#16267A;white-space:nowrap">'+_precoBRL(n)+'</span></div>';
+  lista.forEach(function(p){ var n=_foNum(p.valor); tot+=n; var pago=_foPagoMes(p.id);
+    var pagoBtn='<i class="ti '+(pago?'ti-circle-check':'ti-circle')+'" onclick="foTogglePagoLinha(\''+p.id+'\')" style="font-size:19px;cursor:pointer;color:'+(pago?'#1FA85A':'#C8CCD8')+';margin-right:9px;flex-shrink:0"></i>';
+    html+='<div class="row-card" style="margin-bottom:8px;align-items:center;'+(pago?'background:#F3FBF6;border-color:#CDEBD9':'')+'">'+pagoBtn+'<div style="flex:1;min-width:0"><div class="row-label" style="font-size:13px">'+_precoEsc(nomeDe[p.funcId]||'?')+'</div><div class="row-sub">'+_precoEsc(p.tipo)+'</div></div><span style="font-size:13.5px;font-weight:600;color:#16267A;white-space:nowrap">'+_precoBRL(n)+'</span></div>';
   });
   html+='<div style="text-align:right;font-size:13px;color:#5F5E5A;margin-top:2px">Total do dia: <b style="color:#16267A">'+_precoBRL(tot)+'</b></div>';
   box.innerHTML=html;
