@@ -1701,7 +1701,7 @@ function fzRenderLancar(){
       +   '<i class="ti ti-trash" style="color:#A32D2D;font-size:17px;cursor:pointer" onclick="fzRemover(\''+f.id+'\')" title="Remover"></i>'
       + '</div>'
       + '<div style="display:flex;gap:8px;margin-top:9px">'
-      +   '<input data-fz="'+f.id+'" class="fz-temp" type="text" placeholder="Temp °C" style="width:98px;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">'
+      +   '<input data-fz="'+f.id+'" class="fz-temp" type="text" placeholder="Temp (ex: -18)" style="width:110px;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">'
       +   '<input data-fzobs="'+f.id+'" class="fz-obs" type="text" placeholder="Observação (opcional)" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">'
       + '</div>'
       + '</div>';
@@ -1732,11 +1732,16 @@ function fzSalvarMedicao(){
   var temps=document.querySelectorAll('#fz-lista .fz-temp');
   for(var i=0;i<temps.length;i++){
     var fid=temps[i].getAttribute('data-fz');
-    var val=String(temps[i].value||'').trim();
-    if(val==='') continue;
+    // normaliza: traços unicode -> menos comum, vírgula -> ponto
+    var raw=String(temps[i].value||'').trim().replace(/[\u2212\u2013\u2014]/g,'-').replace(',','.');
+    if(raw==='') continue;
+    var neg=/^-/.test(raw);                 // guarda se é negativo
+    var soNum=raw.replace(/[^0-9.]/g,'');    // tira tudo que não é número/ponto (ex.: "°C")
+    if(soNum==='') continue;
+    var val=(neg?'-':'')+soNum;              // recompõe com o sinal certo
     var obsEl=document.querySelector('#fz-lista .fz-obs[data-fzobs="'+fid+'"]');
     var obs=obsEl?String(obsEl.value||'').trim():'';
-    itens.push({freezerId:fid, temp:val.replace(',','.'), obs:obs});
+    itens.push({freezerId:fid, temp:val, obs:obs});
   }
   if(!itens.length){ toast('Digite ao menos uma temperatura'); return; }
   var btn=document.getElementById('fz-salvar-btn'); var bh=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> Salvando…';
@@ -1944,14 +1949,15 @@ function fzPDF(usarFiltro){
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
-    + '.sheet{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.sheet{max-width:1180px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
     + '.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
     + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
     + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
-    + 'table{width:100%;border-collapse:collapse;margin-top:8px}'
-    + 'th{font-size:10.5px;text-transform:uppercase;color:#1B3A9E;text-align:center;padding:7px 5px;border:1px solid #C9D6EC;background:#EAF0FB}'
-    + 'th.d,td.d{text-align:left;white-space:nowrap;font-weight:bold;background:#F5F8FD}'
-    + 'td{padding:7px 5px;font-size:12.5px;border:1px solid #e6e6e6;text-align:center;color:#1a1a1a}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px;table-layout:fixed}'
+    + 'th{font-size:9px;text-transform:uppercase;color:#1B3A9E;text-align:center;padding:4px 3px;border:1px solid #C9D6EC;background:#EAF0FB;word-break:break-word;line-height:1.15}'
+    + 'th.d,td.d{text-align:left;font-weight:bold;background:#F5F8FD;width:58px;word-break:normal;white-space:nowrap}'
+    + 'td{padding:5px 3px;font-size:10px;border:1px solid #e6e6e6;text-align:center;color:#1a1a1a;word-break:break-word}'
+    + '@media print{@page{size:A4 landscape;margin:8mm}}'
     + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
