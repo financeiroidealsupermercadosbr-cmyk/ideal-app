@@ -690,7 +690,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     <div id="tab-contas" class="content" style="display:none">
       <div class="grid2" style="margin-bottom:12px">
         <div class="metric"><div class="metric-label">Hoje</div><div class="metric-value red" id="c-hoje">—</div></div>
-        <div class="metric"><div class="metric-label">Total mês</div><div class="metric-value" id="c-mes">—</div></div>
+        <div class="metric"><div class="metric-label">Total em aberto</div><div class="metric-value" id="c-mes">—</div></div>
       </div>
 
       <!-- BARRA DE SELEÇÃO EM MASSA -->
@@ -708,13 +708,19 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <input type="text" placeholder="Buscar fornecedor..." id="busca" oninput="filtrar()" style="flex:2">
         <select id="filtro-status" onchange="filtrar()">
           <option value="">Todos</option>
+          <option value="hoje">Hoje</option>
           <option value="vencido">Vencidos</option>
           <option value="pendente">Pendentes</option>
           <option value="pago">Pagos</option>
         </select>
       </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+        <span style="font-size:11px;color:#666">De</span>
+        <input type="date" id="filtro-data-de" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+        <span style="font-size:11px;color:#666">Até</span>
+        <input type="date" id="filtro-data-ate" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+      </div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
-        <input type="date" id="filtro-data" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
         <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
         <button onclick="limparFiltros()" style="padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer;white-space:nowrap">Limpar</button>
       </div>
@@ -1984,7 +1990,7 @@ function renderizarPainel() {
 // CONTAS — LISTAR
 // ══════════════════════════════════════════════════════
 function limparFiltros() {
-  ['busca','filtro-data','filtro-valor-max'].forEach(id=>{
+  ['busca','filtro-data-de','filtro-data-ate','filtro-valor-max'].forEach(id=>{
     const e=document.getElementById(id); if(e) e.value='';
   });
   const ss=document.getElementById('filtro-status'); if(ss) ss.value='';
@@ -1994,23 +2000,30 @@ function limparFiltros() {
 function filtrar() {
   const q   = (document.getElementById('busca')||{value:''}).value.toLowerCase();
   const sel = (document.getElementById('filtro-status')||{value:''}).value;
-  const dtF = (document.getElementById('filtro-data')||{value:''}).value; // YYYY-MM-DD
+  const dtDe  = (document.getElementById('filtro-data-de')||{value:''}).value;  // YYYY-MM-DD
+  const dtAte = (document.getElementById('filtro-data-ate')||{value:''}).value; // YYYY-MM-DD
   const vlMax = parseFloat((document.getElementById('filtro-valor-max')||{value:''}).value)||Infinity;
   const lista = document.getElementById('lista-boletos');
   if(!lista) return;
 
+  // data de hoje em ISO (YYYY-MM-DD) para o filtro "Hoje"
+  const _hojeISO = new Date().toISOString().split('T')[0];
+  // converte o vencimento DD/MM/YYYY do boleto para YYYY-MM-DD (ou '' se inválido)
+  const _vencISO = b=>{ const p=String(b.venc||'').split('/'); return (p.length>=3)? (p[2]+'-'+p[1]+'-'+p[0]) : ''; };
+
   const items = dadosContas.filter(b=>{
     const st = statusB(b);
     if(q&&!b.forn.toLowerCase().includes(q)) return false;
-    if(sel&&st!==sel) return false;
+    // status: "hoje" = vence hoje; os demais usam o status normal
+    if(sel==='hoje'){ if(_vencISO(b)!==_hojeISO) return false; }
+    else if(sel&&st!==sel) return false;
     if(b.valor>vlMax) return false;
-    if(dtF) {
-      // converte venc DD/MM/YYYY para YYYY-MM-DD para comparar
-      const p=b.venc.split('/');
-      if(p.length>=3) {
-        const vencISO=p[2]+'-'+p[1]+'-'+p[0];
-        if(vencISO!==dtF) return false;
-      }
+    // intervalo de vencimento De … Até (qualquer um pode estar vazio)
+    if(dtDe || dtAte){
+      const vISO = _vencISO(b);
+      if(!vISO) return false;
+      if(dtDe  && vISO < dtDe ) return false;
+      if(dtAte && vISO > dtAte) return false;
     }
     return true;
   });
