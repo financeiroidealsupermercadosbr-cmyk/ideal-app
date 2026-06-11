@@ -499,7 +499,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Situação dos terminais</span></div>
         <div class="qcard" data-menu="ck_gerentes" onclick="abrirChecklist()"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span></div>
         <div class="qcard" data-menu="ck_temp" onclick="abrirFreezers()"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span></div>
-        <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span></div>
         <div class="qcard soon" data-menu="folha"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span><span class="qsoon">em breve</span></div>
       </div>
     </div>
@@ -1286,6 +1286,58 @@ function doPost(e) {
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+  </div>
+</div>
+
+<!-- TELA: Contas mensais fixas -->
+<div class="screen" id="s-contas">
+  <style>
+    @keyframes coPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
+    #s-contas .co-dot{animation:coPulse 1.8s ease-in-out infinite}
+    #s-contas .co-daycell{transition:transform .12s ease}
+    #s-contas .co-daycell:active{transform:scale(.93)}
+    @keyframes coFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    #s-contas #co-cal-dia>div{animation:coFade .22s ease}
+  </style>
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Contas mensais fixas</div>
+      <div style="font-size:11.5px;color:#888780" id="co-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="coCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="co-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="coConfigMenu()" title="Configurar"></i>
+  </div>
+
+  <div style="padding:12px 14px 0">
+    <div style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total do mês</div><div id="co-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
+        <div id="co-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 contas</div>
+      </div>
+      <div id="co-pagobar" style="display:none;gap:14px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);font-size:12px"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px 14px 0">
+    <i class="ti ti-chevron-left" style="font-size:22px;color:#16267A;cursor:pointer" onclick="coMesNav(-1)"></i>
+    <div id="co-mes-titulo" style="font-size:14px;font-weight:600;color:#16267A;min-width:140px;text-align:center">—</div>
+    <i class="ti ti-chevron-right" style="font-size:22px;color:#16267A;cursor:pointer" onclick="coMesNav(1)"></i>
+  </div>
+
+  <div style="display:flex;gap:6px;padding:10px 14px 0">
+    <button id="co-tabbtn-lista" onclick="coTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lista</button>
+    <button id="co-tabbtn-cal" onclick="coTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Calendário</button>
+  </div>
+
+  <div id="co-tab-lista" style="padding:12px 14px 100px">
+    <div id="co-lista"><div class="loadrow"><span class="spin"></span> Carregando contas…</div></div>
+    <button class="btn-primary" id="co-nova-btn" style="margin-top:14px;display:none" onclick="coNova()"><i class="ti ti-plus"></i> Nova conta</button>
+  </div>
+
+  <div id="co-tab-cal" style="display:none;padding:12px 14px 100px">
+    <div id="co-cal"></div>
+    <div id="co-cal-dia" style="margin-top:14px"></div>
   </div>
 </div>
 
@@ -2282,6 +2334,259 @@ function ckPDF(){
   win.document.open(); win.document.write(html); win.document.close();
 }
 
+// ══════════════════════════════════════════════════════
+// CONTAS MENSAIS FIXAS (chat 25)
+// Por loja. Lista ordenada por dia + calendário do mês (dias com conta marcados).
+// Editável (gestor): adicionar, editar dia/valor, excluir, importar lista inicial.
+// ══════════════════════════════════════════════════════
+var _coContas = [];
+var _coPagos = {};                 // "contaId|YYYY-MM" -> true (pago no mês)
+var _coMesRef = new Date();
+var _coDiaSel = 0;
+var CO_LISTA_INICIAL = [
+  {nome:'FKS Cora', dia:1, valor:''},
+  {nome:'Prevê Saúde e Segurança', dia:4, valor:''},
+  {nome:'Correios', dia:5, valor:''},
+  {nome:'Talento Ambiental', dia:7, valor:'1700.00'},
+  {nome:'Claro', dia:8, valor:''},
+  {nome:'Ceneb Kids', dia:10, valor:''},
+  {nome:'Escola Mariana', dia:10, valor:''},
+  {nome:'AGE', dia:10, valor:''},
+  {nome:'Fecomércio', dia:12, valor:''},
+  {nome:'Jovem Aprendiz', dia:12, valor:''},
+  {nome:'Rastreamento BSB', dia:15, valor:''},
+  {nome:'Consórcio', dia:15, valor:'1236.16'},
+  {nome:'Rastreamento', dia:15, valor:'199.60'},
+  {nome:'Nevescon', dia:17, valor:'1615.00'},
+  {nome:'FKS', dia:17, valor:'149.90'},
+  {nome:'ICMS', dia:20, valor:''},
+  {nome:'Simples (Varejo)', dia:20, valor:''},
+  {nome:'ISS (Varejo/Ideal)', dia:20, valor:''},
+  {nome:'SimTech', dia:20, valor:'289.00'},
+  {nome:'PIS/COFINS', dia:20, valor:''},
+  {nome:'Plano de Saúde', dia:22, valor:''},
+  {nome:'CEB Sol', dia:23, valor:''},
+  {nome:'BOM Parcelamento (3 parcelas)', dia:25, valor:''}
+];
+function _coLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
+function _coNomeLoja(){ var l=_coLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _coNum(v){ var n=parseFloat(v); return isNaN(n)?0:n; }
+function _coMesYM(){ return _coMesRef.getFullYear()+'-'+('0'+(_coMesRef.getMonth()+1)).slice(-2); }
+function _coPago(contaId){ return !!_coPagos[contaId+'|'+_coMesYM()]; }
+function _coRenderMes(){ var el=document.getElementById('co-mes-titulo'); if(el) el.textContent=_fzMesNomes[_coMesRef.getMonth()]+' '+_coMesRef.getFullYear(); }
+async function _coPost(payload){
+  var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_coLoja()}, payload)) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function abrirContas(){
+  show('s-contas'); window.scrollTo(0,0);
+  var g=ehGestor();
+  document.getElementById('co-cfg-btn').style.display=g?'inline':'none';
+  document.getElementById('co-nova-btn').style.display=g?'block':'none';
+  _coMesRef=new Date(); _coDiaSel=0;
+  _coRenderMes();
+  coTab('lista');
+  coCarregar();
+}
+function coTab(qual){
+  document.getElementById('co-tabbtn-lista').style.cssText=_fzBtn(qual==='lista');
+  document.getElementById('co-tabbtn-cal').style.cssText=_fzBtn(qual==='cal');
+  var L=document.getElementById('co-tab-lista'), C=document.getElementById('co-tab-cal');
+  if(qual==='cal'){ L.style.display='none'; C.style.display='block'; coRenderCal(); }
+  else { C.style.display='none'; L.style.display='block'; coRenderLista(); }
+}
+async function coCarregar(){
+  var sub=document.getElementById('co-sub'); var box=document.getElementById('co-lista');
+  if(sub) sub.textContent=_coNomeLoja();
+  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando contas…</div>';
+  try{
+    var j=await _coPost({acao:'contas_list'});
+    if(!j.ok || !Array.isArray(j.contas)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
+    _coContas=j.contas;
+    _coPagos={}; var pgs=j.pagamentos||[]; for(var p=0;p<pgs.length;p++){ if(pgs[p].contaId&&pgs[p].mes) _coPagos[pgs[p].contaId+'|'+pgs[p].mes]=true; }
+    _coRenderMes();
+    coRenderTotal();
+    coRenderLista();
+    if(document.getElementById('co-tab-cal').style.display!=='none') coRenderCal();
+  }catch(e){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque em ↻.</div>'; }
+}
+function coRenderTotal(){
+  var tot=0, comValor=0, pagoVal=0, pagas=0;
+  for(var i=0;i<_coContas.length;i++){ var c=_coContas[i]; var n=_coNum(c.valor);
+    if(c.valor){ tot+=n; comValor++; }
+    if(_coPago(c.id)){ pagas++; if(c.valor) pagoVal+=n; }
+  }
+  document.getElementById('co-total').textContent=_precoBRL(tot);
+  var semValor=_coContas.length-comValor;
+  document.getElementById('co-qtd').innerHTML=_coContas.length+' conta(s)'+(semValor>0?('<br><span style="opacity:.8">'+semValor+' sem valor</span>'):'');
+  var bar=document.getElementById('co-pagobar');
+  if(bar){
+    if(_coContas.length){
+      bar.style.display='flex';
+      bar.innerHTML='<div><span style="opacity:.8">Pagas</span> <b>'+pagas+'/'+_coContas.length+'</b></div>'
+        +'<div><span style="opacity:.8">Pago</span> <b>'+_precoBRL(pagoVal)+'</b></div>'
+        +'<div><span style="opacity:.8">Falta</span> <b style="color:#FFD86B">'+_precoBRL(Math.max(0,tot-pagoVal))+'</b></div>';
+    } else bar.style.display='none';
+  }
+}
+
+// ── LISTA (ordenada por dia) ──
+function coRenderLista(){
+  var box=document.getElementById('co-lista');
+  if(!_coContas.length){
+    box.innerHTML='<div class="row-sub" style="padding:10px 2px;margin-bottom:10px">Nenhuma conta cadastrada nesta loja.</div>'
+      + (ehGestor()?'<button class="btn-primary" style="margin-top:0;background:#fff;color:#0F6E56;border:1px solid #0F6E56" onclick="coImportar()"><i class="ti ti-download"></i> Importar lista inicial (Lindsey)</button>':'');
+    return;
+  }
+  var arr=_coContas.slice().sort(function(a,b){ return (a.dia-b.dia) || String(a.nome).localeCompare(String(b.nome)); });
+  var g=ehGestor();
+  var html=''; var diaAtual=null;
+  for(var i=0;i<arr.length;i++){ var c=arr[i];
+    if(c.dia!==diaAtual){ diaAtual=c.dia; html+='<div style="font-size:11.5px;color:#888780;font-weight:700;margin:13px 2px 6px;letter-spacing:.3px">DIA '+(c.dia||'?')+'</div>'; }
+    var icons = g ? ('<i class="ti ti-pencil" style="color:#888780;font-size:16px;cursor:pointer;margin-left:8px" onclick="coEditar(\''+c.id+'\')"></i><i class="ti ti-trash" style="color:#A32D2D;font-size:16px;cursor:pointer;margin-left:8px" onclick="coRemover(\''+c.id+'\')"></i>') : '';
+    var pago=_coPago(c.id);
+    var pill='<button onclick="coTogglePago(\''+c.id+'\')" style="border:none;cursor:pointer;border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600;white-space:nowrap;'+(pago?'background:#1FA85A;color:#fff':'background:#fff;color:#888780;border:1px solid #D3D1C7')+'">'+(pago?'✓ Pago':'Pagar')+'</button>';
+    var valTxt = c.valor?_precoBRL(_coNum(c.valor)):'<span style="color:#B4B2A9">sem valor</span>';
+    html+='<div class="row-card" style="margin-bottom:8px;align-items:center"><div style="flex:1"><div class="row-label">'+_precoEsc(c.nome)+'</div><div class="row-sub">'+valTxt+'</div></div>'+pill+icons+'</div>';
+  }
+  box.innerHTML=html;
+}
+
+// ── CALENDÁRIO ──
+function coTogglePago(contaId){
+  var mes=_coMesYM(); var key=contaId+'|'+mes;
+  var novo=!_coPagos[key];
+  if(novo) _coPagos[key]=true; else delete _coPagos[key];
+  coRenderTotal();
+  if(document.getElementById('co-tab-cal').style.display!=='none') coRenderCal(); else coRenderLista();
+  _coPost({acao:'contapag_set', contaId:contaId, mes:mes, pago:novo, quem:(userAtual&&userAtual.nome)||''}).then(function(j){
+    if(!j.ok) toast(j.erro||'Erro ao salvar');
+  }).catch(function(){ toast('Sem conexão — tente de novo'); });
+}
+function coMesNav(delta){
+  _coMesRef=new Date(_coMesRef.getFullYear(), _coMesRef.getMonth()+delta, 1);
+  _coDiaSel=0;
+  _coRenderMes(); coRenderTotal();
+  if(document.getElementById('co-tab-cal').style.display!=='none') coRenderCal(); else coRenderLista();
+}
+function coRenderCal(){
+  var ref=_coMesRef; var y=ref.getFullYear(), m=ref.getMonth();
+  _coRenderMes();
+  var primeiro=new Date(y,m,1).getDay();
+  var diasNoMes=new Date(y,m+1,0).getDate();
+  var porDia={}; for(var i=0;i<_coContas.length;i++){ var dia=_coContas[i].dia; if(dia>=1&&dia<=31){ if(!porDia[dia]) porDia[dia]=[]; porDia[dia].push(_coContas[i]); } }
+  var nomes=['D','S','T','Q','Q','S','S'];
+  var html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+  for(var w=0;w<7;w++){ html+='<div style="text-align:center;font-size:10px;color:#888780;font-weight:600;padding:2px 0">'+nomes[w]+'</div>'; }
+  for(var b=0;b<primeiro;b++){ html+='<div></div>'; }
+  for(var d=1;d<=diasNoMes;d++){
+    var tem=porDia[d]; var sel=(d===_coDiaSel);
+    var allPaid = tem && tem.every(function(c){ return _coPago(c.id); });
+    var bg, cor, dotCor;
+    if(sel){ bg='#16267A'; cor='#fff'; }
+    else if(tem && allPaid){ bg='#DFF5E8'; cor='#0F6E56'; }
+    else if(tem){ bg='#FFF3C4'; cor='#16267A'; }
+    else { bg='#fff'; cor='#B4B2A9'; }
+    dotCor = sel?'#FFC400':((tem&&allPaid)?'#1FA85A':'#E8A800');
+    var dot = tem ? '<div class="co-dot" style="width:5px;height:5px;border-radius:50%;background:'+dotCor+';margin:2px auto 0"></div>' : '';
+    html+='<div class="co-daycell" onclick="coDiaSel('+d+')" style="aspect-ratio:1;border:1px solid #eee;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:'+bg+';color:'+cor+';font-size:13px;font-weight:'+(tem?'700':'400')+'">'+d+dot+'</div>';
+  }
+  html+='</div>';
+  document.getElementById('co-cal').innerHTML=html;
+  coRenderDia(_coDiaSel);
+}
+function coDiaSel(d){ _coDiaSel=(_coDiaSel===d?0:d); coRenderCal(); }
+function coRenderDia(d){
+  var box=document.getElementById('co-cal-dia'); if(!box) return;
+  if(!d){ box.innerHTML='<div class="row-sub" style="text-align:center;padding:8px;color:#B4B2A9">Toque num dia para ver as contas</div>'; return; }
+  var lista=_coContas.filter(function(c){ return c.dia===d; }).sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome)); });
+  if(!lista.length){ box.innerHTML='<div class="row-sub" style="text-align:center;padding:12px">Dia '+d+': nada a pagar 🎉</div>'; return; }
+  var tot=0, pagoDia=0; var html='<div style="font-size:12.5px;color:#16267A;font-weight:600;margin-bottom:8px">Dia '+d+' · '+lista.length+' conta(s)</div>';
+  for(var i=0;i<lista.length;i++){ var c=lista[i]; var n=_coNum(c.valor); tot+=n; var pago=_coPago(c.id); if(pago) pagoDia+=n;
+    var pill='<button onclick="coTogglePago(\''+c.id+'\')" style="border:none;cursor:pointer;border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600;white-space:nowrap;margin-left:8px;'+(pago?'background:#1FA85A;color:#fff':'background:#fff;color:#888780;border:1px solid #D3D1C7')+'">'+(pago?'✓ Pago':'Pagar')+'</button>';
+    html+='<div class="row-card" style="margin-bottom:8px;align-items:center"><div style="flex:1"><div class="row-label">'+_precoEsc(c.nome)+'</div><div class="row-sub">'+(c.valor?_precoBRL(n):'sem valor')+'</div></div>'+pill+'</div>';
+  }
+  if(tot>0) html+='<div style="text-align:right;font-size:13px;color:#5F5E5A;margin-top:2px">Pago '+_precoBRL(pagoDia)+' de <b style="color:#16267A">'+_precoBRL(tot)+'</b></div>';
+  box.innerHTML=html;
+}
+
+// ── EDIÇÃO (gestor) ──
+function coForm(titulo, conta, onOk){
+  conta = conta||{};
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:12px;font-weight:500">'+_precoEsc(titulo)+'</div>'
+    +'<label style="font-size:11.5px;color:#5F5E5A">Nome da conta</label>'
+    +'<input id="_co_nome" style="width:100%;padding:10px;border:1px solid #D3D1C7;border-radius:9px;font-size:14px;box-sizing:border-box;margin:3px 0 10px">'
+    +'<div style="display:flex;gap:10px">'
+    +'<div style="flex:1"><label style="font-size:11.5px;color:#5F5E5A">Dia (1–31)</label><input id="_co_dia" type="number" min="1" max="31" style="width:100%;padding:10px;border:1px solid #D3D1C7;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:3px"></div>'
+    +'<div style="flex:1"><label style="font-size:11.5px;color:#5F5E5A">Valor (opcional)</label><input id="_co_valor" inputmode="decimal" placeholder="ex: 1700,00" style="width:100%;padding:10px;border:1px solid #D3D1C7;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:3px"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:16px">'
+    +'<button id="_co_no" style="flex:1;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px">Cancelar</button>'
+    +'<button id="_co_yes" style="flex:1;background:#16267A;color:#fff;border:none;border-radius:9px;height:42px;font-size:14px;font-weight:500">Salvar</button>'
+    +'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  var inN=card.querySelector('#_co_nome'), inD=card.querySelector('#_co_dia'), inV=card.querySelector('#_co_valor');
+  inN.value=conta.nome||''; inD.value=conta.dia||''; inV.value=conta.valor?String(conta.valor):'';
+  setTimeout(function(){ try{ inN.focus(); }catch(e){} },80);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  function ok(){
+    var nome=inN.value.trim(); if(!nome){ toast('Digite o nome'); return; }
+    var dia=parseInt(inD.value,10)||0; if(dia<1||dia>31){ toast('Dia de 1 a 31'); return; }
+    var s=String(inV.value||'').trim();
+    if(s.indexOf(',')>=0) s=s.replace(/\./g,'').replace(',','.');   // BR: ponto=milhar, vírgula=decimal
+    s=s.replace(/[^0-9.]/g,'');
+    close(); onOk({nome:nome, dia:dia, valor:s});
+  }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_co_no').onclick=close;
+  card.querySelector('#_co_yes').onclick=ok;
+}
+function coNova(){
+  if(!ehGestor()){ toast('Só o gestor edita'); return; }
+  coForm('Nova conta', {}, function(v){ _coPost({acao:'conta_save', nome:v.nome, dia:v.dia, valor:v.valor}).then(function(j){ if(j.ok){ toast('Conta adicionada'); coCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); });
+}
+function coEditar(id){
+  if(!ehGestor()) return;
+  var c=null; for(var i=0;i<_coContas.length;i++){ if(_coContas[i].id===id) c=_coContas[i]; } if(!c) return;
+  coForm('Editar conta', c, function(v){ _coPost({acao:'conta_save', id:id, nome:v.nome, dia:v.dia, valor:v.valor}).then(function(j){ if(j.ok){ toast('Conta atualizada'); coCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); });
+}
+function coRemover(id){
+  if(!ehGestor()) return;
+  var c=null; for(var i=0;i<_coContas.length;i++){ if(_coContas[i].id===id) c=_coContas[i]; }
+  appConfirm('Remover "'+(c?c.nome:'')+'"?', function(){ _coPost({acao:'conta_del', id:id}).then(function(j){ if(j.ok){ toast('Conta removida'); coCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {danger:true, okText:'Remover'});
+}
+function coImportar(){
+  if(!ehGestor()){ toast('Só o gestor edita'); return; }
+  var existentes={}; for(var i=0;i<_coContas.length;i++){ existentes[String(_coContas[i].nome).trim().toUpperCase()]=1; }
+  var aCriar=CO_LISTA_INICIAL.filter(function(c){ return !existentes[c.nome.trim().toUpperCase()]; });
+  if(!aCriar.length){ toast('Essas contas já estão cadastradas'); return; }
+  appConfirm('Importar '+aCriar.length+' contas para '+_coNomeLoja()+'?\nVocê pode editar/excluir cada uma depois.', function(){ toast('Importando…'); _coCriarSerie(aCriar,0); }, {okText:'Importar'});
+}
+function _coCriarSerie(arr,i){
+  if(i>=arr.length){ toast('✓ Contas importadas'); coCarregar(); return; }
+  _coPost({acao:'conta_save', nome:arr[i].nome, dia:arr[i].dia, valor:arr[i].valor}).then(function(){ _coCriarSerie(arr,i+1); }).catch(function(){ _coCriarSerie(arr,i+1); });
+}
+function coConfigMenu(){
+  if(!ehGestor()){ toast('Só o gestor edita'); return; }
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:320px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:14px;font-weight:500">Configurar contas · '+_precoEsc(_coNomeLoja())+'</div>'
+    +'<button id="_coc_novo" style="width:100%;background:#16267A;color:#fff;border:none;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer"><i class="ti ti-plus"></i> Nova conta</button>'
+    +'<button id="_coc_imp" style="width:100%;background:#fff;color:#0F6E56;border:1px solid #0F6E56;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer"><i class="ti ti-download"></i> Importar lista inicial (Lindsey)</button>'
+    +'<div style="font-size:11.5px;color:#888780;margin:2px 2px 10px;line-height:1.4">Editar ou excluir cada conta: use os ícones de lápis e lixeira na aba Lista.</div>'
+    +'<button id="_coc_cancel" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;cursor:pointer">Fechar</button>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_coc_cancel').onclick=close;
+  card.querySelector('#_coc_novo').onclick=function(){ close(); coNova(); };
+  card.querySelector('#_coc_imp').onclick=function(){ close(); coImportar(); };
+}
+
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
@@ -3114,7 +3419,7 @@ const MENU_ITENS = [
   {k:'preco',      ic:'ti-barcode',          nm:'Busca de preço'},
   {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
   {k:'ck_temp',    ic:'ti-temperature-snow', nm:'Checklist temperatura freezers', soon:1},
-  {k:'ck_contas',  ic:'ti-calendar-dollar',  nm:'Checklist contas mensais', soon:1},
+  {k:'ck_contas',  ic:'ti-calendar-dollar',  nm:'Checklist contas mensais'},
   {k:'folha',      ic:'ti-report-money',     nm:'Folha de pagamento', soon:1}
 ];
 
