@@ -1356,6 +1356,10 @@ function doPost(e) {
       <input id="av-ate" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
       <button class="btn-primary" style="margin-top:0;flex:1;min-width:120px" onclick="avAplicarIntervalo()">Aplicar intervalo</button>
     </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button id="av-vbtn-lista" onclick="avVerPor('lista')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lista</button>
+      <button id="av-vbtn-resumo" onclick="avVerPor('resumo')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Resumo por motivo</button>
+    </div>
     <div id="av-salvos-lista"></div>
     <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="avPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
   </div>
@@ -2674,6 +2678,7 @@ var _avMotivos = [];
 var _avProd = null;     // {cod, desc, valor}
 var _avFoto = null;     // {base64, mime, dataUrl}
 var _avFiltro = { tipo:'mes', mes:null };
+var _avView = 'lista';   // 'lista' | 'resumo'
 var _avDetId = '';
 function _avLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
 function _avNomeLoja(){ var l=_avLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
@@ -2696,6 +2701,7 @@ function abrirAvarias(){
   avTab('lancar');
   var dt=document.getElementById('av-data'); if(dt && !dt.value) dt.value=new Date().toISOString().split('T')[0];
   avResetForm();
+  avRenderMotivosSelect();
   if(!PRODUTOS.length){ try{ precoSync(); }catch(e){} }   // carrega o cadastro em segundo plano
   avCarregar();
 }
@@ -2729,19 +2735,20 @@ function avBuscarProduto(){
   var res=[]; for(var i=0;i<PRODUTOS.length && res.length<8;i++){ if(PRODUTOS[i].n.indexOf(nq)>=0) res.push(PRODUTOS[i]); }
   if(!res.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado.</div>'; return; }
   var html='';
-  for(var k=0;k<res.length;k++){ var p=res[k];
-    html+='<div onclick="avSelecionarProduto(\''+p.c+'\')" class="row-card" style="cursor:pointer;margin-bottom:6px;padding:9px 11px"><div style="flex:1"><div class="row-label" style="font-size:13.5px">'+_precoEsc(p.d)+'</div><div class="row-sub">cód '+_precoEsc(p.c)+' · custo '+_precoBRL(p.cm||p.ct||p.v||0)+'</div></div></div>';
+  for(var k=0;k<res.length;k++){ var p=res[k]; var codM=p.b?p.b:p.c;
+    html+='<div onclick="avSelecionarProduto(\''+p.c+'\')" class="row-card" style="cursor:pointer;margin-bottom:6px;padding:9px 11px"><div style="flex:1"><div class="row-label" style="font-size:13.5px">'+_precoEsc(p.d)+'</div><div class="row-sub">'+_precoEsc(codM)+' · venda '+_precoBRL(p.v||p.cm||p.ct||0)+'</div></div></div>';
   }
   box.innerHTML=html;
 }
 function avSelecionarProduto(cod){
   var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
   if(!p) return;
-  _avProd={ cod:p.c, desc:p.d, valor:(p.cm||p.ct||p.v||0) };
+  var codM = p.b ? p.b : p.c;
+  _avProd={ cod:codM, desc:p.d, valor:(p.v||p.cm||p.ct||0) };
   document.getElementById('av-prod-res').innerHTML='';
   var inp=document.getElementById('av-prod-busca'); inp.value=''; inp.style.display='none';
   var sel=document.getElementById('av-prod-sel'); sel.style.display='block';
-  sel.innerHTML='<div class="row-card" style="background:#EAF0FB;align-items:center"><div style="flex:1"><div class="row-label">'+_precoEsc(p.d)+'</div><div class="row-sub">cód '+_precoEsc(p.c)+' · custo '+_precoBRL(_avProd.valor)+'</div></div><i class="ti ti-x" style="color:#888780;font-size:18px;cursor:pointer" onclick="avLimparProduto()"></i></div>';
+  sel.innerHTML='<div class="row-card" style="background:#EAF0FB;align-items:center"><div style="flex:1"><div class="row-label">'+_precoEsc(p.d)+'</div><div class="row-sub">'+_precoEsc(codM)+' · venda '+_precoBRL(_avProd.valor)+'</div></div><i class="ti ti-x" style="color:#888780;font-size:18px;cursor:pointer" onclick="avLimparProduto()"></i></div>';
   document.getElementById('av-valor').value=_avFmtNum(_avProd.valor);
   avCalcTotal();
 }
@@ -2762,11 +2769,13 @@ function avCalcTotal(){
 function avRenderMotivosSelect(){
   var sel=document.getElementById('av-motivo'); if(!sel) return;
   var atual=sel.value;
+  var textos = _avMotivos.length ? _avMotivos.map(function(m){return m.texto;})
+    : ['Vencido','Quebrado','Estragado / deteriorado','Avariado no transporte','Furto / perda','Consumo interno','Erro de cadastro'];
   var html='';
-  for(var i=0;i<_avMotivos.length;i++){ html+='<option value="'+_precoEsc(_avMotivos[i].texto)+'">'+_precoEsc(_avMotivos[i].texto)+'</option>'; }
+  for(var i=0;i<textos.length;i++){ if(String(textos[i]||'').trim().toLowerCase()==='outro') continue; html+='<option value="'+_precoEsc(textos[i])+'">'+_precoEsc(textos[i])+'</option>'; }
   html+='<option value="__outro">Outro (escrever)…</option>';
   sel.innerHTML=html;
-  if(atual){ sel.value=atual; }
+  if(atual){ try{ sel.value=atual; }catch(e){} }
 }
 function avMotivoChange(){
   document.getElementById('av-motivo-outro').style.display = (document.getElementById('av-motivo').value==='__outro')?'block':'none';
@@ -2861,6 +2870,17 @@ function _avFiltroLabel(){ if(_avFiltro.tipo==='tudo') return 'Todos os meses'; 
 function _avFiltradas(){ return _avAvarias.filter(function(a){ return _avPassa(a.data); }); }
 
 // ── SALVOS ──
+function avVerPor(qual){
+  _avView=qual;
+  document.getElementById('av-vbtn-lista').style.cssText='flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(qual==='lista'?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A');
+  document.getElementById('av-vbtn-resumo').style.cssText='flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(qual==='resumo'?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A');
+  avRenderSalvos();
+}
+function _avResumoMotivos(arr){
+  var por={}; for(var i=0;i<arr.length;i++){ var m=arr[i].motivo||'(sem motivo)'; if(!por[m]) por[m]={itens:0,total:0}; por[m].itens++; por[m].total+=_avNum(arr[i].total); }
+  var keys=Object.keys(por).sort(function(a,b){ return por[b].total-por[a].total; });
+  return { por:por, keys:keys };
+}
 function avRenderSalvos(){
   var box=document.getElementById('av-salvos-lista'); if(!box) return;
   var arr=_avFiltradas();
@@ -2868,12 +2888,29 @@ function avRenderSalvos(){
   document.getElementById('av-tot-valor').textContent=_precoBRL(tot);
   document.getElementById('av-tot-qtd').textContent=arr.length+' item(ns)';
   document.getElementById('av-tot-lbl').textContent='Prejuízo · '+_avFiltroLabel();
-  arr=arr.slice().sort(function(a,b){ return String(b.data).localeCompare(String(a.data)) || String(b.id).localeCompare(String(a.id)); });
   if(!arr.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma avaria no período.</div>'; return; }
-  var html='';
+
+  if(_avView==='resumo'){
+    var r=_avResumoMotivos(arr); var maxT=0; for(var z=0;z<r.keys.length;z++){ if(r.por[r.keys[z]].total>maxT) maxT=r.por[r.keys[z]].total; }
+    var h='';
+    for(var k=0;k<r.keys.length;k++){ var m=r.keys[k]; var info=r.por[m]; var pct=maxT>0?Math.round(info.total/maxT*100):0; var pctTot=tot>0?Math.round(info.total/tot*100):0;
+      h+='<div class="row-card" style="display:block;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="row-label">'+_precoEsc(m)+'</div><div style="font-weight:700;color:#A32D2D">'+_precoBRL(info.total)+'</div></div>'
+        +'<div style="height:7px;background:#F1EFE9;border-radius:5px;margin:7px 0 5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#A32D2D;border-radius:5px"></div></div>'
+        +'<div class="row-sub">'+info.itens+' item(ns) · '+pctTot+'% do prejuízo</div>'
+        +'</div>';
+    }
+    box.innerHTML=h;
+    return;
+  }
+
+  // lista agrupada por data
+  arr=arr.slice().sort(function(a,b){ return String(b.data).localeCompare(String(a.data)) || String(b.id).localeCompare(String(a.id)); });
+  var html=''; var dataAtual=null;
   for(var i=0;i<arr.length;i++){ var a=arr[i];
+    if(a.data!==dataAtual){ dataAtual=a.data; html+='<div style="font-size:11.5px;color:#888780;font-weight:700;margin:13px 2px 6px;letter-spacing:.3px">'+_avDataBR(a.data)+'</div>'; }
     var thumb = a.fotoId ? '<img src="'+_avThumb(a.fotoId,200)+'" style="width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px" onerror="this.style.visibility=\'hidden\'">' : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>';
-    html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_avDataBR(a.data)+' · '+_precoEsc(a.qtd)+' un · '+_precoEsc(a.motivo)+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
+    html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_precoEsc(a.qtd)+' un · '+_precoEsc(a.motivo)+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
   }
   box.innerHTML=html;
 }
@@ -2944,6 +2981,11 @@ function avPDF(){
     rows+='<tr><td class="d">'+_avDataBR(a.data)+'</td><td>'+_precoEsc(a.produto)+'<div class="cod">cód '+_precoEsc(a.cod)+'</div></td><td class="c">'+_precoEsc(a.qtd)+'</td><td class="c">'+_precoEsc(a.motivo)+'</td><td class="v">'+_precoBRL(_avNum(a.total))+'</td></tr>';
   }
   if(!arr.length) rows='<tr><td colspan="5" style="text-align:center;color:#888780">Sem avarias no período.</td></tr>';
+  var rg=_avResumoMotivos(arr); var resumoRows='';
+  for(var ri=0;ri<rg.keys.length;ri++){ var mk=rg.keys[ri]; var inf=rg.por[mk]; var pc=tot>0?Math.round(inf.total/tot*100):0;
+    resumoRows+='<tr><td>'+_precoEsc(mk)+'</td><td class="c">'+inf.itens+'</td><td class="c">'+pc+'%</td><td class="v">'+_precoBRL(inf.total)+'</td></tr>';
+  }
+  if(!rg.keys.length) resumoRows='<tr><td colspan="4" style="text-align:center;color:#888780">—</td></tr>';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Controle de Avarias — Ideal</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -2965,6 +3007,9 @@ function avPDF(){
     + '<div class="hd"><h1>Controle de Avarias</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_avNomeLoja())+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>Período:</b> '+_precoEsc(_avFiltroLabel())+' &middot; Itens: '+arr.length+' &middot; Gerado em '+agora+'</div>'
+    + '<div style="font-size:12px;font-weight:bold;color:#A32D2D;margin:12px 0 4px">Resumo por motivo</div>'
+    + '<table><tr><th>Motivo</th><th class="c">Itens</th><th class="c">%</th><th class="v">Total</th></tr>'+resumoRows+'</table>'
+    + '<div style="font-size:12px;font-weight:bold;color:#16267A;margin:18px 0 4px">Avarias do período</div>'
     + '<table><tr><th class="d">Data</th><th>Produto</th><th class="c">Qtd</th><th class="c">Motivo</th><th class="v">Perda</th></tr>'+rows+'</table>'
     + '<div class="tot"><span>Prejuízo total no período</span><span>'+_precoBRL(tot)+'</span></div>'
     + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
