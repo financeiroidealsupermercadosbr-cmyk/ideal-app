@@ -1938,8 +1938,11 @@ function renderizarPainel() {
   // Contas a pagar
   const hjStr = `${String(agora.getDate()).padStart(2,'0')}/${String(agora.getMonth()+1).padStart(2,'0')}/${agora.getFullYear()}`;
   const hjCurto = hjStr.slice(0,5); // DD/MM
-  const cpHoje = dadosContas.filter(b=>!b.pago&&(b.venc===hjStr||b.venc===hjCurto)).reduce((s,b)=>s+b.valor,0);
-  const cpHojeQtd = dadosContas.filter(b=>!b.pago&&(b.venc===hjStr||b.venc===hjCurto)).length;
+  // "Sai hoje" / "Contas a pagar hoje": conta TODOS que vencem hoje (pagos OU não),
+  // assim o valor fica fixo mesmo depois de dar baixa (representa o que sai do caixa no dia).
+  const venceHoje = b => (b.venc===hjStr || b.venc===hjCurto);
+  const cpHoje = dadosContas.filter(venceHoje).reduce((s,b)=>s+b.valor,0);
+  const cpHojeQtd = dadosContas.filter(venceHoje).length;
   const cp7 = dadosContas.filter(b=>{
     if(b.pago)return false;
     const d=diasAte(b.venc); return d>=0&&d<=7;
@@ -1948,7 +1951,7 @@ function renderizarPainel() {
   document.getElementById('p-cp-hoje').textContent  = brl(cpHoje);
   document.getElementById('p-cp-7d').textContent    = brl(cp7);
   document.getElementById('p-sai').textContent = brl(cpHoje);
-  document.getElementById('p-cp-hoje-sub').textContent = cpHojeQtd>0 ? `${cpHojeQtd} boleto${cpHojeQtd>1?'s':''} · vencendo em ${hjCurto}` : 'nenhum boleto vence hoje';
+  document.getElementById('p-cp-hoje-sub').textContent = cpHojeQtd>0 ? `${cpHojeQtd} boleto${cpHojeQtd>1?'s':''} · vence ${hjCurto}` : 'nenhum boleto vence hoje';
 
   const saldo = totRec-cpHoje;
   document.getElementById('p-saldo').textContent = (saldo<0?'- ':'+ ')+brl(Math.abs(saldo));
