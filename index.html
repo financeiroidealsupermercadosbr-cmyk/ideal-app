@@ -1326,8 +1326,16 @@ function doPost(e) {
       <span id="av-total-perda" style="font-size:18px;font-weight:700;color:#A32D2D">R$ 0,00</span>
     </div>
 
-    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Motivo</label>
-    <select id="av-motivo" onchange="avMotivoChange()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Ocorrência <span style="font-weight:400;color:#9a988f">(o que aconteceu)</span></label>
+    <select id="av-ocorrencia" onchange="avClasseChange('ocorrencia')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
+    <input id="av-ocorrencia-outro" placeholder="Escreva a ocorrência" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
+
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Origem <span style="font-weight:400;color:#9a988f">(onde aconteceu)</span></label>
+    <select id="av-origem" onchange="avClasseChange('origem')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
+    <input id="av-origem-outro" placeholder="Escreva a origem" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
+
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Motivo <span style="font-weight:400;color:#9a988f">(causa)</span></label>
+    <select id="av-motivo" onchange="avClasseChange('motivo')" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
     <input id="av-motivo-outro" placeholder="Escreva o motivo" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
 
     <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Observação (opcional)</label>
@@ -2674,12 +2682,17 @@ function coConfigMenu(){
 // Salvos com filtro (mês/intervalo), foto visível, total de prejuízo e PDF.
 // ══════════════════════════════════════════════════════
 var _avAvarias = [];
-var _avMotivos = [];
+var _avClasses = { origem:[], ocorrencia:[], motivo:[] };
+var _avResumoDim = 'ocorrencia';   // dimensão do resumo: origem|ocorrencia|motivo
+var AV_PAD_ORIGEM=['Área de venda','Câmara fria','Depósito','Frente de loja','Recebimento de mercadorias','SAC'];
+var AV_PAD_OCORR=['Amassado','Descosturado','Descolado','Danificado','Deterioração natural','Fraude','Quebrado','Rasgado','Sujo','Sem vácuo','Validade ilegível','Violado/degustado','Vencido'];
+var AV_PAD_MOTIVO=['Acidente por cliente','Acidente por funcionário','Armazenagem inadequada','Agentes da natureza','Defeito de fabricação','Falha na exposição','Falha de equipamento','Intencional por cliente','Intencional por funcionário','Qualidade do produto','Transporte inadequado'];
 var _avProd = null;     // {cod, desc, valor}
 var _avFoto = null;     // {base64, mime, dataUrl}
 var _avFiltro = { tipo:'mes', mes:null };
 var _avView = 'lista';   // 'lista' | 'resumo'
 var _avDetId = '';
+var _avCfgOverlay = null;
 function _avLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
 function _avNomeLoja(){ var l=_avLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
 function _avDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
@@ -2701,7 +2714,7 @@ function abrirAvarias(){
   avTab('lancar');
   var dt=document.getElementById('av-data'); if(dt && !dt.value) dt.value=new Date().toISOString().split('T')[0];
   avResetForm();
-  avRenderMotivosSelect();
+  avRenderClassesSelects();
   if(!PRODUTOS.length){ try{ precoSync(); }catch(e){} }   // carrega o cadastro em segundo plano
   avCarregar();
 }
@@ -2718,8 +2731,8 @@ async function avCarregar(){
   try{
     var j=await _avPost({acao:'avarias_list'});
     if(!j.ok || !Array.isArray(j.avarias)){ toast('Servidor na versão antiga — publique a nova versão do Apps Script'); return; }
-    _avAvarias=j.avarias; _avMotivos=j.motivos||[];
-    avRenderMotivosSelect();
+    _avAvarias=j.avarias; _avClasses=j.classes||{origem:[],ocorrencia:[],motivo:[]};
+    avRenderClassesSelects();
     avPreencherMeses();
     if(document.getElementById('av-tab-salvos').style.display!=='none') avRenderSalvos();
   }catch(e){ toast('Não consegui carregar as avarias'); }
@@ -2729,13 +2742,27 @@ async function avCarregar(){
 function avBuscarProduto(){
   var q=document.getElementById('av-prod-busca').value.trim();
   var box=document.getElementById('av-prod-res');
-  if(q.length<2){ box.innerHTML=''; return; }
+  if(q===''){ box.innerHTML=''; return; }
   if(!PRODUTOS.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px;color:#A86A00">Cadastro não carregado. Abra "Busca de preço" uma vez p/ sincronizar.</div>'; return; }
-  var nq=_precoNorm(q);
-  var res=[]; for(var i=0;i<PRODUTOS.length && res.length<8;i++){ if(PRODUTOS[i].n.indexOf(nq)>=0) res.push(PRODUTOS[i]); }
+  var ehNum=/^\d+$/.test(q);
+  var res=[]; var seen={};
+  function add(p){ if(!seen[p.c]){ seen[p.c]=1; res.push(p); } }
+  var i,p;
+  if(ehNum){
+    for(i=0;i<PRODUTOS.length && res.length<12;i++){ p=PRODUTOS[i]; if(p.c===q || p.b===q) add(p); }   // código/barras EXATO
+    if(q.length>=3){
+      for(i=0;i<PRODUTOS.length && res.length<12;i++){ p=PRODUTOS[i]; if(p.c.indexOf(q)===0 || (p.b && p.b.indexOf(q)===0)) add(p); }  // prefixo
+      var nqn=_precoNorm(q);
+      for(i=0;i<PRODUTOS.length && res.length<12;i++){ p=PRODUTOS[i]; if(p.n.indexOf(nqn)>=0) add(p); }   // dentro do nome
+    }
+  } else {
+    if(q.length<2){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Digite ao menos 2 letras.</div>'; return; }
+    var nq=_precoNorm(q);
+    for(i=0;i<PRODUTOS.length && res.length<12;i++){ p=PRODUTOS[i]; if(p.n.indexOf(nq)>=0) add(p); }
+  }
   if(!res.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado.</div>'; return; }
   var html='';
-  for(var k=0;k<res.length;k++){ var p=res[k]; var codM=p.b?p.b:p.c;
+  for(var k=0;k<res.length;k++){ p=res[k]; var codM=p.b?p.b:p.c;
     html+='<div onclick="avSelecionarProduto(\''+p.c+'\')" class="row-card" style="cursor:pointer;margin-bottom:6px;padding:9px 11px"><div style="flex:1"><div class="row-label" style="font-size:13.5px">'+_precoEsc(p.d)+'</div><div class="row-sub">'+_precoEsc(codM)+' · venda '+_precoBRL(p.v||p.cm||p.ct||0)+'</div></div></div>';
   }
   box.innerHTML=html;
@@ -2766,19 +2793,29 @@ function avCalcTotal(){
 }
 
 // ── MOTIVO ──
-function avRenderMotivosSelect(){
-  var sel=document.getElementById('av-motivo'); if(!sel) return;
+// ── CLASSES (Origem / Ocorrência / Motivo) ──
+function _avClasseTextos(tipo){
+  var arr=_avClasses[tipo]||[];
+  if(arr.length) return arr.map(function(c){return c.texto;});
+  return tipo==='origem'?AV_PAD_ORIGEM:(tipo==='ocorrencia'?AV_PAD_OCORR:AV_PAD_MOTIVO);
+}
+function avRenderClasseSelect(tipo){
+  var sel=document.getElementById('av-'+tipo); if(!sel) return;
   var atual=sel.value;
-  var textos = _avMotivos.length ? _avMotivos.map(function(m){return m.texto;})
-    : ['Vencido','Quebrado','Estragado / deteriorado','Avariado no transporte','Furto / perda','Consumo interno','Erro de cadastro'];
+  var textos=_avClasseTextos(tipo);
   var html='';
-  for(var i=0;i<textos.length;i++){ if(String(textos[i]||'').trim().toLowerCase()==='outro') continue; html+='<option value="'+_precoEsc(textos[i])+'">'+_precoEsc(textos[i])+'</option>'; }
+  for(var i=0;i<textos.length;i++){ html+='<option value="'+_precoEsc(textos[i])+'">'+_precoEsc(textos[i])+'</option>'; }
   html+='<option value="__outro">Outro (escrever)…</option>';
   sel.innerHTML=html;
   if(atual){ try{ sel.value=atual; }catch(e){} }
 }
-function avMotivoChange(){
-  document.getElementById('av-motivo-outro').style.display = (document.getElementById('av-motivo').value==='__outro')?'block':'none';
+function avRenderClassesSelects(){ avRenderClasseSelect('ocorrencia'); avRenderClasseSelect('origem'); avRenderClasseSelect('motivo'); }
+function avClasseChange(tipo){ var o=document.getElementById('av-'+tipo+'-outro'); if(o) o.style.display=(document.getElementById('av-'+tipo).value==='__outro')?'block':'none'; }
+function _avLerClasse(tipo){
+  var sel=document.getElementById('av-'+tipo); if(!sel) return '';
+  var v=sel.value;
+  if(v==='__outro'){ v=String((document.getElementById('av-'+tipo+'-outro')||{}).value||'').trim(); }
+  return v;
 }
 
 // ── FOTO (compressão no aparelho) ──
@@ -2816,11 +2853,12 @@ function avSalvar(){
   var qtd=_avNum(document.getElementById('av-qtd').value); if(qtd<=0){ toast('Quantidade inválida'); return; }
   var valor=_avNum(document.getElementById('av-valor').value);
   var total=qtd*valor;
-  var motivo=document.getElementById('av-motivo').value;
-  if(motivo==='__outro'){ motivo=String(document.getElementById('av-motivo-outro').value||'').trim(); if(!motivo){ toast('Escreva o motivo'); return; } }
+  var ocorrencia=_avLerClasse('ocorrencia');
+  var origem=_avLerClasse('origem');
+  var motivo=_avLerClasse('motivo');
   var obs=String(document.getElementById('av-obs').value||'').trim();
   var btn=document.getElementById('av-salvar-btn'); var bh=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> '+(_avFoto?'Enviando foto…':'Salvando…');
-  var payload={ acao:'avaria_save', data:data, produto:_avProd.desc, cod:_avProd.cod, qtd:String(qtd), valorUnit:String(valor), total:String(total), motivo:motivo, obs:obs, quem:(userAtual&&userAtual.nome)||'' };
+  var payload={ acao:'avaria_save', data:data, produto:_avProd.desc, cod:_avProd.cod, qtd:String(qtd), valorUnit:String(valor), total:String(total), ocorrencia:ocorrencia, origem:origem, motivo:motivo, obs:obs, quem:(userAtual&&userAtual.nome)||'' };
   if(_avFoto){ payload.fotoBase64=_avFoto.base64; payload.fotoMime=_avFoto.mime; }
   _avPost(payload).then(function(j){
     btn.disabled=false; btn.innerHTML=bh;
@@ -2833,8 +2871,10 @@ function avResetForm(){
   document.getElementById('av-qtd').value='1';
   document.getElementById('av-valor').value='';
   document.getElementById('av-obs').value='';
-  var mo=document.getElementById('av-motivo-outro'); mo.value=''; mo.style.display='none';
-  var ms=document.getElementById('av-motivo'); if(ms.options.length) ms.selectedIndex=0;
+  ['ocorrencia','origem','motivo'].forEach(function(tp){
+    var o=document.getElementById('av-'+tp+'-outro'); if(o){ o.value=''; o.style.display='none'; }
+    var s=document.getElementById('av-'+tp); if(s && s.options.length) s.selectedIndex=0;
+  });
   _avFoto=null; avRenderFotoPreview();
   document.getElementById('av-total-perda').textContent='R$ 0,00';
 }
@@ -2876,11 +2916,13 @@ function avVerPor(qual){
   document.getElementById('av-vbtn-resumo').style.cssText='flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(qual==='resumo'?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A');
   avRenderSalvos();
 }
-function _avResumoMotivos(arr){
-  var por={}; for(var i=0;i<arr.length;i++){ var m=arr[i].motivo||'(sem motivo)'; if(!por[m]) por[m]={itens:0,total:0}; por[m].itens++; por[m].total+=_avNum(arr[i].total); }
+function _avDimNome(dim){ return dim==='origem'?'Origem':(dim==='motivo'?'Motivo':'Ocorrência'); }
+function _avResumoPor(arr, dim){
+  var por={}; for(var i=0;i<arr.length;i++){ var m=String(arr[i][dim]||'').trim()||'(não informado)'; if(!por[m]) por[m]={itens:0,total:0}; por[m].itens++; por[m].total+=_avNum(arr[i].total); }
   var keys=Object.keys(por).sort(function(a,b){ return por[b].total-por[a].total; });
   return { por:por, keys:keys };
 }
+function avResumoDim(dim){ _avResumoDim=dim; avRenderSalvos(); }
 function avRenderSalvos(){
   var box=document.getElementById('av-salvos-lista'); if(!box) return;
   var arr=_avFiltradas();
@@ -2891,8 +2933,14 @@ function avRenderSalvos(){
   if(!arr.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma avaria no período.</div>'; return; }
 
   if(_avView==='resumo'){
-    var r=_avResumoMotivos(arr); var maxT=0; for(var z=0;z<r.keys.length;z++){ if(r.por[r.keys[z]].total>maxT) maxT=r.por[r.keys[z]].total; }
-    var h='';
+    var dim=_avResumoDim;
+    var seg='<div style="display:flex;gap:6px;margin-bottom:10px">';
+    ['ocorrencia','origem','motivo'].forEach(function(dd){ var on=(dd===dim);
+      seg+='<button onclick="avResumoDim(\''+dd+'\')" style="flex:1;padding:7px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;'+(on?'background:#A32D2D;color:#fff;border:none':'background:#fff;color:#A32D2D;border:1px solid #A32D2D')+'">'+_avDimNome(dd)+'</button>';
+    });
+    seg+='</div>';
+    var r=_avResumoPor(arr, dim); var maxT=0; for(var z=0;z<r.keys.length;z++){ if(r.por[r.keys[z]].total>maxT) maxT=r.por[r.keys[z]].total; }
+    var h=seg;
     for(var k=0;k<r.keys.length;k++){ var m=r.keys[k]; var info=r.por[m]; var pct=maxT>0?Math.round(info.total/maxT*100):0; var pctTot=tot>0?Math.round(info.total/tot*100):0;
       h+='<div class="row-card" style="display:block;margin-bottom:8px">'
         +'<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="row-label">'+_precoEsc(m)+'</div><div style="font-weight:700;color:#A32D2D">'+_precoBRL(info.total)+'</div></div>'
@@ -2910,7 +2958,8 @@ function avRenderSalvos(){
   for(var i=0;i<arr.length;i++){ var a=arr[i];
     if(a.data!==dataAtual){ dataAtual=a.data; html+='<div style="font-size:11.5px;color:#888780;font-weight:700;margin:13px 2px 6px;letter-spacing:.3px">'+_avDataBR(a.data)+'</div>'; }
     var thumb = a.fotoId ? '<img src="'+_avThumb(a.fotoId,200)+'" style="width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px" onerror="this.style.visibility=\'hidden\'">' : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>';
-    html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_precoEsc(a.qtd)+' un · '+_precoEsc(a.motivo)+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
+    var oc=a.ocorrencia||a.motivo||'';
+    html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_precoEsc(a.qtd)+' un'+(oc?' · '+_precoEsc(oc):'')+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
   }
   box.innerHTML=html;
 }
@@ -2926,7 +2975,11 @@ function avDetalhe(id){
   var html='<div class="row-card" style="display:block">'
     +'<div class="row-sub">Produto</div><div class="row-label">'+_precoEsc(a.produto)+' <span style="color:#888780;font-weight:400">· cód '+_precoEsc(a.cod)+'</span></div>'
     +'<div style="display:flex;gap:20px;margin-top:8px"><div><div class="row-sub">Qtd</div><div class="row-label">'+_precoEsc(a.qtd)+'</div></div><div><div class="row-sub">Valor unit.</div><div class="row-label">'+_precoBRL(_avNum(a.valorUnit))+'</div></div><div><div class="row-sub">Total</div><div class="row-label" style="color:#A32D2D">'+_precoBRL(_avNum(a.total))+'</div></div></div>'
-    +'<div style="margin-top:8px"><div class="row-sub">Motivo</div><div class="row-label">'+_precoEsc(a.motivo)+'</div></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:10px">'
+    +'<div><div class="row-sub">Ocorrência</div><div class="row-label">'+(_precoEsc(a.ocorrencia)||'—')+'</div></div>'
+    +'<div><div class="row-sub">Origem</div><div class="row-label">'+(_precoEsc(a.origem)||'—')+'</div></div>'
+    +'<div><div class="row-sub">Motivo</div><div class="row-label">'+(_precoEsc(a.motivo)||'—')+'</div></div>'
+    +'</div>'
     +(a.obs?'<div style="margin-top:8px"><div class="row-sub">Observação</div><div class="row-label" style="font-weight:400">'+_precoEsc(a.obs)+'</div></div>':'')
     +'<div style="margin-top:8px"><div class="row-sub">Registrado por</div><div class="row-label" style="font-weight:400">'+(_precoEsc(a.quem)||'—')+'</div></div>'
     + foto
@@ -2942,34 +2995,40 @@ function avRemover(id){
   }, {danger:true, okText:'Excluir'});
 }
 
-// ── MOTIVOS (gestor) ──
+// ── LISTAS CISS (gestor) ──
 function avConfigMenu(){
-  if(!ehGestor()){ toast('Só o gestor edita os motivos'); return; }
-  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
-  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25);max-height:80vh;overflow:auto';
-  var itens='';
-  for(var i=0;i<_avMotivos.length;i++){ var m=_avMotivos[i];
-    itens+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f1f1f1"><div style="flex:1;font-size:14px;color:#16267A">'+_precoEsc(m.texto)+'</div><i class="ti ti-pencil" style="color:#888780;font-size:16px;cursor:pointer" onclick="avRenomearMotivo(\''+m.id+'\')"></i><i class="ti ti-trash" style="color:#A32D2D;font-size:16px;cursor:pointer" onclick="avRemoverMotivo(\''+m.id+'\')"></i></div>';
+  if(!ehGestor()){ toast('Só o gestor edita as listas'); return; }
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:360px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25);margin:auto';
+  function secao(tipo,titulo){
+    var arr=_avClasses[tipo]||[]; var itens='';
+    for(var i=0;i<arr.length;i++){ var m=arr[i];
+      itens+='<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3f3f3"><div style="flex:1;font-size:13.5px;color:#16267A">'+_precoEsc(m.texto)+'</div><i class="ti ti-pencil" style="color:#888780;font-size:15px;cursor:pointer" onclick="avRenomearClasse(\''+m.id+'\',\''+tipo+'\')"></i><i class="ti ti-trash" style="color:#A32D2D;font-size:15px;cursor:pointer" onclick="avRemoverClasse(\''+m.id+'\')"></i></div>';
+    }
+    if(!arr.length) itens='<div style="font-size:12.5px;color:#888780;padding:6px 0">(usando a lista padrão — adicione p/ personalizar)</div>';
+    return '<div style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="font-size:12px;font-weight:700;color:#A32D2D">'+titulo+'</div><button onclick="avNovaClasse(\''+tipo+'\')" style="background:#16267A;color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer"><i class="ti ti-plus"></i> Novo</button></div>'+itens+'</div>';
   }
-  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:10px;font-weight:500">Motivos de avaria</div>'
-    +'<div>'+(itens||'<div style="font-size:13px;color:#888780;padding:8px 0">Nenhum motivo.</div>')+'</div>'
-    +'<button id="_avm_novo" style="width:100%;background:#16267A;color:#fff;border:none;border-radius:9px;height:44px;font-size:14px;margin-top:12px;cursor:pointer"><i class="ti ti-plus"></i> Novo motivo</button>'
-    +'<button id="_avm_fechar" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;margin-top:8px;cursor:pointer">Fechar</button>';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:12px;font-weight:600">Listas de avarias (modelo CISS)</div>'
+    + secao('ocorrencia','OCORRÊNCIA — o que aconteceu')
+    + secao('origem','ORIGEM — onde aconteceu')
+    + secao('motivo','MOTIVO — a causa')
+    + '<button id="_avm_fechar" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;margin-top:4px;cursor:pointer">Fechar</button>';
   ov.appendChild(card); document.body.appendChild(ov);
-  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  _avCfgOverlay=ov;
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); if(_avCfgOverlay===ov) _avCfgOverlay=null; }
   ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
   card.querySelector('#_avm_fechar').onclick=close;
-  card.querySelector('#_avm_novo').onclick=function(){ close(); avNovoMotivo(); };
 }
-function avNovoMotivo(){
-  appPrompt('Novo motivo de avaria:', '', function(t){ if(!t) return; _avPost({acao:'avariamotivo_save', texto:t}).then(function(j){ if(j.ok){ toast('Motivo adicionado'); avCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {okText:'Adicionar'});
+function _avReabrirCfg(){ if(_avCfgOverlay && _avCfgOverlay.parentNode){ _avCfgOverlay.parentNode.removeChild(_avCfgOverlay); } _avCfgOverlay=null; avCarregar().then(function(){ try{ avConfigMenu(); }catch(e){} }); }
+function avNovaClasse(tipo){
+  appPrompt('Novo item em '+_avDimNome(tipo)+':', '', function(t){ if(!t) return; _avPost({acao:'avariaclasse_save', tipo:tipo, texto:t}).then(function(j){ if(j.ok){ toast('Adicionado'); _avReabrirCfg(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {okText:'Adicionar'});
 }
-function avRenomearMotivo(id){
-  var m=null; for(var i=0;i<_avMotivos.length;i++){ if(_avMotivos[i].id===id) m=_avMotivos[i]; }
-  appPrompt('Editar motivo:', m?m.texto:'', function(t){ if(!t) return; _avPost({acao:'avariamotivo_save', id:id, texto:t}).then(function(j){ if(j.ok){ toast('Motivo atualizado'); avCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); });
+function avRenomearClasse(id, tipo){
+  var m=null; var arr=_avClasses[tipo]||[]; for(var i=0;i<arr.length;i++){ if(arr[i].id===id) m=arr[i]; }
+  appPrompt('Editar item:', m?m.texto:'', function(t){ if(!t) return; _avPost({acao:'avariaclasse_save', id:id, tipo:tipo, texto:t}).then(function(j){ if(j.ok){ toast('Atualizado'); _avReabrirCfg(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); });
 }
-function avRemoverMotivo(id){
-  appConfirm('Remover este motivo?', function(){ _avPost({acao:'avariamotivo_del', id:id}).then(function(j){ if(j.ok){ toast('Motivo removido'); avCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {danger:true, okText:'Remover'});
+function avRemoverClasse(id){
+  appConfirm('Remover este item?', function(){ _avPost({acao:'avariaclasse_del', id:id}).then(function(j){ if(j.ok){ toast('Removido'); _avReabrirCfg(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {danger:true, okText:'Remover'});
 }
 
 // ── PDF ──
@@ -2978,14 +3037,19 @@ function avPDF(){
   var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   var tot=0; var rows='';
   for(var i=0;i<arr.length;i++){ var a=arr[i]; tot+=_avNum(a.total);
-    rows+='<tr><td class="d">'+_avDataBR(a.data)+'</td><td>'+_precoEsc(a.produto)+'<div class="cod">cód '+_precoEsc(a.cod)+'</div></td><td class="c">'+_precoEsc(a.qtd)+'</td><td class="c">'+_precoEsc(a.motivo)+'</td><td class="v">'+_precoBRL(_avNum(a.total))+'</td></tr>';
+    rows+='<tr><td class="d">'+_avDataBR(a.data)+'</td><td>'+_precoEsc(a.produto)+'<div class="cod">'+_precoEsc(a.cod)+'</div></td><td class="c">'+_precoEsc(a.qtd)+'</td><td class="c">'+_precoEsc(a.ocorrencia||a.motivo||'')+'</td><td class="v">'+_precoBRL(_avNum(a.total))+'</td></tr>';
   }
   if(!arr.length) rows='<tr><td colspan="5" style="text-align:center;color:#888780">Sem avarias no período.</td></tr>';
-  var rg=_avResumoMotivos(arr); var resumoRows='';
-  for(var ri=0;ri<rg.keys.length;ri++){ var mk=rg.keys[ri]; var inf=rg.por[mk]; var pc=tot>0?Math.round(inf.total/tot*100):0;
-    resumoRows+='<tr><td>'+_precoEsc(mk)+'</td><td class="c">'+inf.itens+'</td><td class="c">'+pc+'%</td><td class="v">'+_precoBRL(inf.total)+'</td></tr>';
+  function tabelaResumo(dim){
+    var rg=_avResumoPor(arr, dim); var rr='';
+    for(var ri=0;ri<rg.keys.length;ri++){ var mk=rg.keys[ri]; var inf=rg.por[mk]; var pc=tot>0?Math.round(inf.total/tot*100):0;
+      rr+='<tr><td>'+_precoEsc(mk)+'</td><td class="c">'+inf.itens+'</td><td class="c">'+pc+'%</td><td class="v">'+_precoBRL(inf.total)+'</td></tr>';
+    }
+    if(!rg.keys.length) rr='<tr><td colspan="4" style="text-align:center;color:#888780">—</td></tr>';
+    return '<div style="font-size:12px;font-weight:bold;color:#A32D2D;margin:14px 0 4px">Por '+_avDimNome(dim)+'</div>'
+      + '<table><tr><th>'+_avDimNome(dim)+'</th><th class="c">Itens</th><th class="c">%</th><th class="v">Total</th></tr>'+rr+'</table>';
   }
-  if(!rg.keys.length) resumoRows='<tr><td colspan="4" style="text-align:center;color:#888780">—</td></tr>';
+  var resumos = tabelaResumo('ocorrencia') + tabelaResumo('origem') + tabelaResumo('motivo');
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Controle de Avarias — Ideal</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -3007,10 +3071,10 @@ function avPDF(){
     + '<div class="hd"><h1>Controle de Avarias</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_avNomeLoja())+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>Período:</b> '+_precoEsc(_avFiltroLabel())+' &middot; Itens: '+arr.length+' &middot; Gerado em '+agora+'</div>'
-    + '<div style="font-size:12px;font-weight:bold;color:#A32D2D;margin:12px 0 4px">Resumo por motivo</div>'
-    + '<table><tr><th>Motivo</th><th class="c">Itens</th><th class="c">%</th><th class="v">Total</th></tr>'+resumoRows+'</table>'
+    + '<div style="font-size:13px;font-weight:bold;color:#A32D2D;margin:12px 0 2px">Resumo (modelo CISS)</div>'
+    + resumos
     + '<div style="font-size:12px;font-weight:bold;color:#16267A;margin:18px 0 4px">Avarias do período</div>'
-    + '<table><tr><th class="d">Data</th><th>Produto</th><th class="c">Qtd</th><th class="c">Motivo</th><th class="v">Perda</th></tr>'+rows+'</table>'
+    + '<table><tr><th class="d">Data</th><th>Produto</th><th class="c">Qtd</th><th class="c">Ocorrência</th><th class="v">Perda</th></tr>'+rows+'</table>'
     + '<div class="tot"><span>Prejuízo total no período</span><span>'+_precoBRL(tot)+'</span></div>'
     + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
