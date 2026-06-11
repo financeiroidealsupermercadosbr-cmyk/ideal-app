@@ -497,7 +497,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
         <div class="qcard" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
         <div class="qcard" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Situação dos terminais</span></div>
-        <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="ck_gerentes" onclick="abrirChecklist()"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span></div>
         <div class="qcard" data-menu="ck_temp" onclick="abrirFreezers()"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span></div>
         <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="folha"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span><span class="qsoon">em breve</span></div>
@@ -1289,6 +1289,56 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- TELA: Checklist dos gerentes -->
+<div class="screen" id="s-checklist">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Checklist dos gerentes</div>
+      <div style="font-size:11.5px;color:#888780" id="ck-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="ckCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="ck-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="ckConfigMenu()" title="Configurar"></i>
+  </div>
+
+  <div style="display:flex;gap:6px;padding:10px 14px 0">
+    <button id="ck-tabbtn-preencher" onclick="ckTab('preencher')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Preencher</button>
+    <button id="ck-tabbtn-salvos" onclick="ckTab('salvos')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Salvos</button>
+  </div>
+
+  <div id="ck-tab-preencher" style="padding:12px 14px 100px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:13px;color:#5F5E5A;white-space:nowrap">Data</span>
+      <input id="ck-data" type="date" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">
+    </div>
+    <div id="ck-lista"><div class="loadrow"><span class="spin"></span> Carregando tarefas…</div></div>
+    <button class="btn-primary" id="ck-salvar-btn" style="margin-top:14px" onclick="ckSalvar()"><i class="ti ti-device-floppy"></i> Salvar checklist</button>
+    <button class="btn-primary" id="ck-nova-btn" style="margin-top:10px;background:#fff;color:#16267A;border:1px solid #16267A;display:none" onclick="ckNovaTarefa()"><i class="ti ti-plus"></i> Nova tarefa</button>
+  </div>
+
+  <div id="ck-tab-salvos" style="display:none;padding:12px 14px 100px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select id="ck-mes" onchange="ckFiltroMes()" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff"></select>
+      <button onclick="ckToggleIntervalo()" title="Filtrar por intervalo" style="padding:9px 11px;border:1px solid #16267A;border-radius:9px;background:#fff;color:#16267A;font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
+    </div>
+    <div id="ck-intervalo" style="display:none;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:12px;color:#5F5E5A">De</span>
+      <input id="ck-de" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
+      <span style="font-size:12px;color:#5F5E5A">Até</span>
+      <input id="ck-ate" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
+      <button class="btn-primary" style="margin-top:0;flex:1;min-width:120px" onclick="ckAplicarIntervalo()">Aplicar intervalo</button>
+    </div>
+    <div style="font-size:11.5px;color:#888780;margin:0 2px 8px">Período: <b id="ck-salvos-filtro">—</b></div>
+    <div id="ck-salvos-lista"></div>
+  </div>
+
+  <div id="ck-detalhe" style="display:none;padding:14px 14px 100px">
+    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="ckVoltarSalvos()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="ck-det-nome">Checklist</div><div class="row-sub" id="ck-det-sub">—</div></div></div>
+    <div id="ck-det-itens"></div>
+    <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="ckPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+  </div>
+</div>
+
 <!-- TELA: Checklist temperatura dos freezers -->
 <div class="screen" id="s-freezers">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
@@ -1975,6 +2025,263 @@ function fzPDF(usarFiltro){
   if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
   win.document.open(); win.document.write(html); win.document.close();
 }
+// ══════════════════════════════════════════════════════
+// CHECKLIST DOS GERENTES (chat 25)
+// Tarefas globais (só gestor/master edita). Preenchimento Sim/Não + obs, por loja+data.
+// Salvos com filtro (mês/intervalo), detalhe e PDF no formato do papel.
+// ══════════════════════════════════════════════════════
+var _ckTarefas = [];
+var _ckResp = [];
+var _ckMarcas = {};                       // tarefaId -> 'SIM'|'NAO' durante o preenchimento
+var _ckFiltro = { tipo:'mes', mes:null };
+var _ckDetData = '';
+function _ckLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
+function _ckNomeLoja(){ var l=_ckLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _ckDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
+function _ckMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
+function _ckTexto(id){ for(var i=0;i<_ckTarefas.length;i++){ if(_ckTarefas[i].id===id) return _ckTarefas[i].texto; } return '(tarefa removida)'; }
+async function _ckPost(payload){
+  var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_ckLoja()}, payload)) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function abrirChecklist(){
+  show('s-checklist'); window.scrollTo(0,0);
+  if(_ckFiltro.tipo==='mes' && !_ckFiltro.mes){ _ckFiltro.mes=new Date().toISOString().slice(0,7); }
+  var g=ehGestor();
+  document.getElementById('ck-cfg-btn').style.display = g?'inline':'none';
+  document.getElementById('ck-nova-btn').style.display = g?'block':'none';
+  ckTab('preencher');
+  var dt=document.getElementById('ck-data'); if(dt && !dt.value) dt.value=new Date().toISOString().split('T')[0];
+  ckCarregar();
+}
+function ckTab(qual){
+  document.getElementById('ck-detalhe').style.display='none';
+  var P=document.getElementById('ck-tab-preencher'), S=document.getElementById('ck-tab-salvos');
+  document.getElementById('ck-tabbtn-preencher').style.cssText=_fzBtn(qual==='preencher');
+  document.getElementById('ck-tabbtn-salvos').style.cssText=_fzBtn(qual==='salvos');
+  if(qual==='salvos'){ P.style.display='none'; S.style.display='block'; ckRenderSalvos(); }
+  else { S.style.display='none'; P.style.display='block'; }
+}
+async function ckCarregar(){
+  var sub=document.getElementById('ck-sub'); var box=document.getElementById('ck-lista');
+  if(sub) sub.textContent=_ckNomeLoja();
+  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando tarefas…</div>';
+  try{
+    var jt = await _ckPost({acao:'cklist_tarefas'});
+    if(!jt.ok || !Array.isArray(jt.tarefas)){
+      box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script (Codigo.gs) e toque em ↻.</div>'; return;
+    }
+    _ckTarefas = jt.tarefas;
+    var jr = await _ckPost({acao:'ckresp_list'});
+    _ckResp = (jr && jr.ok && Array.isArray(jr.respostas)) ? jr.respostas : [];
+    ckRenderPreencher();
+    ckPreencherMeses();
+    if(document.getElementById('ck-tab-salvos').style.display!=='none') ckRenderSalvos();
+  }catch(e){
+    box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque em ↻.</div>';
+  }
+}
+
+// ── PREENCHER ──
+function ckRenderPreencher(){
+  var box=document.getElementById('ck-lista');
+  if(!_ckTarefas.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma tarefa cadastrada.</div>'; return; }
+  var g=ehGestor();
+  var html='';
+  for(var i=0;i<_ckTarefas.length;i++){
+    var t=_ckTarefas[i];
+    var icons = g ? ('<i class="ti ti-pencil" style="color:#888780;font-size:16px;cursor:pointer;margin-left:6px" onclick="ckRenomear(\''+t.id+'\')"></i><i class="ti ti-trash" style="color:#A32D2D;font-size:16px;cursor:pointer;margin-left:6px" onclick="ckRemoverTarefa(\''+t.id+'\')"></i>') : '';
+    html += '<div class="row-card" data-ckt="'+t.id+'" style="display:block;margin-bottom:10px">'
+      + '<div style="display:flex;align-items:flex-start;gap:6px"><div class="row-label" style="flex:1;font-weight:500;line-height:1.35">'+(i+1)+'. '+_precoEsc(t.texto)+'</div>'+icons+'</div>'
+      + '<div style="display:flex;gap:8px;margin-top:9px;align-items:center">'
+      +   '<button type="button" class="ck-sim" onclick="ckMarcar(\''+t.id+'\',\'SIM\')" style="padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#1FA85A;border:1px solid #1FA85A">Sim</button>'
+      +   '<button type="button" class="ck-nao" onclick="ckMarcar(\''+t.id+'\',\'NAO\')" style="padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#C53434;border:1px solid #C53434">Não</button>'
+      +   '<input class="ck-obs" data-cko="'+t.id+'" placeholder="Obs (opcional)" style="flex:1;min-width:70px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">'
+      + '</div></div>';
+  }
+  box.innerHTML=html;
+  _ckMarcas={};
+}
+function ckMarcar(tid, val){
+  _ckMarcas[tid]=val;
+  var card=document.querySelector('#ck-lista .row-card[data-ckt="'+tid+'"]'); if(!card) return;
+  var sim=card.querySelector('.ck-sim'), nao=card.querySelector('.ck-nao');
+  sim.style.cssText='padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;'+(val==='SIM'?'background:#1FA85A;color:#fff;border:1px solid #1FA85A':'background:#fff;color:#1FA85A;border:1px solid #1FA85A');
+  nao.style.cssText='padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;'+(val==='NAO'?'background:#C53434;color:#fff;border:1px solid #C53434':'background:#fff;color:#C53434;border:1px solid #C53434');
+}
+function ckSalvar(){
+  var data=document.getElementById('ck-data').value;
+  if(!data){ toast('Escolha a data'); return; }
+  var itens=[];
+  for(var i=0;i<_ckTarefas.length;i++){
+    var t=_ckTarefas[i];
+    var resp=_ckMarcas[t.id]||'';
+    var obsEl=document.querySelector('#ck-lista .ck-obs[data-cko="'+t.id+'"]');
+    var obs=obsEl?String(obsEl.value||'').trim():'';
+    if(resp==='' && obs==='') continue;
+    itens.push({tarefaId:t.id, resp:resp, obs:obs});
+  }
+  if(!itens.length){ toast('Marque ao menos uma tarefa'); return; }
+  var btn=document.getElementById('ck-salvar-btn'); var bh=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> Salvando…';
+  _ckPost({acao:'ckresp_save', data:data, quem:(userAtual&&userAtual.nome)||'', itens:itens}).then(function(j){
+    btn.disabled=false; btn.innerHTML=bh;
+    if(j.ok){ toast('✓ Checklist salvo'); ckCarregar(); }
+    else toast(j.erro||'Erro ao salvar');
+  }).catch(function(){ btn.disabled=false; btn.innerHTML=bh; toast('Erro ao salvar'); });
+}
+
+// ── CONFIG / EDIÇÃO DE TAREFAS (só gestor) ──
+function ckConfigMenu(){
+  if(!ehGestor()){ toast('Só o gestor edita a lista'); return; }
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:320px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:14px;font-weight:500">Configurar checklist</div>'
+    +'<button id="_ckc_novo" style="width:100%;background:#16267A;color:#fff;border:none;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer"><i class="ti ti-plus"></i> Nova tarefa</button>'
+    +'<div style="font-size:11.5px;color:#888780;margin:2px 2px 10px;line-height:1.4">Para editar ou excluir uma tarefa, use os ícones de lápis e lixeira em cada uma na aba Preencher. A lista vale para todas as lojas.</div>'
+    +'<button id="_ckc_cancel" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;cursor:pointer">Fechar</button>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_ckc_cancel').onclick=close;
+  card.querySelector('#_ckc_novo').onclick=function(){ close(); ckNovaTarefa(); };
+}
+function ckNovaTarefa(){
+  if(!ehGestor()){ toast('Só o gestor edita a lista'); return; }
+  appPrompt('Texto da nova tarefa:','',function(txt){ if(!txt) return; _ckPost({acao:'cktarefa_save', texto:txt}).then(function(j){ if(j.ok){ toast('Tarefa adicionada'); ckCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {okText:'Adicionar'});
+}
+function ckRenomear(id){
+  if(!ehGestor()) return;
+  appPrompt('Editar tarefa:', _ckTexto(id), function(txt){ if(!txt) return; _ckPost({acao:'cktarefa_save', id:id, texto:txt}).then(function(j){ if(j.ok){ toast('Tarefa atualizada'); ckCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); });
+}
+function ckRemoverTarefa(id){
+  if(!ehGestor()) return;
+  appConfirm('Remover esta tarefa da lista?\n("'+_ckTexto(id).slice(0,70)+'")', function(){ _ckPost({acao:'cktarefa_del', id:id}).then(function(j){ if(j.ok){ toast('Tarefa removida'); ckCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {danger:true, okText:'Remover'});
+}
+
+// ── FILTRO (mês + intervalo) ──
+function ckPreencherMeses(){
+  var sel=document.getElementById('ck-mes'); if(!sel) return;
+  var meses={}; for(var i=0;i<_ckResp.length;i++){ var ym=String(_ckResp[i].data||'').slice(0,7); if(/^\d{4}-\d{2}$/.test(ym)) meses[ym]=1; }
+  meses[new Date().toISOString().slice(0,7)]=1;
+  var lista=Object.keys(meses).sort().reverse();
+  var html='<option value="__tudo">Todos os meses</option>';
+  for(var k=0;k<lista.length;k++){ html+='<option value="'+lista[k]+'">'+_ckMesLabel(lista[k])+'</option>'; }
+  sel.innerHTML=html;
+  if(_ckFiltro.tipo==='mes' && _ckFiltro.mes) sel.value=_ckFiltro.mes;
+  else if(_ckFiltro.tipo==='tudo') sel.value='__tudo';
+}
+function ckFiltroMes(){
+  var v=document.getElementById('ck-mes').value;
+  document.getElementById('ck-intervalo').style.display='none';
+  _ckFiltro = (v==='__tudo') ? {tipo:'tudo'} : {tipo:'mes', mes:v};
+  ckRenderSalvos();
+}
+function ckToggleIntervalo(){ var el=document.getElementById('ck-intervalo'); el.style.display = (el.style.display==='none') ? 'flex' : 'none'; }
+function ckAplicarIntervalo(){
+  var de=document.getElementById('ck-de').value, ate=document.getElementById('ck-ate').value;
+  if(!de || !ate){ toast('Preencha De e Até'); return; }
+  if(de>ate){ var t=de; de=ate; ate=t; }
+  _ckFiltro={tipo:'intervalo', de:de, ate:ate};
+  ckRenderSalvos();
+}
+function _ckPassa(dataISO){
+  var d=String(dataISO||'');
+  if(_ckFiltro.tipo==='tudo') return true;
+  if(_ckFiltro.tipo==='mes') return d.slice(0,7)===_ckFiltro.mes;
+  if(_ckFiltro.tipo==='intervalo') return d>=_ckFiltro.de && d<=_ckFiltro.ate;
+  return true;
+}
+function _ckFiltroLabel(){
+  if(_ckFiltro.tipo==='tudo') return 'Todos os meses';
+  if(_ckFiltro.tipo==='mes') return _ckMesLabel(_ckFiltro.mes);
+  if(_ckFiltro.tipo==='intervalo') return _ckDataBR(_ckFiltro.de)+' a '+_ckDataBR(_ckFiltro.ate);
+  return '';
+}
+function _ckRespFiltradas(){ return _ckResp.filter(function(r){ return _ckPassa(r.data); }); }
+
+// ── SALVOS ──
+function ckRenderSalvos(){
+  var box=document.getElementById('ck-salvos-lista'); if(!box) return;
+  var lbl=document.getElementById('ck-salvos-filtro'); if(lbl) lbl.textContent=_ckFiltroLabel();
+  var resp=_ckRespFiltradas();
+  var porData={};
+  for(var i=0;i<resp.length;i++){ var dd=resp[i].data; if(!porData[dd]) porData[dd]={quem:resp[i].quem, sim:0, tot:0}; if(resp[i].resp==='SIM') porData[dd].sim++; if(resp[i].resp==='SIM'||resp[i].resp==='NAO') porData[dd].tot++; if(!porData[dd].quem && resp[i].quem) porData[dd].quem=resp[i].quem; }
+  var datas=Object.keys(porData).sort().reverse();
+  if(!datas.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhum checklist salvo no período.</div>'; return; }
+  var html='';
+  for(var r=0;r<datas.length;r++){ var dd=datas[r]; var info=porData[dd];
+    html += '<div class="row-card" style="cursor:pointer;margin-bottom:8px" onclick="ckDetalhe(\''+dd+'\')"><div style="flex:1"><div class="row-label">'+_ckDataBR(dd)+'</div><div class="row-sub">'+(info.quem?('por '+_precoEsc(info.quem)+' · '):'')+info.sim+'/'+info.tot+' Sim</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:17px"></i></div>';
+  }
+  box.innerHTML=html;
+}
+function ckDetalhe(dd){
+  var resp=_ckResp.filter(function(x){ return x.data===dd; });
+  var mapa={}, quem=''; for(var i=0;i<resp.length;i++){ mapa[resp[i].tarefaId]=resp[i]; if(resp[i].quem) quem=resp[i].quem; }
+  document.getElementById('ck-tab-preencher').style.display='none';
+  document.getElementById('ck-tab-salvos').style.display='none';
+  document.getElementById('ck-detalhe').style.display='block';
+  document.getElementById('ck-det-nome').textContent='Checklist de '+_ckDataBR(dd);
+  document.getElementById('ck-det-sub').textContent=(quem?('preenchido por '+quem):'—');
+  _ckDetData=dd;
+  var box=document.getElementById('ck-det-itens');
+  var html='';
+  for(var k=0;k<_ckTarefas.length;k++){ var t=_ckTarefas[k]; var r=mapa[t.id];
+    var resptxt = r ? (r.resp==='SIM'?'<span style="color:#1FA85A;font-weight:600">Sim</span>':(r.resp==='NAO'?'<span style="color:#C53434;font-weight:600">Não</span>':'—')) : '<span style="color:#B4B2A9">—</span>';
+    html += '<div class="row-card" style="display:block;margin-bottom:8px"><div style="display:flex;gap:8px;align-items:flex-start"><div class="row-label" style="flex:1;font-weight:500;line-height:1.35">'+(k+1)+'. '+_precoEsc(t.texto)+'</div><div style="white-space:nowrap">'+resptxt+'</div></div>'+((r&&r.obs)?('<div class="row-sub" style="margin-top:3px">obs: '+_precoEsc(r.obs)+'</div>'):'')+'</div>';
+  }
+  box.innerHTML=html;
+  window.scrollTo(0,0);
+}
+function ckVoltarSalvos(){ document.getElementById('ck-detalhe').style.display='none'; ckTab('salvos'); }
+
+// ── PDF (formato do papel) ──
+function ckPDF(){
+  var dd=_ckDetData; if(!dd){ toast('Abra um checklist'); return; }
+  var resp=_ckResp.filter(function(x){ return x.data===dd; });
+  var mapa={}, quem=''; for(var i=0;i<resp.length;i++){ mapa[resp[i].tarefaId]=resp[i]; if(resp[i].quem) quem=resp[i].quem; }
+  var rows='';
+  for(var k=0;k<_ckTarefas.length;k++){ var t=_ckTarefas[k]; var r=mapa[t.id]||{};
+    var sim=(r.resp==='SIM')?'X':''; var nao=(r.resp==='NAO')?'X':'';
+    rows += '<tr><td class="n">'+(k+1)+'</td><td class="tk">'+_precoEsc(t.texto)+(r.obs?('<div class="ob">obs: '+_precoEsc(r.obs)+'</div>'):'')+'</td><td class="c">'+sim+'</td><td class="c">'+nao+'</td><td class="as"></td></tr>';
+  }
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Checklist Gerente — Ideal</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    + '.sheet{max-width:760px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px;table-layout:fixed}'
+    + 'th{font-size:10px;text-transform:uppercase;color:#1B3A9E;text-align:center;padding:6px 4px;border:1px solid #C9D6EC;background:#EAF0FB}'
+    + 'td{padding:6px 5px;font-size:12px;border:1px solid #e6e6e6;color:#1a1a1a;vertical-align:top}'
+    + 'td.n,th.n{width:26px;text-align:center;color:#888780}'
+    + 'td.tk{text-align:left}.ob{font-size:10px;color:#9a988f;margin-top:2px}'
+    + 'td.c,th.c{width:42px;text-align:center;font-weight:bold}'
+    + 'td.as,th.as{width:150px}'
+    + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
+    + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    + '</style></head><body><div class="sheet">'
+    + '<div class="hd"><h1>Checklist Diário Gerente</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_ckNomeLoja())+'</div></div><div class="stripe"></div>'
+    + '<div class="body">'
+    + '<div class="meta"><b>Data:</b> '+_ckDataBR(dd)+' &middot; <b>Preenchido por:</b> '+(_precoEsc(quem)||'—')+' &middot; Gerado em '+agora+'</div>'
+    + '<table><tr><th class="n">#</th><th>Tarefas a serem desempenhadas</th><th class="c">Sim</th><th class="c">Não</th><th class="as">Assinatura - Gerente</th></tr>'+rows+'</table>'
+    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    + '</div></div>'
+    + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    + '</body></html>';
+  var win=window.open('','_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
+}
+
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
