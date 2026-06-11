@@ -114,6 +114,30 @@
   var IDLE_MS     = 9000;       // volta ao repouso depois de mostrar um preço
   var CACHE_KEY   = 'ideal_bp_v2';
 
+  // >>> SITUAÇÃO DO TERMINAL ("dá o oi" pro painel do app) <<<
+  // O id do terminal vem da URL: busca-preco.html?t=bp1  (ou ?t=bp2 etc).
+  // A cada HEARTBEAT_MS o terminal manda um "oi" pro Apps Script, que anota
+  // na aba Terminais. O app lê essa aba e mostra verde/vermelho.
+  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+  var TERMINAL_ID = (function(){
+    try{ var m = location.search.match(/[?&]t=([^&]+)/); return m ? decodeURIComponent(m[1]).trim() : ''; }
+    catch(e){ return ''; }
+  })();
+  var HEARTBEAT_MS = 2*60*1000; // manda um "oi" a cada 2 min
+
+  // Manda o "oi" (fire-and-forget: não precisa ler a resposta).
+  function darOi(){
+    if(!TERMINAL_ID) return;            // sem ?t= na URL, não se identifica
+    try{
+      var info = (online ? 'online' : 'offline') + ' · ' + total + ' produtos';
+      fetch(APPS_SCRIPT_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ acao:'heartbeat', sheetId:SHEET_ID, terminal:TERMINAL_ID, info:info })
+      }).catch(function(){});
+    }catch(e){}
+  }
+
   // >>> OFERTAS NO REPOUSO (edite à vontade) <<<
   // dias: 0=dom 1=seg 2=ter 3=qua 4=qui 5=sex 6=sáb. Lista vazia [] = todo dia.
   var PROMOS = [
@@ -342,6 +366,8 @@
   repouso();
   atualizar(); atualizarBanco();
   setInterval(function(){ atualizar(); atualizarBanco(); }, REFRESH_MS);
+  darOi();                                  // dá o 1º "oi" ao ligar
+  setInterval(darOi, HEARTBEAT_MS);         // e segue dando de tempos em tempos
 })();
 </script>
 </body>
