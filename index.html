@@ -1314,7 +1314,10 @@ function doPost(e) {
 
     <label style="font-size:12px;color:#5F5E5A;font-weight:600">Produto</label>
     <div id="av-prod-sel" style="display:none;margin-top:6px"></div>
-    <input id="av-prod-busca" placeholder="Buscar por nome ou código…" oninput="avBuscarProduto()" autocomplete="off" style="width:100%;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin-top:6px">
+    <div id="av-busca-row" style="display:flex;gap:8px;margin-top:6px">
+      <input id="av-prod-busca" placeholder="Buscar por nome ou código…" oninput="avBuscarProduto()" autocomplete="off" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box">
+      <button onclick="avAbrirScanner()" title="Ler código de barras" style="flex:0 0 auto;width:48px;border:none;background:#16267A;color:#fff;border-radius:10px;cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center"><i class="ti ti-barcode"></i></button>
+    </div>
     <div id="av-prod-res" style="margin-top:4px"></div>
 
     <div style="display:flex;gap:8px;margin-top:12px">
@@ -2693,6 +2696,7 @@ var _avFiltro = { tipo:'mes', mes:null };
 var _avView = 'lista';   // 'lista' | 'resumo'
 var _avDetId = '';
 var _avCfgOverlay = null;
+var _avScanStream = null, _avScanAtivo = false, _avZXing = null;
 function _avLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
 function _avNomeLoja(){ var l=_avLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
 function _avDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
@@ -2701,6 +2705,11 @@ function _avNum(s){ s=String(s==null?'':s).trim(); if(s==='') return 0; if(s.ind
 function _avFmtNum(n){ n=Number(n)||0; return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function _avThumb(id,sz){ return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(sz||800); }
 function _avOpen(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
+function _avImg(id, sz, style){
+  var prim='https://drive.google.com/thumbnail?id='+id+'&sz=w'+sz;
+  var fb='https://lh3.googleusercontent.com/d/'+id+'=w'+sz;
+  return '<img src="'+prim+'" style="'+style+'" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\''+fb+'\';}else{this.style.opacity=0.25;}">';
+}
 async function _avPost(payload){
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_avLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
@@ -2773,7 +2782,8 @@ function avSelecionarProduto(cod){
   var codM = p.b ? p.b : p.c;
   _avProd={ cod:codM, desc:p.d, valor:(p.v||p.cm||p.ct||0) };
   document.getElementById('av-prod-res').innerHTML='';
-  var inp=document.getElementById('av-prod-busca'); inp.value=''; inp.style.display='none';
+  var inp=document.getElementById('av-prod-busca'); inp.value='';
+  document.getElementById('av-busca-row').style.display='none';
   var sel=document.getElementById('av-prod-sel'); sel.style.display='block';
   sel.innerHTML='<div class="row-card" style="background:#EAF0FB;align-items:center"><div style="flex:1"><div class="row-label">'+_precoEsc(p.d)+'</div><div class="row-sub">'+_precoEsc(codM)+' · venda '+_precoBRL(_avProd.valor)+'</div></div><i class="ti ti-x" style="color:#888780;font-size:18px;cursor:pointer" onclick="avLimparProduto()"></i></div>';
   document.getElementById('av-valor').value=_avFmtNum(_avProd.valor);
@@ -2782,7 +2792,8 @@ function avSelecionarProduto(cod){
 function avLimparProduto(){
   _avProd=null;
   var sel=document.getElementById('av-prod-sel'); sel.style.display='none'; sel.innerHTML='';
-  document.getElementById('av-prod-busca').style.display='block';
+  var inp=document.getElementById('av-prod-busca'); if(inp) inp.value='';
+  document.getElementById('av-busca-row').style.display='flex';
   document.getElementById('av-valor').value='';
   avCalcTotal();
 }
@@ -2790,6 +2801,65 @@ function avCalcTotal(){
   var q=_avNum(document.getElementById('av-qtd').value);
   var v=_avNum(document.getElementById('av-valor').value);
   document.getElementById('av-total-perda').textContent=_precoBRL(q*v);
+}
+
+// ── SCANNER DE CÓDIGO DE BARRAS (câmera) ──
+function avAbrirScanner(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast('Este aparelho não permite usar a câmera aqui'); return; }
+  var ov=document.createElement('div'); ov.id='av-scan-ov'; ov.style.cssText='position:fixed;inset:0;background:#000;z-index:100000;display:flex;flex-direction:column';
+  ov.innerHTML='<div style="color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between"><div style="font-size:15px;font-weight:600">Ler código de barras</div><i class="ti ti-x" style="font-size:25px;cursor:pointer" onclick="avFecharScanner()"></i></div>'
+    +'<div style="flex:1;position:relative;overflow:hidden"><video id="av-scan-video" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>'
+    +'<div style="position:absolute;left:8%;right:8%;top:42%;height:16%;border:3px solid #FFC400;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)"></div></div>'
+    +'<div id="av-scan-msg" style="color:#fff;text-align:center;padding:16px;font-size:13px">Aponte para o código de barras do produto…</div>';
+  document.body.appendChild(ov);
+  avIniciarScan();
+}
+function avFecharScanner(){
+  _avScanAtivo=false;
+  if(_avZXing){ try{ _avZXing.reset(); }catch(e){} _avZXing=null; }
+  if(_avScanStream){ try{ _avScanStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} _avScanStream=null; }
+  var ov=document.getElementById('av-scan-ov'); if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
+}
+async function avIniciarScan(){
+  var video=document.getElementById('av-scan-video');
+  _avScanAtivo=true;
+  if('BarcodeDetector' in window){
+    try{
+      _avScanStream=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' } } });
+      video.srcObject=_avScanStream; await video.play();
+      var det=new BarcodeDetector({ formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar'] });
+      avLoopDetector(det, video);
+      return;
+    }catch(e){ /* tenta ZXing abaixo */ }
+  }
+  avCarregarZXingEScan();
+}
+function avLoopDetector(det, video){
+  if(!_avScanAtivo) return;
+  det.detect(video).then(function(codes){
+    if(!_avScanAtivo) return;
+    if(codes && codes.length && codes[0].rawValue){ avCodigoLido(codes[0].rawValue); return; }
+    requestAnimationFrame(function(){ avLoopDetector(det, video); });
+  }).catch(function(){ if(_avScanAtivo) requestAnimationFrame(function(){ avLoopDetector(det, video); }); });
+}
+function avCarregarZXingEScan(){
+  function start(){
+    try{
+      _avZXing=new ZXing.BrowserMultiFormatReader();
+      _avZXing.decodeFromVideoDevice(null, 'av-scan-video', function(result){ if(result && _avScanAtivo){ avCodigoLido(result.getText()); } });
+    }catch(e){ var m=document.getElementById('av-scan-msg'); if(m) m.textContent='Leitor não suportado neste aparelho. Feche e digite o código na busca.'; }
+  }
+  if(window.ZXing){ start(); return; }
+  var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js';
+  s.onload=start; s.onerror=function(){ var m=document.getElementById('av-scan-msg'); if(m) m.textContent='Sem internet para carregar o leitor. Feche e digite o código na busca.'; };
+  document.head.appendChild(s);
+}
+function avCodigoLido(code){
+  code=String(code||'').trim(); if(!code) return;
+  var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].b===code || PRODUTOS[i].c===code){ p=PRODUTOS[i]; break; } }
+  avFecharScanner();
+  if(p){ avSelecionarProduto(p.c); toast('✓ '+String(p.d).slice(0,26)); }
+  else { var inp=document.getElementById('av-prod-busca'); if(inp){ inp.value=code; } avBuscarProduto(); toast('Código '+code+' não está no cadastro'); }
 }
 
 // ── MOTIVO ──
@@ -2860,9 +2930,14 @@ function avSalvar(){
   var btn=document.getElementById('av-salvar-btn'); var bh=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> '+(_avFoto?'Enviando foto…':'Salvando…');
   var payload={ acao:'avaria_save', data:data, produto:_avProd.desc, cod:_avProd.cod, qtd:String(qtd), valorUnit:String(valor), total:String(total), ocorrencia:ocorrencia, origem:origem, motivo:motivo, obs:obs, quem:(userAtual&&userAtual.nome)||'' };
   if(_avFoto){ payload.fotoBase64=_avFoto.base64; payload.fotoMime=_avFoto.mime; }
+  var tinhaFoto=!!_avFoto;
   _avPost(payload).then(function(j){
     btn.disabled=false; btn.innerHTML=bh;
-    if(j.ok){ toast('✓ Avaria registrada'); avResetForm(); avCarregar(); }
+    if(j.ok){
+      if(tinhaFoto && !j.fotoId){ toast('Avaria salva, mas a FOTO não subiu — falta autorizar o Drive (veja o passo no app).'); }
+      else { toast('✓ Avaria registrada'); }
+      avResetForm(); avCarregar();
+    }
     else toast(j.erro||'Erro ao salvar');
   }).catch(function(){ btn.disabled=false; btn.innerHTML=bh; toast('Erro ao salvar (se a foto for grande, tente de novo)'); });
 }
@@ -2957,7 +3032,7 @@ function avRenderSalvos(){
   var html=''; var dataAtual=null;
   for(var i=0;i<arr.length;i++){ var a=arr[i];
     if(a.data!==dataAtual){ dataAtual=a.data; html+='<div style="font-size:11.5px;color:#888780;font-weight:700;margin:13px 2px 6px;letter-spacing:.3px">'+_avDataBR(a.data)+'</div>'; }
-    var thumb = a.fotoId ? '<img src="'+_avThumb(a.fotoId,200)+'" style="width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px" onerror="this.style.visibility=\'hidden\'">' : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>';
+    var thumb = a.fotoId ? _avImg(a.fotoId,200,'width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px') : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>';
     var oc=a.ocorrencia||a.motivo||'';
     html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_precoEsc(a.qtd)+' un'+(oc?' · '+_precoEsc(oc):'')+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
   }
@@ -2971,7 +3046,7 @@ function avDetalhe(id){
   document.getElementById('av-detalhe').style.display='block';
   document.getElementById('av-det-nome').textContent=a.produto;
   document.getElementById('av-det-sub').textContent=_avDataBR(a.data)+' · '+_precoBRL(_avNum(a.total));
-  var foto = a.fotoId ? '<a href="'+_avOpen(a.fotoId)+'" target="_blank" rel="noopener"><img src="'+_avThumb(a.fotoId,1000)+'" style="width:100%;border-radius:12px;margin-top:10px;display:block"></a><div style="font-size:11px;color:#888780;margin-top:4px">Toque na foto para abrir no Drive.</div>' : '<div class="row-sub" style="padding:8px 2px">Sem foto.</div>';
+  var foto = a.fotoId ? '<a href="'+_avOpen(a.fotoId)+'" target="_blank" rel="noopener">'+_avImg(a.fotoId,1000,'width:100%;border-radius:12px;margin-top:10px;display:block')+'</a><div style="font-size:11px;color:#888780;margin-top:4px">Toque na foto para abrir no Drive.</div>' : '<div class="row-sub" style="padding:8px 2px">Sem foto.</div>';
   var html='<div class="row-card" style="display:block">'
     +'<div class="row-sub">Produto</div><div class="row-label">'+_precoEsc(a.produto)+' <span style="color:#888780;font-weight:400">· cód '+_precoEsc(a.cod)+'</span></div>'
     +'<div style="display:flex;gap:20px;margin-top:8px"><div><div class="row-sub">Qtd</div><div class="row-label">'+_precoEsc(a.qtd)+'</div></div><div><div class="row-sub">Valor unit.</div><div class="row-label">'+_precoBRL(_avNum(a.valorUnit))+'</div></div><div><div class="row-sub">Total</div><div class="row-label" style="color:#A32D2D">'+_precoBRL(_avNum(a.total))+'</div></div></div>'
