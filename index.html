@@ -498,7 +498,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
         <div class="qcard" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Situação dos terminais</span></div>
         <div class="qcard soon" data-menu="ck_gerentes"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon" data-menu="ck_temp"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="ck_temp" onclick="abrirFreezers()"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span></div>
         <div class="qcard soon" data-menu="ck_contas"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="folha"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span><span class="qsoon">em breve</span></div>
       </div>
@@ -1289,6 +1289,59 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- TELA: Checklist temperatura dos freezers -->
+<div class="screen" id="s-freezers">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Temperatura dos freezers</div>
+      <div style="font-size:11.5px;color:#888780" id="fz-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fzCarregar()" title="Atualizar"></i>
+  </div>
+
+  <div style="display:flex;gap:6px;padding:10px 14px 0">
+    <button id="fz-tabbtn-lancar" onclick="fzTab('lancar')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lançar</button>
+    <button id="fz-tabbtn-coletas" onclick="fzTab('coletas')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Coletas salvas</button>
+  </div>
+
+  <div id="fz-tab-lancar" style="padding:12px 14px 100px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:13px;color:#5F5E5A;white-space:nowrap">Data da medição</span>
+      <input id="fz-data" type="date" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">
+    </div>
+    <div id="fz-lista"><div class="loadrow"><span class="spin"></span> Carregando freezers…</div></div>
+    <button class="btn-primary" id="fz-salvar-btn" style="margin-top:14px" onclick="fzSalvarMedicao()"><i class="ti ti-device-floppy"></i> Salvar medição</button>
+    <button class="btn-primary" style="margin-top:10px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="fzNovo()"><i class="ti ti-plus"></i> Novo freezer</button>
+  </div>
+
+  <div id="fz-tab-coletas" style="display:none;padding:12px 14px 100px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select id="fz-mes" onchange="fzFiltroMes()" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff"></select>
+      <button onclick="fzToggleIntervalo()" id="fz-int-btn" title="Filtrar por intervalo" style="padding:9px 11px;border:1px solid #16267A;border-radius:9px;background:#fff;color:#16267A;font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
+    </div>
+    <div id="fz-intervalo" style="display:none;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:12px;color:#5F5E5A">De</span>
+      <input id="fz-de" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
+      <span style="font-size:12px;color:#5F5E5A">Até</span>
+      <input id="fz-ate" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
+      <button class="btn-primary" style="margin-top:0;flex:1;min-width:120px" onclick="fzAplicarIntervalo()">Aplicar intervalo</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button id="fz-vbtn-freezer" onclick="fzVerPor('freezer')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Por freezer</button>
+      <button id="fz-vbtn-data" onclick="fzVerPor('data')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Por data</button>
+    </div>
+    <div style="font-size:11.5px;color:#888780;margin:0 2px 8px">Período: <b id="fz-col-filtro">—</b></div>
+    <div id="fz-col-lista"></div>
+    <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="fzExportarMenu()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+  </div>
+
+  <div id="fz-detalhe" style="display:none;padding:14px 14px 100px">
+    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="fzVoltarColetas()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="fz-det-nome">Detalhe</div><div class="row-sub" id="fz-det-sub">—</div></div></div>
+    <div id="fz-det-itens"></div>
+  </div>
+</div>
+
 <!-- TELA: Situação dos terminais (busca-preço) -->
 <div class="screen" id="s-terminais">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
@@ -1532,6 +1585,349 @@ function _termBannerMostrar(ids){
 function _termBannerEsconder(){
   var b = document.getElementById('term-alerta-bar');
   if(b) b.style.display = 'none';
+}
+
+// ── Modal pra digitar um texto (ex.: nome de freezer) — estilo do app ──
+function appPrompt(msg, valorInicial, onOk, opts){
+  opts=opts||{};
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px 18px 14px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;line-height:1.45;margin-bottom:10px;white-space:pre-line">'+_precoEsc(msg)+'</div>'
+    +'<input id="_ap_in" style="width:100%;padding:11px;border:1px solid #D3D1C7;border-radius:9px;font-size:15px;box-sizing:border-box">'
+    +'<div style="display:flex;gap:8px;margin-top:16px">'
+    +'<button id="_ap_no" style="flex:1;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px">Cancelar</button>'
+    +'<button id="_ap_yes" style="flex:1;background:#16267A;color:#fff;border:none;border-radius:9px;height:42px;font-size:14px;font-weight:500">'+_precoEsc(opts.okText||'Salvar')+'</button>'
+    +'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  var inp=card.querySelector('#_ap_in'); inp.value=valorInicial||'';
+  setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} },80);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  function ok(){ var v=inp.value.trim(); close(); try{ onOk&&onOk(v); }catch(e){ console.error(e); } }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_ap_no').onclick=close;
+  card.querySelector('#_ap_yes').onclick=ok;
+  inp.addEventListener('keydown', function(e){ if(e.key==='Enter') ok(); });
+}
+
+// ══════════════════════════════════════════════════════
+// CHECKLIST TEMPERATURA DOS FREEZERS (chat 25)
+// Por loja (usa a loja do topo). Lançar medição + Coletas salvas (filtro por
+// mês ou intervalo, ver por freezer ou por data) + PDF (filtrado ou tudo).
+// ══════════════════════════════════════════════════════
+var _fzFreezers = [];
+var _fzTemps = [];
+var _fzView = 'freezer';                    // visão das coletas: 'freezer' | 'data'
+var _fzFiltro = { tipo:'mes', mes:null };   // {tipo:'tudo'} | {tipo:'mes',mes:'YYYY-MM'} | {tipo:'intervalo',de,ate}
+var _fzMesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function _fzLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
+function _fzNomeLoja(){
+  var l=_fzLoja();
+  return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l;
+}
+function _fzDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
+function _fzMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
+function _fzNomeFreezer(id){ for(var i=0;i<_fzFreezers.length;i++){ if(_fzFreezers[i].id===id) return _fzFreezers[i].nome; } return '(freezer removido)'; }
+async function _fzPost(payload){
+  var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_fzLoja()}, payload)) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function abrirFreezers(){
+  show('s-freezers'); window.scrollTo(0,0);
+  if(_fzFiltro.tipo==='mes' && !_fzFiltro.mes){ _fzFiltro.mes = new Date().toISOString().slice(0,7); }
+  fzTab('lancar');
+  var dt=document.getElementById('fz-data'); if(dt && !dt.value) dt.value=new Date().toISOString().split('T')[0];
+  fzCarregar();
+}
+function _fzBtn(on){ return 'flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
+function fzTab(qual){
+  document.getElementById('fz-detalhe').style.display='none';
+  var L=document.getElementById('fz-tab-lancar'), C=document.getElementById('fz-tab-coletas');
+  document.getElementById('fz-tabbtn-lancar').style.cssText=_fzBtn(qual==='lancar');
+  document.getElementById('fz-tabbtn-coletas').style.cssText=_fzBtn(qual==='coletas');
+  if(qual==='coletas'){ L.style.display='none'; C.style.display='block'; fzRenderColetas(); }
+  else { C.style.display='none'; L.style.display='block'; }
+}
+
+async function fzCarregar(){
+  var sub=document.getElementById('fz-sub'); var box=document.getElementById('fz-lista');
+  if(sub) sub.textContent=_fzNomeLoja();
+  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando freezers…</div>';
+  try{
+    var j = await _fzPost({acao:'freezers_list'});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    _fzFreezers = j.freezers||[]; _fzTemps = j.temps||[];
+    fzRenderLancar();
+    fzPreencherMeses();
+    if(document.getElementById('fz-tab-coletas').style.display!=='none') fzRenderColetas();
+  }catch(e){
+    box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque em ↻ ali em cima.</div>';
+  }
+}
+
+// ───── ABA LANÇAR ─────
+function _fzUltima(freezerId){
+  var ult=null;
+  for(var i=0;i<_fzTemps.length;i++){ var t=_fzTemps[i]; if(t.freezerId!==freezerId) continue; if(!ult || String(t.data)>String(ult.data)) ult=t; }
+  return ult;
+}
+function fzRenderLancar(){
+  var box=document.getElementById('fz-lista');
+  if(!_fzFreezers.length){
+    box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhum freezer ainda nesta loja. Toque em <b>Novo freezer</b> para adicionar.</div>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<_fzFreezers.length;i++){
+    var f=_fzFreezers[i];
+    var u=_fzUltima(f.id);
+    var ultTxt = u ? ('última: '+_precoEsc(u.temp)+'° em '+_fzDataBR(u.data)) : 'sem medição ainda';
+    html += '<div class="row-card" style="display:block;margin-bottom:10px">'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      +   '<div style="flex:1"><div class="row-label">'+_precoEsc(f.nome)+'</div><div class="row-sub">'+ultTxt+'</div></div>'
+      +   '<i class="ti ti-pencil" style="color:#888780;font-size:17px;cursor:pointer" onclick="fzRenomear(\''+f.id+'\')" title="Renomear"></i>'
+      +   '<i class="ti ti-trash" style="color:#A32D2D;font-size:17px;cursor:pointer" onclick="fzRemover(\''+f.id+'\')" title="Remover"></i>'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;margin-top:9px">'
+      +   '<input data-fz="'+f.id+'" class="fz-temp" type="text" placeholder="Temp °C" style="width:98px;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">'
+      +   '<input data-fzobs="'+f.id+'" class="fz-obs" type="text" placeholder="Observação (opcional)" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">'
+      + '</div>'
+      + '</div>';
+  }
+  box.innerHTML=html;
+}
+function fzNovo(){
+  appPrompt('Nome do novo freezer\n(ex.: "Câmara açougue", "Ilha congelados"):','',function(nome){
+    if(!nome) return;
+    _fzPost({acao:'freezer_save', nome:nome}).then(function(j){ if(j.ok){ toast('Freezer adicionado'); fzCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro ao salvar'); });
+  }, {okText:'Adicionar'});
+}
+function fzRenomear(id){
+  appPrompt('Novo nome do freezer:', _fzNomeFreezer(id), function(nome){
+    if(!nome) return;
+    _fzPost({acao:'freezer_save', id:id, nome:nome}).then(function(j){ if(j.ok){ toast('Renomeado'); fzCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
+  });
+}
+function fzRemover(id){
+  appConfirm('Remover o freezer "'+_fzNomeFreezer(id)+'"?\nO histórico de medições dele continua guardado.', function(){
+    _fzPost({acao:'freezer_del', id:id}).then(function(j){ if(j.ok){ toast('Freezer removido'); fzCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
+  }, {danger:true, okText:'Remover'});
+}
+function fzSalvarMedicao(){
+  var data=document.getElementById('fz-data').value;
+  if(!data){ toast('Escolha a data'); return; }
+  var itens=[];
+  var temps=document.querySelectorAll('#fz-lista .fz-temp');
+  for(var i=0;i<temps.length;i++){
+    var fid=temps[i].getAttribute('data-fz');
+    var val=String(temps[i].value||'').trim();
+    if(val==='') continue;
+    var obsEl=document.querySelector('#fz-lista .fz-obs[data-fzobs="'+fid+'"]');
+    var obs=obsEl?String(obsEl.value||'').trim():'';
+    itens.push({freezerId:fid, temp:val.replace(',','.'), obs:obs});
+  }
+  if(!itens.length){ toast('Digite ao menos uma temperatura'); return; }
+  var btn=document.getElementById('fz-salvar-btn'); var bh=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> Salvando…';
+  _fzPost({acao:'freezertemp_save', data:data, quem:(userAtual&&userAtual.nome)||'', itens:itens}).then(function(j){
+    btn.disabled=false; btn.innerHTML=bh;
+    if(j.ok){
+      toast('✓ '+j.gravados+' medição(ões) salva(s)');
+      document.querySelectorAll('#fz-lista .fz-temp').forEach(function(el){ el.value=''; });
+      document.querySelectorAll('#fz-lista .fz-obs').forEach(function(el){ el.value=''; });
+      fzCarregar();
+    } else toast(j.erro||'Erro ao salvar');
+  }).catch(function(){ btn.disabled=false; btn.innerHTML=bh; toast('Erro ao salvar'); });
+}
+
+// ───── FILTRO (mês + intervalo) ─────
+function fzPreencherMeses(){
+  var sel=document.getElementById('fz-mes'); if(!sel) return;
+  var meses={}; for(var i=0;i<_fzTemps.length;i++){ var ym=String(_fzTemps[i].data||'').slice(0,7); if(/^\d{4}-\d{2}$/.test(ym)) meses[ym]=1; }
+  meses[new Date().toISOString().slice(0,7)]=1;
+  var lista=Object.keys(meses).sort().reverse();
+  var html='<option value="__tudo">Todos os meses</option>';
+  for(var k=0;k<lista.length;k++){ html+='<option value="'+lista[k]+'">'+_fzMesLabel(lista[k])+'</option>'; }
+  sel.innerHTML=html;
+  if(_fzFiltro.tipo==='mes' && _fzFiltro.mes) sel.value=_fzFiltro.mes;
+  else if(_fzFiltro.tipo==='tudo') sel.value='__tudo';
+}
+function fzFiltroMes(){
+  var v=document.getElementById('fz-mes').value;
+  document.getElementById('fz-intervalo').style.display='none';
+  _fzFiltro = (v==='__tudo') ? {tipo:'tudo'} : {tipo:'mes', mes:v};
+  fzRenderColetas();
+}
+function fzToggleIntervalo(){
+  var el=document.getElementById('fz-intervalo');
+  el.style.display = (el.style.display==='none') ? 'flex' : 'none';
+}
+function fzAplicarIntervalo(){
+  var de=document.getElementById('fz-de').value, ate=document.getElementById('fz-ate').value;
+  if(!de || !ate){ toast('Preencha De e Até'); return; }
+  if(de>ate){ var t=de; de=ate; ate=t; }
+  _fzFiltro={tipo:'intervalo', de:de, ate:ate};
+  fzRenderColetas();
+}
+function _fzPassa(dataISO){
+  var d=String(dataISO||'');
+  if(_fzFiltro.tipo==='tudo') return true;
+  if(_fzFiltro.tipo==='mes') return d.slice(0,7)===_fzFiltro.mes;
+  if(_fzFiltro.tipo==='intervalo') return d>=_fzFiltro.de && d<=_fzFiltro.ate;
+  return true;
+}
+function _fzFiltroLabel(){
+  if(_fzFiltro.tipo==='tudo') return 'Todos os meses';
+  if(_fzFiltro.tipo==='mes') return _fzMesLabel(_fzFiltro.mes);
+  if(_fzFiltro.tipo==='intervalo') return _fzDataBR(_fzFiltro.de)+' a '+_fzDataBR(_fzFiltro.ate);
+  return '';
+}
+function _fzTempsFiltrados(){ return _fzTemps.filter(function(t){ return _fzPassa(t.data); }); }
+
+// ───── VISÃO DAS COLETAS (por freezer / por data) ─────
+function _fzVbtn(on){ return 'flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
+function fzVerPor(qual){
+  _fzView=qual;
+  document.getElementById('fz-vbtn-freezer').style.cssText=_fzVbtn(qual==='freezer');
+  document.getElementById('fz-vbtn-data').style.cssText=_fzVbtn(qual==='data');
+  fzRenderColetas();
+}
+function fzRenderColetas(){
+  var box=document.getElementById('fz-col-lista'); if(!box) return;
+  var lbl=document.getElementById('fz-col-filtro'); if(lbl) lbl.textContent=_fzFiltroLabel();
+  var temps=_fzTempsFiltrados();
+  if(_fzView==='freezer'){
+    if(!_fzFreezers.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhum freezer cadastrado.</div>'; return; }
+    var html='';
+    for(var i=0;i<_fzFreezers.length;i++){
+      var f=_fzFreezers[i];
+      var doF=temps.filter(function(t){ return t.freezerId===f.id; });
+      var ult=null; for(var k=0;k<doF.length;k++){ if(!ult||String(doF[k].data)>String(ult.data)) ult=doF[k]; }
+      var sub = doF.length ? (doF.length+' medição(ões) · última '+_precoEsc(ult.temp)+'° em '+_fzDataBR(ult.data)) : 'nenhuma medição no período';
+      html += '<div class="row-card" style="cursor:pointer;margin-bottom:8px" onclick="fzDetalheFreezer(\''+f.id+'\')"><div style="flex:1"><div class="row-label">'+_precoEsc(f.nome)+'</div><div class="row-sub">'+sub+'</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:17px"></i></div>';
+    }
+    box.innerHTML=html;
+  } else {
+    var porData={};
+    for(var j=0;j<temps.length;j++){ var d=temps[j].data; if(!porData[d]) porData[d]=[]; porData[d].push(temps[j]); }
+    var datas=Object.keys(porData).sort().reverse();
+    if(!datas.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma coleta no período selecionado.</div>'; return; }
+    var h='';
+    for(var r=0;r<datas.length;r++){ var dd=datas[r];
+      h += '<div class="row-card" style="cursor:pointer;margin-bottom:8px" onclick="fzDetalheData(\''+dd+'\')"><div style="flex:1"><div class="row-label">'+_fzDataBR(dd)+'</div><div class="row-sub">'+porData[dd].length+' freezer(s) medido(s)</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:17px"></i></div>';
+    }
+    box.innerHTML=h;
+  }
+}
+
+// ───── DETALHE (histórico de um freezer OU coletas de uma data) ─────
+function _fzAbrirDetalhe(nome, sub){
+  document.getElementById('fz-tab-lancar').style.display='none';
+  document.getElementById('fz-tab-coletas').style.display='none';
+  document.getElementById('fz-detalhe').style.display='block';
+  document.getElementById('fz-det-nome').textContent=nome;
+  document.getElementById('fz-det-sub').textContent=sub;
+  window.scrollTo(0,0);
+}
+function fzVoltarColetas(){ document.getElementById('fz-detalhe').style.display='none'; fzTab('coletas'); }
+function _fzLinhaMed(t, mostrarFreezer){
+  return '<div class="row-card" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+    + '<div style="font-size:20px;font-weight:700;color:#16267A;min-width:62px">'+_precoEsc(t.temp)+'°</div>'
+    + '<div style="flex:1"><div class="row-label">'+(mostrarFreezer?_precoEsc(_fzNomeFreezer(t.freezerId)):_fzDataBR(t.data))+'</div>'
+    +   '<div class="row-sub">'+(t.quem?('por '+_precoEsc(t.quem)):'—')+(t.obs?(' · '+_precoEsc(t.obs)):'')+'</div></div>'
+    + '<i class="ti ti-trash" style="color:#A32D2D;font-size:16px;cursor:pointer" onclick="fzTempRemover(\''+t.id+'\')"></i>'
+    + '</div>';
+}
+function fzDetalheFreezer(id){
+  var lista=_fzTempsFiltrados().filter(function(t){ return t.freezerId===id; }).sort(function(a,b){ return String(b.data).localeCompare(String(a.data)); });
+  _fzAbrirDetalhe(_fzNomeFreezer(id), lista.length+' medição(ões) · '+_fzFiltroLabel());
+  var box=document.getElementById('fz-det-itens');
+  if(!lista.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma medição no período.</div>'; return; }
+  var html=''; for(var j=0;j<lista.length;j++){ html+=_fzLinhaMed(lista[j], false); }
+  box.innerHTML=html;
+}
+function fzDetalheData(dd){
+  var lista=_fzTemps.filter(function(t){ return t.data===dd; });
+  lista.sort(function(a,b){ return _fzNomeFreezer(a.freezerId).localeCompare(_fzNomeFreezer(b.freezerId)); });
+  _fzAbrirDetalhe('Coletas de '+_fzDataBR(dd), lista.length+' freezer(s) medido(s)');
+  var box=document.getElementById('fz-det-itens');
+  var html=''; for(var j=0;j<lista.length;j++){ html+=_fzLinhaMed(lista[j], true); }
+  box.innerHTML=html;
+}
+function fzTempRemover(id){
+  appConfirm('Apagar esta medição?', function(){
+    _fzPost({acao:'freezertemp_del', id:id}).then(function(j){
+      if(j.ok){ toast('Medição apagada'); document.getElementById('fz-detalhe').style.display='none'; fzCarregar(); fzTab('coletas'); }
+      else toast(j.erro||'Erro');
+    }).catch(function(){ toast('Erro'); });
+  }, {danger:true, okText:'Apagar'});
+}
+
+// ───── EXPORTAR PDF (filtrado ou tudo) ─────
+function fzExportarMenu(){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:320px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:14px;font-weight:500">Exportar PDF de:</div>'
+    +'<button id="_fzpdf_filtro" style="width:100%;background:#16267A;color:#fff;border:none;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer">'+_precoEsc(_fzFiltroLabel())+'</button>'
+    +'<button id="_fzpdf_tudo" style="width:100%;background:#fff;color:#16267A;border:1px solid #16267A;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer">Tudo (todas as datas)</button>'
+    +'<button id="_fzpdf_cancel" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;cursor:pointer">Cancelar</button>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_fzpdf_cancel').onclick=close;
+  card.querySelector('#_fzpdf_filtro').onclick=function(){ close(); fzPDF(true); };
+  card.querySelector('#_fzpdf_tudo').onclick=function(){ close(); fzPDF(false); };
+}
+function fzPDF(usarFiltro){
+  if(!_fzFreezers.length){ toast('Cadastre freezers primeiro'); return; }
+  var temps = usarFiltro ? _fzTempsFiltrados() : _fzTemps.slice();
+  var periodoTxt = usarFiltro ? _fzFiltroLabel() : 'Todas as datas';
+  var cols=_fzFreezers.slice();
+  var setData={}; for(var i=0;i<temps.length;i++){ if(temps[i].data) setData[temps[i].data]=1; }
+  var datas=Object.keys(setData).sort();
+  var mapa={};
+  for(var j=0;j<temps.length;j++){ var t=temps[j]; var ch=t.data+'|'+t.freezerId; if(!mapa[ch]) mapa[ch]=[]; mapa[ch].push(t.temp); }
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var thead='<tr><th class="d">DATA</th>'; for(var c=0;c<cols.length;c++){ thead+='<th>'+_precoEsc(cols[c].nome)+'</th>'; } thead+='</tr>';
+  var tbody='';
+  if(!datas.length){ tbody='<tr><td class="d" colspan="'+(cols.length+1)+'" style="text-align:center;color:#888780">Sem medicoes no periodo.</td></tr>'; }
+  else for(var r=0;r<datas.length;r++){ var dd=datas[r]; tbody+='<tr><td class="d">'+_fzDataBR(dd)+'</td>';
+    for(var cc=0;cc<cols.length;cc++){ var arr=mapa[dd+'|'+cols[cc].id]; tbody+='<td>'+(arr?_precoEsc(arr.join(' / '))+'°':'')+'</td>'; }
+    tbody+='</tr>';
+  }
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Temperatura dos Freezers — Ideal</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    + '.sheet{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px}'
+    + 'th{font-size:10.5px;text-transform:uppercase;color:#1B3A9E;text-align:center;padding:7px 5px;border:1px solid #C9D6EC;background:#EAF0FB}'
+    + 'th.d,td.d{text-align:left;white-space:nowrap;font-weight:bold;background:#F5F8FD}'
+    + 'td{padding:7px 5px;font-size:12.5px;border:1px solid #e6e6e6;text-align:center;color:#1a1a1a}'
+    + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
+    + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    + '</style></head><body><div class="sheet">'
+    + '<div class="hd"><h1>Controle de Temperatura dos Freezers</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_fzNomeLoja())+'</div></div><div class="stripe"></div>'
+    + '<div class="body">'
+    + '<div class="meta"><b>Periodo:</b> '+_precoEsc(periodoTxt)+' &middot; Freezers: '+cols.length+' &middot; Datas: '+datas.length+' &middot; Gerado em '+agora+'</div>'
+    + '<table>'+thead+tbody+'</table>'
+    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    + '</div></div>'
+    + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    + '</body></html>';
+  var win=window.open('','_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
 }
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
