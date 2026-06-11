@@ -491,7 +491,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
         <div class="qcard soon" data-menu="sangrias"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
         <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
-        <div class="qcard soon" data-menu="transf"><i class="ti ti-scale"></i><span class="qnm">Transferência de estoque</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="avarias" onclick="abrirAvarias()"><i class="ti ti-alert-triangle"></i><span class="qnm">Controle de avarias</span></div>
         <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora de preço</span></div>
         <div class="qcard" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
@@ -1286,6 +1286,83 @@ function doPost(e) {
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+  </div>
+</div>
+
+<!-- TELA: Controle de avarias -->
+<div class="screen" id="s-avarias">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Controle de avarias</div>
+      <div style="font-size:11.5px;color:#888780" id="av-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="avCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="av-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="avConfigMenu()" title="Motivos"></i>
+  </div>
+
+  <div style="display:flex;gap:6px;padding:10px 14px 0">
+    <button id="av-tabbtn-lancar" onclick="avTab('lancar')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lançar</button>
+    <button id="av-tabbtn-salvos" onclick="avTab('salvos')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Salvos</button>
+  </div>
+
+  <div id="av-tab-lancar" style="padding:12px 14px 100px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:13px;color:#5F5E5A;white-space:nowrap">Data</span>
+      <input id="av-data" type="date" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px">
+    </div>
+
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600">Produto</label>
+    <div id="av-prod-sel" style="display:none;margin-top:6px"></div>
+    <input id="av-prod-busca" placeholder="Buscar por nome ou código…" oninput="avBuscarProduto()" autocomplete="off" style="width:100%;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin-top:6px">
+    <div id="av-prod-res" style="margin-top:4px"></div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <div style="flex:1"><label style="font-size:12px;color:#5F5E5A;font-weight:600">Quantidade</label><input id="av-qtd" type="text" inputmode="decimal" value="1" oninput="avCalcTotal()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:5px"></div>
+      <div style="flex:1"><label style="font-size:12px;color:#5F5E5A;font-weight:600">Valor unit. (R$)</label><input id="av-valor" type="text" inputmode="decimal" placeholder="0,00" oninput="avCalcTotal()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:5px"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#FDECEC;border-radius:10px;padding:10px 13px;margin-top:10px">
+      <span style="font-size:12.5px;color:#A32D2D;font-weight:600">Total da perda</span>
+      <span id="av-total-perda" style="font-size:18px;font-weight:700;color:#A32D2D">R$ 0,00</span>
+    </div>
+
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Motivo</label>
+    <select id="av-motivo" onchange="avMotivoChange()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff;margin-top:5px"></select>
+    <input id="av-motivo-outro" placeholder="Escreva o motivo" style="display:none;width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:6px">
+
+    <label style="font-size:12px;color:#5F5E5A;font-weight:600;display:block;margin-top:12px">Observação (opcional)</label>
+    <input id="av-obs" placeholder="Ex.: lote, validade, detalhe" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:5px">
+
+    <input type="file" id="av-foto-input" accept="image/*" capture="environment" onchange="avFotoEscolhida(this)" style="display:none">
+    <button class="btn-primary" style="margin-top:12px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="document.getElementById('av-foto-input').click()"><i class="ti ti-camera"></i> Tirar / anexar foto</button>
+    <div id="av-foto-preview" style="margin-top:10px"></div>
+
+    <button class="btn-primary" id="av-salvar-btn" style="margin-top:14px;background:#A32D2D" onclick="avSalvar()"><i class="ti ti-device-floppy"></i> Registrar avaria</button>
+  </div>
+
+  <div id="av-tab-salvos" style="display:none;padding:12px 14px 100px">
+    <div style="background:linear-gradient(135deg,#A32D2D,#C53434);color:#fff;border-radius:13px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px" id="av-tot-lbl">Prejuízo no período</div><div id="av-tot-valor" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
+      <div id="av-tot-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 itens</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <select id="av-mes" onchange="avFiltroMes()" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff"></select>
+      <button onclick="avToggleIntervalo()" title="Intervalo" style="padding:9px 11px;border:1px solid #16267A;border-radius:9px;background:#fff;color:#16267A;font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
+    </div>
+    <div id="av-intervalo" style="display:none;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:12px;color:#5F5E5A">De</span>
+      <input id="av-de" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
+      <span style="font-size:12px;color:#5F5E5A">Até</span>
+      <input id="av-ate" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px">
+      <button class="btn-primary" style="margin-top:0;flex:1;min-width:120px" onclick="avAplicarIntervalo()">Aplicar intervalo</button>
+    </div>
+    <div id="av-salvos-lista"></div>
+    <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="avPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+  </div>
+
+  <div id="av-detalhe" style="display:none;padding:14px 14px 100px">
+    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="avVoltarSalvos()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="av-det-nome">Avaria</div><div class="row-sub" id="av-det-sub">—</div></div></div>
+    <div id="av-det-corpo"></div>
   </div>
 </div>
 
@@ -2587,6 +2664,319 @@ function coConfigMenu(){
   card.querySelector('#_coc_imp').onclick=function(){ close(); coImportar(); };
 }
 
+// ══════════════════════════════════════════════════════
+// CONTROLE DE AVARIAS (chat 25)
+// Por loja. Lança produto (do cadastro) + qtd + valor + motivo + foto (Drive).
+// Salvos com filtro (mês/intervalo), foto visível, total de prejuízo e PDF.
+// ══════════════════════════════════════════════════════
+var _avAvarias = [];
+var _avMotivos = [];
+var _avProd = null;     // {cod, desc, valor}
+var _avFoto = null;     // {base64, mime, dataUrl}
+var _avFiltro = { tipo:'mes', mes:null };
+var _avDetId = '';
+function _avLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
+function _avNomeLoja(){ var l=_avLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _avDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
+function _avMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
+function _avNum(s){ s=String(s==null?'':s).trim(); if(s==='') return 0; if(s.indexOf(',')>=0) s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,''); var n=parseFloat(s); return isNaN(n)?0:n; }
+function _avFmtNum(n){ n=Number(n)||0; return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function _avThumb(id,sz){ return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(sz||800); }
+function _avOpen(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
+async function _avPost(payload){
+  var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_avLoja()}, payload)) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function abrirAvarias(){
+  show('s-avarias'); window.scrollTo(0,0);
+  document.getElementById('av-cfg-btn').style.display=ehGestor()?'inline':'none';
+  if(_avFiltro.tipo==='mes' && !_avFiltro.mes) _avFiltro.mes=new Date().toISOString().slice(0,7);
+  avTab('lancar');
+  var dt=document.getElementById('av-data'); if(dt && !dt.value) dt.value=new Date().toISOString().split('T')[0];
+  avResetForm();
+  if(!PRODUTOS.length){ try{ precoSync(); }catch(e){} }   // carrega o cadastro em segundo plano
+  avCarregar();
+}
+function avTab(qual){
+  document.getElementById('av-detalhe').style.display='none';
+  document.getElementById('av-tabbtn-lancar').style.cssText=_fzBtn(qual==='lancar');
+  document.getElementById('av-tabbtn-salvos').style.cssText=_fzBtn(qual==='salvos');
+  var L=document.getElementById('av-tab-lancar'), S=document.getElementById('av-tab-salvos');
+  if(qual==='salvos'){ L.style.display='none'; S.style.display='block'; avRenderSalvos(); }
+  else { S.style.display='none'; L.style.display='block'; }
+}
+async function avCarregar(){
+  var sub=document.getElementById('av-sub'); if(sub) sub.textContent=_avNomeLoja();
+  try{
+    var j=await _avPost({acao:'avarias_list'});
+    if(!j.ok || !Array.isArray(j.avarias)){ toast('Servidor na versão antiga — publique a nova versão do Apps Script'); return; }
+    _avAvarias=j.avarias; _avMotivos=j.motivos||[];
+    avRenderMotivosSelect();
+    avPreencherMeses();
+    if(document.getElementById('av-tab-salvos').style.display!=='none') avRenderSalvos();
+  }catch(e){ toast('Não consegui carregar as avarias'); }
+}
+
+// ── BUSCA DE PRODUTO (cadastro) ──
+function avBuscarProduto(){
+  var q=document.getElementById('av-prod-busca').value.trim();
+  var box=document.getElementById('av-prod-res');
+  if(q.length<2){ box.innerHTML=''; return; }
+  if(!PRODUTOS.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px;color:#A86A00">Cadastro não carregado. Abra "Busca de preço" uma vez p/ sincronizar.</div>'; return; }
+  var nq=_precoNorm(q);
+  var res=[]; for(var i=0;i<PRODUTOS.length && res.length<8;i++){ if(PRODUTOS[i].n.indexOf(nq)>=0) res.push(PRODUTOS[i]); }
+  if(!res.length){ box.innerHTML='<div class="row-sub" style="padding:6px 2px">Nada encontrado.</div>'; return; }
+  var html='';
+  for(var k=0;k<res.length;k++){ var p=res[k];
+    html+='<div onclick="avSelecionarProduto(\''+p.c+'\')" class="row-card" style="cursor:pointer;margin-bottom:6px;padding:9px 11px"><div style="flex:1"><div class="row-label" style="font-size:13.5px">'+_precoEsc(p.d)+'</div><div class="row-sub">cód '+_precoEsc(p.c)+' · custo '+_precoBRL(p.cm||p.ct||p.v||0)+'</div></div></div>';
+  }
+  box.innerHTML=html;
+}
+function avSelecionarProduto(cod){
+  var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
+  if(!p) return;
+  _avProd={ cod:p.c, desc:p.d, valor:(p.cm||p.ct||p.v||0) };
+  document.getElementById('av-prod-res').innerHTML='';
+  var inp=document.getElementById('av-prod-busca'); inp.value=''; inp.style.display='none';
+  var sel=document.getElementById('av-prod-sel'); sel.style.display='block';
+  sel.innerHTML='<div class="row-card" style="background:#EAF0FB;align-items:center"><div style="flex:1"><div class="row-label">'+_precoEsc(p.d)+'</div><div class="row-sub">cód '+_precoEsc(p.c)+' · custo '+_precoBRL(_avProd.valor)+'</div></div><i class="ti ti-x" style="color:#888780;font-size:18px;cursor:pointer" onclick="avLimparProduto()"></i></div>';
+  document.getElementById('av-valor').value=_avFmtNum(_avProd.valor);
+  avCalcTotal();
+}
+function avLimparProduto(){
+  _avProd=null;
+  var sel=document.getElementById('av-prod-sel'); sel.style.display='none'; sel.innerHTML='';
+  document.getElementById('av-prod-busca').style.display='block';
+  document.getElementById('av-valor').value='';
+  avCalcTotal();
+}
+function avCalcTotal(){
+  var q=_avNum(document.getElementById('av-qtd').value);
+  var v=_avNum(document.getElementById('av-valor').value);
+  document.getElementById('av-total-perda').textContent=_precoBRL(q*v);
+}
+
+// ── MOTIVO ──
+function avRenderMotivosSelect(){
+  var sel=document.getElementById('av-motivo'); if(!sel) return;
+  var atual=sel.value;
+  var html='';
+  for(var i=0;i<_avMotivos.length;i++){ html+='<option value="'+_precoEsc(_avMotivos[i].texto)+'">'+_precoEsc(_avMotivos[i].texto)+'</option>'; }
+  html+='<option value="__outro">Outro (escrever)…</option>';
+  sel.innerHTML=html;
+  if(atual){ sel.value=atual; }
+}
+function avMotivoChange(){
+  document.getElementById('av-motivo-outro').style.display = (document.getElementById('av-motivo').value==='__outro')?'block':'none';
+}
+
+// ── FOTO (compressão no aparelho) ──
+function avFotoEscolhida(input){
+  var file=input.files && input.files[0]; if(!file){ return; }
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var max=1000; var w=img.width, h=img.height;
+      if(w>h && w>max){ h=Math.round(h*max/w); w=max; } else if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      var dataUrl=cv.toDataURL('image/jpeg',0.7);
+      _avFoto={ mime:'image/jpeg', base64:dataUrl.split(',')[1], dataUrl:dataUrl };
+      avRenderFotoPreview();
+    };
+    img.onerror=function(){ toast('Não consegui ler a imagem'); };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function avRenderFotoPreview(){
+  var box=document.getElementById('av-foto-preview');
+  if(!_avFoto){ box.innerHTML=''; return; }
+  box.innerHTML='<div style="position:relative;display:inline-block"><img src="'+_avFoto.dataUrl+'" style="max-width:170px;max-height:170px;border-radius:10px;border:1px solid #eee"><button onclick="avRemoverFoto()" style="position:absolute;top:-8px;right:-8px;background:#A32D2D;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:15px;line-height:1">×</button></div>';
+}
+function avRemoverFoto(){ _avFoto=null; avRenderFotoPreview(); }
+
+// ── SALVAR ──
+function avSalvar(){
+  if(!_avProd){ toast('Escolha o produto'); return; }
+  var data=document.getElementById('av-data').value; if(!data){ toast('Escolha a data'); return; }
+  var qtd=_avNum(document.getElementById('av-qtd').value); if(qtd<=0){ toast('Quantidade inválida'); return; }
+  var valor=_avNum(document.getElementById('av-valor').value);
+  var total=qtd*valor;
+  var motivo=document.getElementById('av-motivo').value;
+  if(motivo==='__outro'){ motivo=String(document.getElementById('av-motivo-outro').value||'').trim(); if(!motivo){ toast('Escreva o motivo'); return; } }
+  var obs=String(document.getElementById('av-obs').value||'').trim();
+  var btn=document.getElementById('av-salvar-btn'); var bh=btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spin"></span> '+(_avFoto?'Enviando foto…':'Salvando…');
+  var payload={ acao:'avaria_save', data:data, produto:_avProd.desc, cod:_avProd.cod, qtd:String(qtd), valorUnit:String(valor), total:String(total), motivo:motivo, obs:obs, quem:(userAtual&&userAtual.nome)||'' };
+  if(_avFoto){ payload.fotoBase64=_avFoto.base64; payload.fotoMime=_avFoto.mime; }
+  _avPost(payload).then(function(j){
+    btn.disabled=false; btn.innerHTML=bh;
+    if(j.ok){ toast('✓ Avaria registrada'); avResetForm(); avCarregar(); }
+    else toast(j.erro||'Erro ao salvar');
+  }).catch(function(){ btn.disabled=false; btn.innerHTML=bh; toast('Erro ao salvar (se a foto for grande, tente de novo)'); });
+}
+function avResetForm(){
+  avLimparProduto();
+  document.getElementById('av-qtd').value='1';
+  document.getElementById('av-valor').value='';
+  document.getElementById('av-obs').value='';
+  var mo=document.getElementById('av-motivo-outro'); mo.value=''; mo.style.display='none';
+  var ms=document.getElementById('av-motivo'); if(ms.options.length) ms.selectedIndex=0;
+  _avFoto=null; avRenderFotoPreview();
+  document.getElementById('av-total-perda').textContent='R$ 0,00';
+}
+
+// ── FILTRO ──
+function avPreencherMeses(){
+  var sel=document.getElementById('av-mes'); if(!sel) return;
+  var meses={}; for(var i=0;i<_avAvarias.length;i++){ var ym=String(_avAvarias[i].data||'').slice(0,7); if(/^\d{4}-\d{2}$/.test(ym)) meses[ym]=1; }
+  meses[new Date().toISOString().slice(0,7)]=1;
+  var lista=Object.keys(meses).sort().reverse();
+  var html='<option value="__tudo">Todos os meses</option>';
+  for(var k=0;k<lista.length;k++){ html+='<option value="'+lista[k]+'">'+_avMesLabel(lista[k])+'</option>'; }
+  sel.innerHTML=html;
+  if(_avFiltro.tipo==='mes' && _avFiltro.mes) sel.value=_avFiltro.mes;
+  else if(_avFiltro.tipo==='tudo') sel.value='__tudo';
+}
+function avFiltroMes(){
+  var v=document.getElementById('av-mes').value;
+  document.getElementById('av-intervalo').style.display='none';
+  _avFiltro=(v==='__tudo')?{tipo:'tudo'}:{tipo:'mes', mes:v};
+  avRenderSalvos();
+}
+function avToggleIntervalo(){ var el=document.getElementById('av-intervalo'); el.style.display=(el.style.display==='none')?'flex':'none'; }
+function avAplicarIntervalo(){
+  var de=document.getElementById('av-de').value, ate=document.getElementById('av-ate').value;
+  if(!de||!ate){ toast('Preencha De e Até'); return; }
+  if(de>ate){ var t=de; de=ate; ate=t; }
+  _avFiltro={tipo:'intervalo', de:de, ate:ate};
+  avRenderSalvos();
+}
+function _avPassa(d){ d=String(d||''); if(_avFiltro.tipo==='tudo') return true; if(_avFiltro.tipo==='mes') return d.slice(0,7)===_avFiltro.mes; if(_avFiltro.tipo==='intervalo') return d>=_avFiltro.de && d<=_avFiltro.ate; return true; }
+function _avFiltroLabel(){ if(_avFiltro.tipo==='tudo') return 'Todos os meses'; if(_avFiltro.tipo==='mes') return _avMesLabel(_avFiltro.mes); if(_avFiltro.tipo==='intervalo') return _avDataBR(_avFiltro.de)+' a '+_avDataBR(_avFiltro.ate); return ''; }
+function _avFiltradas(){ return _avAvarias.filter(function(a){ return _avPassa(a.data); }); }
+
+// ── SALVOS ──
+function avRenderSalvos(){
+  var box=document.getElementById('av-salvos-lista'); if(!box) return;
+  var arr=_avFiltradas();
+  var tot=0; for(var t=0;t<arr.length;t++) tot+=_avNum(arr[t].total);
+  document.getElementById('av-tot-valor').textContent=_precoBRL(tot);
+  document.getElementById('av-tot-qtd').textContent=arr.length+' item(ns)';
+  document.getElementById('av-tot-lbl').textContent='Prejuízo · '+_avFiltroLabel();
+  arr=arr.slice().sort(function(a,b){ return String(b.data).localeCompare(String(a.data)) || String(b.id).localeCompare(String(a.id)); });
+  if(!arr.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma avaria no período.</div>'; return; }
+  var html='';
+  for(var i=0;i<arr.length;i++){ var a=arr[i];
+    var thumb = a.fotoId ? '<img src="'+_avThumb(a.fotoId,200)+'" style="width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px" onerror="this.style.visibility=\'hidden\'">' : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>';
+    html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_avDataBR(a.data)+' · '+_precoEsc(a.qtd)+' un · '+_precoEsc(a.motivo)+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
+  }
+  box.innerHTML=html;
+}
+function avDetalhe(id){
+  var a=null; for(var i=0;i<_avAvarias.length;i++){ if(_avAvarias[i].id===id) a=_avAvarias[i]; } if(!a) return;
+  _avDetId=id;
+  document.getElementById('av-tab-lancar').style.display='none';
+  document.getElementById('av-tab-salvos').style.display='none';
+  document.getElementById('av-detalhe').style.display='block';
+  document.getElementById('av-det-nome').textContent=a.produto;
+  document.getElementById('av-det-sub').textContent=_avDataBR(a.data)+' · '+_precoBRL(_avNum(a.total));
+  var foto = a.fotoId ? '<a href="'+_avOpen(a.fotoId)+'" target="_blank" rel="noopener"><img src="'+_avThumb(a.fotoId,1000)+'" style="width:100%;border-radius:12px;margin-top:10px;display:block"></a><div style="font-size:11px;color:#888780;margin-top:4px">Toque na foto para abrir no Drive.</div>' : '<div class="row-sub" style="padding:8px 2px">Sem foto.</div>';
+  var html='<div class="row-card" style="display:block">'
+    +'<div class="row-sub">Produto</div><div class="row-label">'+_precoEsc(a.produto)+' <span style="color:#888780;font-weight:400">· cód '+_precoEsc(a.cod)+'</span></div>'
+    +'<div style="display:flex;gap:20px;margin-top:8px"><div><div class="row-sub">Qtd</div><div class="row-label">'+_precoEsc(a.qtd)+'</div></div><div><div class="row-sub">Valor unit.</div><div class="row-label">'+_precoBRL(_avNum(a.valorUnit))+'</div></div><div><div class="row-sub">Total</div><div class="row-label" style="color:#A32D2D">'+_precoBRL(_avNum(a.total))+'</div></div></div>'
+    +'<div style="margin-top:8px"><div class="row-sub">Motivo</div><div class="row-label">'+_precoEsc(a.motivo)+'</div></div>'
+    +(a.obs?'<div style="margin-top:8px"><div class="row-sub">Observação</div><div class="row-label" style="font-weight:400">'+_precoEsc(a.obs)+'</div></div>':'')
+    +'<div style="margin-top:8px"><div class="row-sub">Registrado por</div><div class="row-label" style="font-weight:400">'+(_precoEsc(a.quem)||'—')+'</div></div>'
+    + foto
+    +'</div>'
+    +'<button class="btn-primary" style="margin-top:12px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="avRemover(\''+a.id+'\')"><i class="ti ti-trash"></i> Excluir avaria</button>';
+  document.getElementById('av-det-corpo').innerHTML=html;
+  window.scrollTo(0,0);
+}
+function avVoltarSalvos(){ document.getElementById('av-detalhe').style.display='none'; avTab('salvos'); }
+function avRemover(id){
+  appConfirm('Excluir esta avaria?\n(A foto continua guardada no Drive.)', function(){
+    _avPost({acao:'avaria_del', id:id}).then(function(j){ if(j.ok){ toast('Avaria excluída'); document.getElementById('av-detalhe').style.display='none'; avCarregar(); avTab('salvos'); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
+  }, {danger:true, okText:'Excluir'});
+}
+
+// ── MOTIVOS (gestor) ──
+function avConfigMenu(){
+  if(!ehGestor()){ toast('Só o gestor edita os motivos'); return; }
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:340px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25);max-height:80vh;overflow:auto';
+  var itens='';
+  for(var i=0;i<_avMotivos.length;i++){ var m=_avMotivos[i];
+    itens+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f1f1f1"><div style="flex:1;font-size:14px;color:#16267A">'+_precoEsc(m.texto)+'</div><i class="ti ti-pencil" style="color:#888780;font-size:16px;cursor:pointer" onclick="avRenomearMotivo(\''+m.id+'\')"></i><i class="ti ti-trash" style="color:#A32D2D;font-size:16px;cursor:pointer" onclick="avRemoverMotivo(\''+m.id+'\')"></i></div>';
+  }
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:10px;font-weight:500">Motivos de avaria</div>'
+    +'<div>'+(itens||'<div style="font-size:13px;color:#888780;padding:8px 0">Nenhum motivo.</div>')+'</div>'
+    +'<button id="_avm_novo" style="width:100%;background:#16267A;color:#fff;border:none;border-radius:9px;height:44px;font-size:14px;margin-top:12px;cursor:pointer"><i class="ti ti-plus"></i> Novo motivo</button>'
+    +'<button id="_avm_fechar" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;margin-top:8px;cursor:pointer">Fechar</button>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_avm_fechar').onclick=close;
+  card.querySelector('#_avm_novo').onclick=function(){ close(); avNovoMotivo(); };
+}
+function avNovoMotivo(){
+  appPrompt('Novo motivo de avaria:', '', function(t){ if(!t) return; _avPost({acao:'avariamotivo_save', texto:t}).then(function(j){ if(j.ok){ toast('Motivo adicionado'); avCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {okText:'Adicionar'});
+}
+function avRenomearMotivo(id){
+  var m=null; for(var i=0;i<_avMotivos.length;i++){ if(_avMotivos[i].id===id) m=_avMotivos[i]; }
+  appPrompt('Editar motivo:', m?m.texto:'', function(t){ if(!t) return; _avPost({acao:'avariamotivo_save', id:id, texto:t}).then(function(j){ if(j.ok){ toast('Motivo atualizado'); avCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); });
+}
+function avRemoverMotivo(id){
+  appConfirm('Remover este motivo?', function(){ _avPost({acao:'avariamotivo_del', id:id}).then(function(j){ if(j.ok){ toast('Motivo removido'); avCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); }); }, {danger:true, okText:'Remover'});
+}
+
+// ── PDF ──
+function avPDF(){
+  var arr=_avFiltradas().slice().sort(function(a,b){ return String(a.data).localeCompare(String(b.data)); });
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var tot=0; var rows='';
+  for(var i=0;i<arr.length;i++){ var a=arr[i]; tot+=_avNum(a.total);
+    rows+='<tr><td class="d">'+_avDataBR(a.data)+'</td><td>'+_precoEsc(a.produto)+'<div class="cod">cód '+_precoEsc(a.cod)+'</div></td><td class="c">'+_precoEsc(a.qtd)+'</td><td class="c">'+_precoEsc(a.motivo)+'</td><td class="v">'+_precoBRL(_avNum(a.total))+'</td></tr>';
+  }
+  if(!arr.length) rows='<tr><td colspan="5" style="text-align:center;color:#888780">Sem avarias no período.</td></tr>';
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Controle de Avarias — Ideal</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    + '.sheet{max-width:760px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.hd{background:#A32D2D;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px}'
+    + 'th{font-size:11px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:6px 4px;border-bottom:2px solid #E2C9C9}'
+    + 'td{padding:8px 4px;font-size:13px;border-bottom:1px solid #f1f1f1;vertical-align:top;color:#1a1a1a}'
+    + 'td.d,th.d{white-space:nowrap}td.c,th.c{text-align:center}td.v,th.v{text-align:right;white-space:nowrap;color:#A32D2D;font-weight:bold}'
+    + '.cod{font-size:10px;color:#9a988f;margin-top:2px}'
+    + '.tot{display:flex;justify-content:space-between;margin-top:14px;padding:12px 16px;border-radius:10px;background:#FDECEC;font-size:14px;font-weight:bold;color:#A32D2D}'
+    + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#A32D2D;color:#fff}.b2{background:#FDECEC;color:#A32D2D}'
+    + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    + '</style></head><body><div class="sheet">'
+    + '<div class="hd"><h1>Controle de Avarias</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_avNomeLoja())+'</div></div><div class="stripe"></div>'
+    + '<div class="body">'
+    + '<div class="meta"><b>Período:</b> '+_precoEsc(_avFiltroLabel())+' &middot; Itens: '+arr.length+' &middot; Gerado em '+agora+'</div>'
+    + '<table><tr><th class="d">Data</th><th>Produto</th><th class="c">Qtd</th><th class="c">Motivo</th><th class="v">Perda</th></tr>'+rows+'</table>'
+    + '<div class="tot"><span>Prejuízo total no período</span><span>'+_precoBRL(tot)+'</span></div>'
+    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    + '</div></div>'
+    + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    + '</body></html>';
+  var win=window.open('','_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
+}
+
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
@@ -3415,7 +3805,7 @@ const MENU_ITENS = [
   {k:'cotacao',    ic:'ti-shopping-cart',    nm:'Lista de cotação'},
   {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias', soon:1},
   {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento', soon:1},
-  {k:'transf',     ic:'ti-scale',            nm:'Transferência de estoque', soon:1},
+  {k:'avarias',    ic:'ti-alert-triangle',   nm:'Controle de avarias'},
   {k:'preco',      ic:'ti-barcode',          nm:'Busca de preço'},
   {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
   {k:'ck_temp',    ic:'ti-temperature-snow', nm:'Checklist temperatura freezers', soon:1},
