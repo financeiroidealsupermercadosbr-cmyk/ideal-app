@@ -1451,6 +1451,88 @@ async function terminaisAtualizar(){
     if(sub) sub.textContent = 'sem conexão';
   }
 }
+
+// ── Vigia de terminais (Nível 1: aviso visual no app, SEM som) · chat 25 ──
+// Roda enquanto o app está aberto (qualquer tela). Avisa UMA vez quando um
+// terminal cai (15+ min sem dar "oi") e UMA vez quando volta.
+var TERM_ALERTA_MIN = 15;        // só alerta quem está 15+ min sem sinal
+var _vigiaTimer = null;
+var _termEstado = {};            // id -> 'on' | 'off' (estado já avisado)
+var _termAlertaDispensado = false;
+
+function vigiaTerminaisIniciar(){
+  if(_vigiaTimer) return;                       // não inicia duas vezes
+  terminaisCheckSilencioso();                   // checa já na entrada
+  _vigiaTimer = setInterval(terminaisCheckSilencioso, 150000); // a cada 2,5 min
+}
+function vigiaTerminaisParar(){
+  if(_vigiaTimer){ clearInterval(_vigiaTimer); _vigiaTimer = null; }
+  _termEstado = {}; _termAlertaDispensado = false;
+  _termBannerEsconder();
+}
+
+async function terminaisCheckSilencioso(){
+  try{
+    var res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ acao:'terminais_list', sheetId:SHEET_ID })
+    });
+    if(!res.ok) return;
+    var j = await res.json();
+    if(!j || !j.ok) return;
+    var lista = j.terminais || [];
+    var offline = [];
+    for(var i=0;i<lista.length;i++){
+      var t = lista[i];
+      var seg = (t.idadeSeg==null) ? null : Number(t.idadeSeg);
+      var caiu = (seg!=null && seg >= TERM_ALERTA_MIN*60); // "sem registro" NÃO conta como caiu
+      var id = String(t.id).toUpperCase();
+      var antes = _termEstado[t.id];
+      if(caiu){
+        offline.push(id);
+        if(antes !== 'off'){ toast('⚠️ Terminal '+id+' está offline'); _termAlertaDispensado = false; }
+        _termEstado[t.id] = 'off';
+      } else {
+        if(antes === 'off'){ toast('✓ Terminal '+id+' voltou'); }
+        _termEstado[t.id] = 'on';
+      }
+    }
+    if(offline.length && !_termAlertaDispensado) _termBannerMostrar(offline);
+    else _termBannerEsconder();
+  }catch(e){ /* silencioso: o vigia nunca atrapalha o app */ }
+}
+
+function _termBanner(){
+  var b = document.getElementById('term-alerta-bar');
+  if(b) return b;
+  b = document.createElement('div');
+  b.id = 'term-alerta-bar';
+  b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:60px;width:100%;max-width:360px;z-index:65;'
+    + 'background:#A32D2D;color:#fff;border-radius:11px;padding:10px 12px;display:none;align-items:center;gap:9px;'
+    + 'box-shadow:0 6px 22px rgba(0,0,0,.22);font-size:13px;cursor:pointer';
+  b.innerHTML = '<i class="ti ti-alert-triangle" style="font-size:18px;flex:0 0 auto"></i>'
+    + '<span id="term-alerta-txt" style="flex:1;line-height:1.3"></span>'
+    + '<i class="ti ti-x" id="term-alerta-x" style="font-size:17px;flex:0 0 auto;opacity:.85"></i>';
+  b.addEventListener('click', function(ev){
+    if(ev.target && ev.target.id === 'term-alerta-x'){ _termAlertaDispensado = true; _termBannerEsconder(); ev.stopPropagation(); return; }
+    abrirTerminais();
+  });
+  document.body.appendChild(b);
+  return b;
+}
+function _termBannerMostrar(ids){
+  var b = _termBanner();
+  var txt = document.getElementById('term-alerta-txt');
+  var n = ids.length;
+  txt.textContent = (n===1)
+    ? ('Terminal '+ids[0]+' offline · toque para ver')
+    : (n+' terminais offline ('+ids.join(', ')+') · toque para ver');
+  b.style.display = 'flex';
+}
+function _termBannerEsconder(){
+  var b = document.getElementById('term-alerta-bar');
+  if(b) b.style.display = 'none';
+}
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
@@ -1654,9 +1736,11 @@ async function fazerLogin() {
   carregarSheets();
   if(window.sincronizarInicio) sincronizarInicio();
   if (usr.nivel==='gestor') carregarUsuarios();
+  vigiaTerminaisIniciar();
 }
 function fazerLogout() {
   userAtual=null;
+  vigiaTerminaisParar();
   ['login-user','login-pass'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('login-loja').value='';
   document.querySelectorAll('.nav-btn').forEach(b=>b.style.display='');
