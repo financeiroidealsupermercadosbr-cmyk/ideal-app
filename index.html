@@ -4982,11 +4982,15 @@ function fnEditar(id){
 var COTWEB=[], _cwAtual=null;
 var COTWEB_BASE='https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/cotacao.html';
 function _cwLink(cotId){ return COTWEB_BASE+'?c='+encodeURIComponent(cotId); }
-function _cwBadgeTxt(s){ return String(s).toUpperCase()==='ABERTA'?'Aberta':'Fechada'; }
+function _cwBadgeTxt(s){ s=String(s).toUpperCase(); return s==='ABERTA'?'Aberta':(s==='AGENDADA'?'Agendada':'Fechada'); }
+function _cwFmtEp(ep){ ep=Number(ep)||0; if(!ep) return ''; var d=new Date(ep); var p=function(n){return ('0'+n).slice(-2);}; return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+function _cwDtLocalVal(dt){ var p=function(n){return ('0'+n).slice(-2);}; return dt.getFullYear()+'-'+p(dt.getMonth()+1)+'-'+p(dt.getDate())+'T'+p(dt.getHours())+':'+p(dt.getMinutes()); }
 function _cwBadge(status){
-  var aberta=String(status).toUpperCase()==='ABERTA';
-  var cor=aberta?'#0F6E56':'#888780', bg=aberta?'#E5F4EE':'#EFEFEC';
-  return '<span style="font-size:10.5px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:20px">'+(aberta?'ABERTA':'FECHADA')+'</span>';
+  var s=String(status).toUpperCase();
+  var cor='#888780', bg='#EFEFEC', txt='FECHADA';
+  if(s==='ABERTA'){ cor='#0F6E56'; bg='#E5F4EE'; txt='ABERTA'; }
+  else if(s==='AGENDADA'){ cor='#1B3A9E'; bg='#E6EEFB'; txt='AGENDADA'; }
+  return '<span style="font-size:10.5px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:20px">'+txt+'</span>';
 }
 function _cwCopiarTxt(link){
   if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(function(){ toast('✓ Link copiado'); }).catch(function(){ toast('Segure no texto pra copiar'); }); }
@@ -5045,6 +5049,12 @@ function cwRenderPainel(){
     +'<div style="font-size:11.5px;color:#16267A;word-break:break-all;background:#fff;border:1px solid #E0D6B0;border-radius:8px;padding:8px;margin-bottom:8px">'+_precoEsc(link)+'</div>'
     +'<button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="cwCopiar()"><i class="ti ti-copy"></i> Copiar link</button>'
     +'</div>';
+  if(c.inicioEp || c.fimEp){
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;background:#F4F8FF;border:1px solid #D5E2F7;border-radius:11px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#16267A">'
+      +(c.inicioEp?'<span><i class="ti ti-player-play" style="color:#1B3A9E"></i> Abre: <b>'+_cwFmtEp(c.inicioEp)+'</b></span>':'')
+      +(c.fimEp?'<span style="margin-left:auto"><i class="ti ti-clock-stop" style="color:#A32D2D"></i> Fecha: <b>'+_cwFmtEp(c.fimEp)+'</b></span>':'')
+      +'</div>';
+  }
   h+='<div style="font-size:12px;font-weight:600;color:#16267A;margin:6px 2px 8px">Fornecedores — toque pra mandar no WhatsApp</div>';
   for(var f=0;f<c.fornecedores.length;f++){ var fo=c.fornecedores[f]; var cor=fo.respondeu?'#1FA85A':'#C9A23A'; var fid=_precoEsc(fo.id);
     h+='<div class="row-card" style="display:block;margin-bottom:8px">'
@@ -5057,7 +5067,9 @@ function cwRenderPainel(){
       +'<button style="flex:0 0 auto;padding:0 14px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" onclick="cwCopiarMsg(\''+fid+'\')"><i class="ti ti-copy"></i> Msg</button>'
       +'</div></div>';
   }
-  if(aberta){ h+='<button class="btn-primary" style="margin-top:14px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwFechar()"><i class="ti ti-lock"></i> Fechar cotação</button>'; }
+  var _st=String(c.status).toUpperCase();
+  if(_st==='AGENDADA'){ h+='<div class="row-sub" style="padding:10px 2px;text-align:center;color:#1B3A9E">⏳ Programada — abre em '+_cwFmtEp(c.inicioEp)+'.</div>'; }
+  if(_st!=='FECHADA'){ h+='<button class="btn-primary" style="margin-top:14px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwFechar()"><i class="ti ti-lock"></i> Fechar cotação agora</button>'; }
   else { h+='<div class="row-sub" style="padding:12px 2px;text-align:center">Cotação fechada — fornecedores não respondem mais.</div>'; }
   h+='<button class="btn-primary" style="margin-top:10px;background:#16267A" onclick="cwVerResultado()"><i class="ti ti-table"></i> Ver resultado</button>';
   h+='<button class="btn-primary" style="margin-top:10px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwExcluir()"><i class="ti ti-trash"></i> Excluir cotação</button>';
@@ -5254,10 +5266,17 @@ async function cwAbrirCriar(){
       +'<span style="font-size:13.5px;color:#1a1a1a">'+_precoEsc(f.nome)+'</span></label>';
   }
   var tituloDefault=_colAtual.obs||('Cotação '+(new Date().toLocaleDateString('pt-BR')));
+  var defI=_cwDtLocalVal(new Date());
+  var defF=_cwDtLocalVal(new Date(Date.now()+2*86400000));
   card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:4px">Nova cotação web</div>'
     +'<div style="font-size:11.5px;color:#888780;margin-bottom:12px">'+_colAtual.itens.length+' itens desta coleta</div>'
     +'<label style="font-size:11px;color:#888780">Título</label>'
     +'<input id="cw-titulo" value="'+_precoEsc(tituloDefault)+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 12px">'
+    +'<div style="display:flex;gap:8px;margin-bottom:6px">'
+    +'<div style="flex:1"><label style="font-size:11px;color:#888780">Início (abre)</label><input id="cw-inicio" type="datetime-local" value="'+defI+'" style="width:100%;padding:9px;border:1px solid #e0e0e0;border-radius:10px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>'
+    +'<div style="flex:1"><label style="font-size:11px;color:#888780">Término (fecha)</label><input id="cw-fim" type="datetime-local" value="'+defF+'" style="width:100%;padding:9px;border:1px solid #e0e0e0;border-radius:10px;font-size:13px;box-sizing:border-box;margin-top:4px"></div>'
+    +'</div>'
+    +'<div style="font-size:10.5px;color:#9a988f;margin:0 0 12px;line-height:1.5">No término ela <b>fecha sozinha</b>. Deixe o término em branco pra fechar na mão.</div>'
     +'<div style="font-size:11px;color:#888780;margin-bottom:4px">Fornecedores convidados</div>'
     +'<div style="border:1px solid #eee;border-radius:10px;padding:2px 8px;margin-bottom:14px">'+fhtml+'</div>'
     +'<div style="display:flex;gap:8px">'
@@ -5273,9 +5292,12 @@ async function cwAbrirCriar(){
     var chks=card.querySelectorAll('.cw-forn-chk'); var ids=[];
     for(var k=0;k<chks.length;k++){ if(chks[k].checked) ids.push(chks[k].value); }
     if(!ids.length){ toast('Escolha ao menos 1 fornecedor'); return; }
+    var iv=card.querySelector('#cw-inicio').value; var fv=card.querySelector('#cw-fim').value;
+    var inicioEp=iv?new Date(iv).getTime():0; var fimEp=fv?new Date(fv).getTime():0;
+    if(fimEp && inicioEp && fimEp<=inicioEp){ toast('O término tem que ser depois do início'); return; }
     var btn=card.querySelector('#cw-criar'); btn.disabled=true; btn.textContent='Criando…';
     try{
-      var j=await _estPost({acao:'cotweb_criar', titulo:titulo, itens:_colAtual.itens, fornecedores:ids, coletaId:_colAtual.id});
+      var j=await _estPost({acao:'cotweb_criar', titulo:titulo, itens:_colAtual.itens, fornecedores:ids, coletaId:_colAtual.id, inicioEp:inicioEp, fimEp:fimEp});
       if(!j.ok) throw new Error(j.erro||'falha');
       close(); cwMostrarLink(j.id);
     }catch(e){ console.error('cwCriar',e); toast('⚠ Não consegui criar'); btn.disabled=false; btn.textContent='Criar cotação'; }
