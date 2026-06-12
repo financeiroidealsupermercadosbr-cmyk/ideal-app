@@ -8264,6 +8264,7 @@ function _colCruzarDados(){
   var uni=arr.filter(function(x){return x.entries.length<2;}).sort(function(a,b){ return a.desc<b.desc?-1:(a.desc>b.desc?1:0); });
   return {rep:rep, uni:uni};
 }
+var _colCruzaData=null;
 async function colCruzar(){
   if(!COLETAS.length){ try{ await _colCarregar(); }catch(e){} }
   document.getElementById('col-lista-view').style.display='none';
@@ -8277,30 +8278,73 @@ function colCruzaVoltar(){
 }
 function colRenderCruza(){
   var d=_colCruzarDados();
+  _colCruzaData=d;
   var sub=document.getElementById('col-cruza-sub'); if(sub) sub.textContent = d.rep.length+' repetido(s) · '+(d.rep.length+d.uni.length)+' produtos no total';
   var h='';
-  h+='<div style="font-size:13px;font-weight:600;color:#9A6B00;margin:12px 0 6px;display:flex;align-items:center;gap:6px"><i class="ti ti-alert-triangle"></i> Repetidos em 2+ coletas ('+d.rep.length+')</div>';
+  h+='<div style="background:#EAF2FF;border:1px solid #C9DCF7;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:12px;color:#16267A;line-height:1.5">Monte a <b>coleta agrupada</b>: desmarque o que não quiser e, nos repetidos, escolha qual quantidade usar. Depois toque em <b>Salvar coleta agrupada</b> — ela vira uma coleta pronta pra mandar pra Cotação Web.</div>';
+  h+='<button class="btn-primary" style="margin:0 0 6px;background:#0F6E56" onclick="_colSalvarAgrupada()"><i class="ti ti-checklist"></i> Salvar coleta agrupada</button>';
+  h+='<div style="font-size:13px;font-weight:600;color:#9A6B00;margin:14px 0 6px;display:flex;align-items:center;gap:6px"><i class="ti ti-alert-triangle"></i> Repetidos em 2+ coletas ('+d.rep.length+')</div>';
   if(!d.rep.length){ h+='<div class="row-sub" style="padding:4px 2px 8px">Nenhum produto repetido entre as coletas.</div>'; }
   for(var i=0;i<d.rep.length;i++){ var p=d.rep[i];
+    var imax=0; for(var k=1;k<p.entries.length;k++){ if((Number(p.entries[k].qtd)||0)>(Number(p.entries[imax].qtd)||0)) imax=k; }
     h+='<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:10px;padding:10px;margin-bottom:8px">'
-      +'<div style="font-size:13px;font-weight:600;color:#1a1a1a">'+_precoEsc(p.desc)+' <span style="font-size:11px;color:#9A6B00;font-weight:500">· '+p.entries.length+' coletas</span></div>'
-      +'<div style="font-size:10px;color:#9a988f;margin-bottom:4px">'+(p.manual?'✎ manual · sem cadastro':('cód '+_precoEsc(p.cod)))+'</div>';
+      +'<div style="display:flex;align-items:flex-start;gap:9px">'
+      +'<input type="checkbox" id="cz-inc-rep-'+i+'" checked style="width:18px;height:18px;margin-top:1px;accent-color:#0F6E56;flex:0 0 auto">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1a1a1a">'+_precoEsc(p.desc)+' <span style="font-size:11px;color:#9A6B00;font-weight:500">· '+p.entries.length+' coletas</span></div>'
+      +'<div style="font-size:10px;color:#9a988f">'+(p.manual?'✎ manual · sem cadastro':('cód '+_precoEsc(p.cod)))+'</div></div></div>';
     for(var e=0;e<p.entries.length;e++){ var en=p.entries[e];
       h+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#5F5E5A;padding:4px 0;border-top:1px solid #F0E4C0">'
         +'<i class="ti ti-user" style="font-size:13px;color:#9A6B00"></i><span style="flex:1">'+_precoEsc(en.usuario||'—')+'<span style="color:#b7b5ac"> · '+_precoEsc(en.data)+'</span></span>'
         +'<span style="font-weight:600;color:#16267A;white-space:nowrap">'+en.qtd+' '+_precoEsc(en.un)+'</span></div>';
     }
-    h+='</div>';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed #E0B23C">'
+      +'<span style="font-size:11.5px;color:#9A6B00;font-weight:600;white-space:nowrap">Usar qtd:</span>'
+      +'<select id="cz-qtd-rep-'+i+'" style="flex:1;padding:7px;border:1px solid #E0B23C;border-radius:8px;font-size:13px;background:#fff;color:#16267A">';
+    for(var e2=0;e2<p.entries.length;e2++){ var en2=p.entries[e2];
+      h+='<option value="'+e2+'"'+(e2===imax?' selected':'')+'>'+en2.qtd+' '+_precoEsc(en2.un)+' — '+_precoEsc(en2.usuario||'—')+'</option>';
+    }
+    h+='</select></div></div>';
   }
   h+='<div style="font-size:13px;font-weight:600;color:#16267A;margin:14px 0 6px;display:flex;align-items:center;gap:6px"><i class="ti ti-list"></i> Demais produtos ('+d.uni.length+')</div>';
   if(!d.uni.length){ h+='<div class="row-sub" style="padding:4px 2px">—</div>'; }
   for(var u=0;u<d.uni.length;u++){ var q=d.uni[u]; var en0=q.entries[0];
-    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
+    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:9px">'
+      +'<input type="checkbox" id="cz-inc-uni-'+u+'" checked style="width:18px;height:18px;accent-color:#0F6E56;flex:0 0 auto">'
       +'<div style="flex:1"><div style="font-size:12.5px;color:#1a1a1a;line-height:1.25">'+_precoEsc(q.desc)+'</div>'
       +'<div style="font-size:10px;color:#9a988f">'+_precoEsc(en0.usuario||'—')+' · '+_precoEsc(en0.data)+'</div></div>'
       +'<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+en0.qtd+' '+_precoEsc(en0.un)+'</span></div>';
   }
+  h+='<button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="_colSalvarAgrupada()"><i class="ti ti-checklist"></i> Salvar coleta agrupada</button>';
   document.getElementById('col-cruza-itens').innerHTML=h;
+}
+function _colItemAgr(p, en){
+  var manual=!!p.manual;
+  return { cod: manual?('MAN'+Date.now()+Math.floor(Math.random()*1000)):String(p.cod||''),
+           desc: p.desc||'', barras: p.barras||'',
+           qtd: Number(en.qtd)||0, un: en.un||'UN', manual: manual };
+}
+async function _colSalvarAgrupada(){
+  var d=_colCruzaData; if(!d){ toast('Abra o cruzamento primeiro.'); return; }
+  var itens=[];
+  for(var i=0;i<d.rep.length;i++){ var inc=document.getElementById('cz-inc-rep-'+i); if(!inc||!inc.checked) continue;
+    var p=d.rep[i]; var sel=document.getElementById('cz-qtd-rep-'+i); var idx=sel?(parseInt(sel.value,10)||0):0; var en=p.entries[idx]||p.entries[0];
+    itens.push(_colItemAgr(p, en));
+  }
+  for(var u=0;u<d.uni.length;u++){ var incu=document.getElementById('cz-inc-uni-'+u); if(!incu||!incu.checked) continue;
+    var q=d.uni[u]; itens.push(_colItemAgr(q, q.entries[0]));
+  }
+  if(!itens.length){ toast('Marque ao menos 1 item pra agrupar.'); return; }
+  var quando=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var obs='Agrupada — '+quando+' ('+itens.length+' itens)';
+  var btns=document.querySelectorAll('#col-cruza-itens .btn-primary');
+  for(var b=0;b<btns.length;b++){ btns[b].disabled=true; }
+  try{
+    var r=await _estPost({acao:'coleta_save', id:'', usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:itens});
+    if(!r.ok) throw new Error(r.erro||'falha');
+    toast('✓ Coleta agrupada salva ('+itens.length+' itens)');
+    appConfirm('Coleta agrupada salva!\nJá está em "Coletas salvas". Quer abrir agora?', function(){ abrirColetas(); }, {okText:'Abrir'});
+  }catch(e){ console.error('_colSalvarAgrupada',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
+  for(var b2=0;b2<btns.length;b2++){ if(btns[b2]) btns[b2].disabled=false; }
 }
 function colCruzaPDF(){ _colGerarPDFCruza(_colCruzarDados()); }
 
