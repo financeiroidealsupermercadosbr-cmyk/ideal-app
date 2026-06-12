@@ -58,7 +58,14 @@
 <script>
 var APPS_URL = 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
 var COT_ID = (function(){ var m=location.search.match(/[?&]c=([^&]+)/); return m?decodeURIComponent(m[1]):''; })();
-var ESTADO = { titulo:'', status:'', fornecedores:[], fornId:'', nome:'', itens:[], respostas:[] };
+var ESTADO = { titulo:'', status:'', fornecedores:[], fornId:'', nome:'', itens:[], respostas:[], inicioEp:0, fimEp:0 };
+function _fmtEp(ep){ ep=Number(ep)||0; if(!ep) return ''; var d=new Date(ep); var p=function(n){return ('0'+n).slice(-2);}; return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+function _loginStatusHtml(){
+  var s=String(ESTADO.status).toUpperCase();
+  if(s==='ABERTA') return '<span class="pill">ABERTA</span> Preencha os preços dos itens que você tem.'+(ESTADO.fimEp?(' <b>Fecha '+_fmtEp(ESTADO.fimEp)+'.</b>'):'');
+  if(s==='AGENDADA') return '<span class="pill" style="background:#E6EEFB;color:#1B3A9E">AGENDADA</span> Ainda não começou'+(ESTADO.inicioEp?(' — abre '+_fmtEp(ESTADO.inicioEp)+'.'):'.');
+  return '<span class="pill fech">FECHADA</span> Esta cotação já foi encerrada.';
+}
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function el(){ return document.getElementById('app'); }
@@ -78,6 +85,7 @@ async function init(){
     var j = await api({acao:'cotweb_publico'});
     if(!j.ok) throw new Error(j.erro||'falha');
     ESTADO.titulo=j.titulo||'Cotação'; ESTADO.status=j.status||''; ESTADO.fornecedores=j.fornecedores||[];
+    ESTADO.inicioEp=j.inicioEp||0; ESTADO.fimEp=j.fimEp||0;
     renderLogin();
   }catch(e){
     el().innerHTML='<div class="card"><h2>Não consegui abrir</h2><div class="muted">'+esc(e.message||'Tente novamente em instantes.')+'</div></div>';
@@ -91,7 +99,7 @@ function renderLogin(){
   el().innerHTML=''
     +'<div class="card">'
     +'<h2>'+esc(ESTADO.titulo)+'</h2>'
-    +'<div class="muted" style="margin-top:4px">'+(fech?'<span class="pill fech">FECHADA</span> Esta cotação já foi encerrada.':'<span class="pill">ABERTA</span> Preencha os preços dos itens que você tem.')+'</div>'
+    +'<div class="muted" style="margin-top:4px">'+_loginStatusHtml()+'</div>'
     +'<label>Seu nome (fornecedor)</label>'
     +'<select id="lg-forn">'+opts+'</select>'
     +'<label>PIN de acesso</label>'
@@ -115,6 +123,7 @@ async function entrar(){
     var j=await api({acao:'cotweb_login', fornId:fornId, pin:pin});
     if(!j.ok) throw new Error(j.erro||'falha');
     ESTADO.fornId=fornId; ESTADO.nome=j.nome||''; ESTADO.pin=pin; ESTADO.titulo=j.titulo||ESTADO.titulo; ESTADO.status=j.status||ESTADO.status;
+    if(j.inicioEp!=null) ESTADO.inicioEp=j.inicioEp; if(j.fimEp!=null) ESTADO.fimEp=j.fimEp;
     ESTADO.itens=j.itens||[]; ESTADO.respostas=j.respostas||[];
     renderFill();
   }catch(e){
@@ -142,7 +151,8 @@ function renderFill(){
       +'</div></div>';
   }
   if(fech){
-    h+='<div class="card center muted">Esta cotação está <b>fechada</b>. Você pode ver, mas não enviar.</div>';
+    if(String(ESTADO.status).toUpperCase()==='AGENDADA') h+='<div class="card center muted">Esta cotação <b>ainda não começou</b>'+(ESTADO.inicioEp?(' — abre '+_fmtEp(ESTADO.inicioEp)):'')+'. Você pode ver, mas só envia depois.</div>';
+    else h+='<div class="card center muted">Esta cotação está <b>fechada</b>. Você pode ver, mas não enviar.</div>';
   }
   el().innerHTML=h;
   if(!fech){
