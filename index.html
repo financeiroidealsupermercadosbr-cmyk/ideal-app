@@ -98,10 +98,10 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .nav-btn{flex:1;padding:0;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#9aa0b0;font-size:11px;font-family:Arial,sans-serif}
 .nav-btn.active{color:#1B3A9E;font-weight:600}
 .nav-btn i{font-size:21px}
-.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px}
-.qcard{position:relative;background:#fff;border-radius:14px;padding:24px 6px;min-height:104px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
-.qcard i{font-size:26px;color:#1B3A9E}
-.qcard .qnm{font-size:11px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
+.qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px}
+.qcard{position:relative;background:#fff;border-radius:12px;padding:15px 3px;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
+.qcard i{font-size:24px;color:#1B3A9E}
+.qcard .qnm{font-size:10.5px;color:#16267A;text-align:center;line-height:1.15;font-weight:600}
 .qcard .qsoon{font-size:10px;color:#888780}
 .qcard.soon{opacity:0.55;cursor:default}
 .qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
@@ -130,6 +130,17 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qsec-rh .qbar{background:#534AB7}.qsec-rh b{color:#534AB7}
 .qsec-pv .qbar{background:#BA7517}.qsec-pv b{color:#854F0B}
 .qsec-op .qbar{background:#D85A30}.qsec-op b{color:#993C1D}
+@keyframes skelSh{0%{background-position:-160px 0}100%{background-position:calc(160px + 100%) 0}}
+.skel{background:#eceef3;background-image:linear-gradient(90deg,#eceef3 0,#f6f7fa 70px,#eceef3 140px);background-size:160px 100%;border-radius:7px;animation:skelSh 1.15s ease-in-out infinite}
+.skel-card{border:1px solid rgba(22,38,122,0.07);border-radius:10px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.skel-dot{width:34px;height:34px;border-radius:50%;flex-shrink:0}
+.skel-l1{height:12px;width:58%;margin-bottom:8px}
+.skel-l2{height:10px;width:38%}
+.vazio{text-align:center;padding:36px 18px}
+.vazio>i{font-size:36px;color:#C3C8D6;display:block;margin-bottom:10px}
+.vazio .vt{font-size:14px;font-weight:600;color:#16267A;margin-bottom:4px}
+.vazio .vs{font-size:12px;color:#888780;line-height:1.5;margin-bottom:13px}
+.vazio button{background:#16267A;color:#fff;border:none;border-radius:9px;padding:9px 17px;font-size:12.5px;font-weight:600;cursor:pointer}
 .dre-aj-edit{color:#888780;font-size:14px;cursor:pointer;margin-left:6px;vertical-align:-1px}
 .dre-tag-aj{display:inline-block;background:#FAEEDA;color:#854F0B;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:5px;vertical-align:1px}
 .dre-soon{background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
@@ -767,7 +778,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
         <button onclick="limparFiltros()" style="padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer;white-space:nowrap">Limpar</button>
       </div>
-      <div id="lista-boletos"><div style="text-align:center;padding:30px;color:#999;font-size:13px">Carregando...</div></div>
+      <div id="lista-boletos"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
     </div>
 
     <!-- RESUMO -->
@@ -799,7 +810,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <span><i class="ti ti-users"></i> Usuários</span>
         <button onclick="abrirModalUsuario()" style="font-size:11px;padding:3px 9px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#1B3A9E;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-plus" style="font-size:13px"></i> Novo</button>
       </div>
-      <div id="cfg-users-list"><div class="row-sub" style="padding:6px 2px">Carregando usuários…</div></div>
+      <div id="cfg-users-list"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-lock-access"></i> Permissões</div>
       <div class="row-card" style="cursor:pointer" onclick="abrirPermsMenu()"><div><div class="row-label">Permissões do Menu</div><div class="row-sub">Escolher, por setor, o que cada um pode abrir no Menu</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
@@ -1031,13 +1042,13 @@ function doPost(e) {
       <div style="font-size:11.5px;color:#9A6B00;margin-top:6px;line-height:1.5">Produtos não identificados automaticamente (falta de NCM ou descrição genérica). Toque para classificar um a um.</div>
     </div>
     <div class="section-label"><i class="ti ti-category-2"></i> Setores</div>
-    <div id="est-setores"><div class="row-sub" style="padding:6px 2px">Carregando setores…</div></div>
+    <div id="est-setores"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 
   <!-- VISÃO 2: dentro de um setor -->
   <div id="est-setor-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estResumoVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
-    <div id="est-itens"><div class="row-sub" style="padding:6px 2px">Carregando produtos…</div></div>
+    <div id="est-itens"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 </div>
 
@@ -1070,12 +1081,12 @@ function doPost(e) {
       <div style="font-size:11.5px;color:#888780" id="rel-total-lbl">Faturamento total</div>
       <div style="font-size:22px;font-weight:600;color:#16267A" id="rel-total">—</div>
     </div>
-    <div id="rel-setores"><div class="row-sub" style="padding:6px 2px">Carregando setores…</div></div>
+    <div id="rel-setores"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 
   <div id="rel-setor-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="relVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="rel-setor-nome">Setor</div><div class="row-sub" id="rel-setor-cont">—</div></div></div>
-    <div id="rel-itens"><div class="row-sub" style="padding:6px 2px">Carregando produtos…</div></div>
+    <div id="rel-itens"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 </div>
 
@@ -1928,6 +1939,7 @@ async function terminaisAtualizar(){
   var sub = document.getElementById('term-sub');
   var box = document.getElementById('term-lista');
   if(!box) return;
+  box.innerHTML=_skel(3);
   try{
     var res = await fetch(_urlApps(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -1938,7 +1950,7 @@ async function terminaisAtualizar(){
     if(!j || !j.ok) throw new Error((j&&j.erro)||'falha');
     var lista = (j.terminais||[]).slice().sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
     if(!lista.length){
-      box.innerHTML = '<div class="row-sub" style="padding:10px 2px">Nenhum terminal ainda. Eles aparecem aqui assim que ligarem (pode levar uns 2 minutos).</div>';
+      box.innerHTML = _vazio({ico:'ti-device-desktop',tit:'Nenhum terminal ainda',sub:'Eles aparecem aqui assim que ligarem (pode levar uns 2 minutos).'});
       if(sub) sub.textContent = '0 terminais';
       return;
     }
@@ -2121,7 +2133,7 @@ function fzTab(qual){
 async function fzCarregar(){
   var sub=document.getElementById('fz-sub'); var box=document.getElementById('fz-lista');
   if(sub) sub.textContent=_fzNomeLoja();
-  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando freezers…</div>';
+  box.innerHTML=_skel(4);
   try{
     var j = await _fzPost({acao:'freezers_list'});
     if(!j.ok) throw new Error(j.erro||'falha');
@@ -2481,7 +2493,7 @@ function ckTab(qual){
 async function ckCarregar(){
   var sub=document.getElementById('ck-sub'); var box=document.getElementById('ck-lista');
   if(sub) sub.textContent=_ckNomeLoja();
-  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando tarefas…</div>';
+  box.innerHTML=_skel(5);
   try{
     var jt = await _ckPost({acao:'cklist_tarefas'});
     if(!jt.ok || !Array.isArray(jt.tarefas)){
@@ -2501,7 +2513,7 @@ async function ckCarregar(){
 // ── PREENCHER ──
 function ckRenderPreencher(){
   var box=document.getElementById('ck-lista');
-  if(!_ckTarefas.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma tarefa cadastrada.</div>'; return; }
+  if(!_ckTarefas.length){ box.innerHTML=_vazio({ico:'ti-clipboard-check',tit:'Nenhuma tarefa cadastrada',sub:'O gestor pode adicionar as tarefas do checklist.'}); return; }
   var g=ehGestor();
   var html='';
   for(var i=0;i<_ckTarefas.length;i++){
@@ -2762,7 +2774,7 @@ function coTab(qual){
 async function coCarregar(){
   var sub=document.getElementById('co-sub'); var box=document.getElementById('co-lista');
   if(sub) sub.textContent=_coNomeLoja();
-  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando contas…</div>';
+  box.innerHTML=_skel(5);
   try{
     var j=await _coPost({acao:'contas_list'});
     if(!j.ok || !Array.isArray(j.contas)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
@@ -3007,6 +3019,7 @@ function avTab(qual){
 }
 async function avCarregar(){
   var sub=document.getElementById('av-sub'); if(sub) sub.textContent=_avNomeLoja();
+  var _avb=document.getElementById('av-salvos-lista'); if(_avb)_avb.innerHTML=_skel(4);
   try{
     var j=await _avPost({acao:'avarias_list'});
     if(!j.ok || !Array.isArray(j.avarias)){ toast('Servidor na versão antiga — publique a nova versão do Apps Script'); return; }
@@ -3275,7 +3288,7 @@ function avRenderSalvos(){
   document.getElementById('av-tot-valor').textContent=_precoBRL(tot);
   document.getElementById('av-tot-qtd').textContent=arr.length+' item(ns)';
   document.getElementById('av-tot-lbl').textContent='Prejuízo · '+_avFiltroLabel();
-  if(!arr.length){ box.innerHTML='<div class="row-sub" style="padding:10px 2px">Nenhuma avaria no período.</div>'; return; }
+  if(!arr.length){ box.innerHTML=_vazio({ico:'ti-alert-triangle',tit:'Nenhuma avaria no período',sub:'Ajuste o filtro de período acima.'}); return; }
 
   if(_avView==='resumo'){
     var dim=_avResumoDim;
@@ -3491,7 +3504,7 @@ function foTab(qual){
 async function foCarregar(){
   var sub=document.getElementById('fo-sub'); if(sub) sub.textContent=_foNomeLoja();
   var box=document.getElementById('fo-lista');
-  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  box.innerHTML=_skel(5,true);
   try{
     var j=await _foPost({acao:'folha_list'});
     if(!j.ok || !Array.isArray(j.funcionarios)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
@@ -3909,7 +3922,7 @@ function vaTab(qual){
 async function vaCarregar(){
   var sub=document.getElementById('va-sub'); if(sub) sub.textContent=_foNomeLoja();
   var box=document.getElementById('va-lista');
-  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  box.innerHTML=_skel(5,true);
   try{
     var j=await _vaPost({acao:'vales_list'});
     if(!j.ok || !Array.isArray(j.funcionarios)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
@@ -3945,7 +3958,7 @@ function vaRenderLista(){
   var box=document.getElementById('va-lista');
   vaRenderChips();
   if(!_vaFunc.length){
-    box.innerHTML='<div class="row-sub" style="padding:14px 2px;text-align:center;color:#B4B2A9">Nenhum funcionário nesta loja.<br><span style="font-size:12px">Eles vêm da Folha de pagamento.</span></div>';
+    box.innerHTML=_vazio({ico:'ti-receipt',tit:'Nenhum funcionário nesta loja',sub:'Eles vêm da Folha de pagamento.'});
     return;
   }
   var porSetor={}; _vaFunc.forEach(function(f){ var s=f.setor||'(sem setor)'; (porSetor[s]=porSetor[s]||[]).push(f); });
@@ -4190,7 +4203,7 @@ function abrirSangrias(){
 async function saCarregar(){
   var sub=document.getElementById('sa-sub'); if(sub) sub.textContent=_foNomeLoja();
   var box=document.getElementById('sa-lista');
-  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  box.innerHTML=_skel(4);
   try{
     var j=await _saPost({acao:'sangrias_list'});
     if(!j.ok || !Array.isArray(j.cofre)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
@@ -4391,7 +4404,7 @@ function orcRenderItens(){
   var tb=document.getElementById('orc-total'); if(tb) tb.textContent=_precoBRL(tot);
   var tq=document.getElementById('orc-qtd'); if(tq) tq.textContent=ORC_ITENS.length+' item(ns)';
   var el=document.getElementById('orc-itens'); if(!el) return;
-  if(!ORC_ITENS.length){ el.innerHTML='<div class="row-sub" style="padding:14px 2px;text-align:center;color:#B4B2A9">Nenhum item ainda. Busque ou bipe um produto.</div>'; return; }
+  if(!ORC_ITENS.length){ el.innerHTML=_vazio({ico:'ti-wallet',tit:'Nenhum item ainda',sub:'Busque ou bipe um produto pra montar o orçamento.'}); return; }
   var h='';
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var cod=_precoEsc(it.cod); var sub=(Number(it.venda)||0)*(Number(it.qtd)||0);
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
@@ -5123,7 +5136,7 @@ function filtrar() {
   });
 
   if(!items.length){
-    lista.innerHTML='<div style="text-align:center;padding:20px;color:#999;font-size:13px">Nenhum resultado</div>';
+    lista.innerHTML=_vazio({ico:'ti-file-invoice',tit:'Nenhum boleto encontrado',sub:'Ajuste os filtros acima — ou aguarde a próxima atualização da ponte.'});
     return;
   }
 
@@ -5322,6 +5335,10 @@ async function permsCarregarMenu(){
     });
   }catch(e){ MENU_PERMS = {}; } // aba ainda não criada → tudo liberado
 }
+
+// === KIT 1.4: skeleton de carregamento + tela vazia amigável (reutilizável) ===
+function _skel(n,av){ n=n||4; var dot=av?'<div class="skel skel-dot"></div>':''; var h=''; for(var i=0;i<n;i++){ h+='<div class="skel-card">'+dot+'<div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div>'; } return h; }
+function _vazio(o){ o=o||{}; var b=o.btnTxt?('<button onclick="'+(o.btnAcao||'')+'">'+o.btnTxt+'</button>'):''; return '<div class="vazio"><i class="ti '+(o.ico||'ti-inbox')+'"></i><div class="vt">'+(o.tit||'Nada por aqui ainda')+'</div>'+(o.sub?('<div class="vs">'+o.sub+'</div>'):'')+b+'</div>'; }
 
 // === Busca do Menu (filtra os cards por nome, ignora acentos) ===
 function menuFiltrar(q){
@@ -5528,7 +5545,7 @@ function renderUsuarios(arr){
   const box = document.getElementById('cfg-users-list');
   if(!box) return;
   const ativos = (arr||[]).filter(u=>String(u.status||'').toLowerCase()!=='inativo');
-  if(!ativos.length){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Nenhum usuário cadastrado ainda.</div>'; return; }
+  if(!ativos.length){ box.innerHTML = _vazio({ico:'ti-users',tit:'Nenhum usuário ainda',sub:'Cadastre o primeiro usuário pra liberar o acesso.'}); return; }
   box.innerHTML = ativos.map(function(u){
     const lj = LOJA_NOMES[u.loja] || u.loja || '';
     const sub = _escUsr(u.setor||'') + (lj?(' · '+_escUsr(lj)):'');
@@ -7775,7 +7792,7 @@ function cotRemover(cod){
 }
 function cotRenderItens(){
   var el=document.getElementById('cot-itens'); if(!el) return;
-  if(!COT_ITENS.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum item ainda. Busque ou bipe um produto e toque em Adicionar.</div>'; return; }
+  if(!COT_ITENS.length){ el.innerHTML=_vazio({ico:'ti-shopping-cart',tit:'Nenhum item ainda',sub:'Busque ou bipe um produto e toque em Adicionar.'}); return; }
   var h='';
   for(var i=0;i<COT_ITENS.length;i++){ var it=COT_ITENS[i]; var cod=_precoEsc(it.cod);
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
@@ -7857,7 +7874,7 @@ function colAtualizar(){ abrirColetas(); }
 function colRenderLista(){
   var el=document.getElementById('col-lista');
   document.getElementById('col-sub').textContent = COLETAS.length+' coleta(s) salva(s) · de todos';
-  if(!COLETAS.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhuma coleta salva ainda.</div>'; return; }
+  if(!COLETAS.length){ el.innerHTML=_vazio({ico:'ti-bookmark',tit:'Nenhuma coleta salva ainda',sub:'As coletas que você salvar aparecem aqui.'}); return; }
   var h='';
   for(var i=0;i<COLETAS.length;i++){ var c=COLETAS[i];
     var quem=_precoEsc(c.usuario||'—'); var data=_precoEsc((c.data||'').slice(0,16)); var obs=_precoEsc(c.obs||'');
