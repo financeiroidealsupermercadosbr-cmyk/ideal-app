@@ -513,12 +513,11 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <input class="qsearch" type="search" inputmode="search" placeholder="Buscar módulo…" oninput="menuFiltrar(this.value)" aria-label="Buscar módulo">
       </div>
 
-      <div class="qsec qsec-fin"><span class="qbar"></span><b>Financeiro</b><em>5</em></div>
+      <div class="qsec qsec-fin"><span class="qbar"></span><b>Financeiro</b><em>4</em></div>
       <div class="qgrid">
         <div class="qcard qc-fin" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard qc-fin" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard qc-fin" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Sangrias</span></div>
-        <div class="qcard qc-fin" data-menu="orcamento" onclick="abrirOrcamento()"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span></div>
         <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
       </div>
 
@@ -528,10 +527,11 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-rh" data-menu="vale" onclick="abrirVale()"><i class="ti ti-receipt"></i><span class="qnm">Vale / Convênio</span></div>
       </div>
 
-      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>5</em></div>
+      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>6</em></div>
       <div class="qgrid">
         <div class="qcard qc-pv" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard qc-pv" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora</span></div>
+        <div class="qcard qc-pv" data-menu="orcamento" onclick="abrirOrcamento()"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span></div>
         <div class="qcard qc-pv" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
         <div class="qcard qc-pv" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
         <div class="qcard qc-pv" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
@@ -1872,7 +1872,8 @@ function diasAte(venc) {
 function statusB(b) {
   if (b.pago) return 'pago';
   const d = diasAte(b.venc);
-  if (d <= 0) return 'vencido';  // hoje E anteriores = vencido
+  if (d < 0)  return 'vencido';  // só ANTERIORES a hoje = vencido
+  if (d === 0) return 'hoje';    // vence hoje = "Hoje" (vira vencido só amanhã)
   return 'pendente';
 }
 
@@ -3541,7 +3542,7 @@ function _foCardFunc(f,g){
     +'<div style="width:38px;height:38px;border-radius:50%;background:#16267A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0">'+_precoEsc(_foIniciais(f.nome))+'</div>'
     +'<div style="flex:1;min-width:0"><div class="row-label" style="line-height:1.25">'+_precoEsc(f.nome)+'</div>'
     +'<div class="row-sub">'+(pags.length?(pags.length+' pagamento(s)'):'<span style="color:#B4B2A9">sem pagamento</span>')+'</div></div>'
-    +(g?('<i class="ti ti-pencil" style="color:#888780;font-size:17px;cursor:pointer;padding:4px" onclick="foEditFunc(\''+f.id+'\')"></i><i class="ti ti-trash" style="color:#A32D2D;font-size:17px;cursor:pointer;padding:4px" onclick="foDelFunc(\''+f.id+'\')"></i>'):'')
+    +(g?('<button onclick="foEditFunc(\''+f.id+'\')" style="display:inline-flex;align-items:center;gap:4px;background:#EEF1FB;color:#16267A;border:none;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0"><i class="ti ti-user" style="font-size:14px"></i>Dados</button><i class="ti ti-trash" style="color:#A32D2D;font-size:17px;cursor:pointer;padding:5px;flex-shrink:0;margin-left:2px" onclick="foDelFunc(\''+f.id+'\')"></i>'):'')
     +'</div>';
   var linhas='';
   pags.forEach(function(p){
