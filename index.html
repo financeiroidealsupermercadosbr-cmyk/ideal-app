@@ -5938,6 +5938,34 @@ function dreLancamentosPorGrupo(){
 // abre/fecha um grupo (só visual; não recalcula nada)
 function dreToggleGrupo(head){ head.parentElement.classList.toggle('open'); }
 
+// ── COMPOSIÇÃO das linhas "fechadas" da DRE (CMV, impostos, desp. financeiras) ──
+// Lista as contas que formam cada número, no período/loja atual. Toque pra abrir.
+function dreComposicao(cat){
+  const out=[];
+  if(dreLoja==='l2' || dreLoja==='all'){
+    (dadosContas||[]).forEach(c=>{ if(c.cat===cat && dreNoPeriodo(c.venc||c.emis)) out.push(c); });
+  }
+  out.sort((a,b)=>(b.valor||0)-(a.valor||0));
+  return out;
+}
+function dreExpContas(cat, titulo){
+  const lista = dreComposicao(cat);
+  if(!lista.length) return '';
+  const total = lista.reduce((s,c)=>s+(c.valor||0),0);
+  const itens = lista.map(c=>{
+    const venc = dreDataBR(c.venc||c.emis);
+    const meta = [venc||'sem data', (c.doc&&String(c.doc).trim())?('doc '+dreEsc(c.doc)):''].filter(Boolean).join(' \u00b7 ');
+    return '<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">'+dreEsc(c.forn||'\u2014')+'</div><div class="dli-meta"><i class="ti ti-calendar"></i>'+meta+'</div></div><div class="dli-val">'+brlC(c.valor)+'</div></div>';
+  }).join('');
+  return '<div class="dre-lanc-grp" style="margin:4px 12px 2px">'
+    + '<div class="dlg-head" onclick="dreToggleGrupo(this)">'
+    +   '<div class="dlg-left"><i class="ti ti-chevron-right dlg-chev"></i><span class="dlg-nm">'+titulo+'</span><span class="dlg-badge">'+lista.length+' '+(lista.length===1?'conta':'contas')+'</span></div>'
+    +   '<span class="dlg-val">'+brlC(total)+'</span>'
+    + '</div>'
+    + '<div class="dlg-list">'+itens+'</div>'
+  + '</div>';
+}
+
 // Cálculo central da DRE (aplica os ajustes manuais por linha). Usado pela tela E pelo PDF.
 function dreCalcular(){
   const rec = dreSomaReceita();
@@ -5993,6 +6021,9 @@ function renderDRE(){
   const G = ehGestor();
   const lap  = (linha,label)=> G ? ` <i class="ti ti-pencil dre-aj-edit" onclick="abrirModalAjuste('${linha}','${label}')"></i>` : '';
   const tagA = on => on ? ` <span class="dre-tag-aj">ajustado</span>` : '';
+  const impExp = dreExpContas('imposto','Contas de impostos');
+  const cmvExp = dreExpContas('cmv','Contas do CMV');
+  const dfExp  = dreExpContas('desp_fin','Contas financeiras');
 
   // detalhe das despesas operacionais (gestor vê os 5 pra poder ajustar; senão só os > 0)
   const subDesp = D.subCats
@@ -6037,10 +6068,12 @@ function renderDRE(){
     <div class="dre-row sub"><div class="dr-lbl">PIX</div><div class="dr-val">${brlC(rec.pix)}</div></div>
 
     <div class="dre-row"><div class="dr-lbl">(−) Deduções e impostos${tagA(D.aj.imposto)}</div><div class="dr-val">${impostos>0?'− '+brlC(impostos):'R$ 0,00'}${lap('imposto','Deduções e impostos')}<div class="dr-sub">${impostos>0?pct(impostos):'sem imposto no período'}</div></div></div>
+    ${impExp}
 
     <div class="dre-row total"><div class="dr-lbl">(=) Receita líquida</div><div class="dr-val">${brlC(recLiq)}</div></div>
 
     <div class="dre-row"><div class="dr-lbl">(−) Custo mercadorias (CMV)${tagA(D.aj.cmv)}</div><div class="dr-val">${cmv>0?'− '+brlC(cmv):'R$ 0,00'}${lap('cmv','Custo das mercadorias (CMV)')}<div class="dr-sub">${cmv>0?pct(cmv)+' da receita':'sem compras no período'}</div></div></div>
+    ${cmvExp}
     <div class="dre-row total"><div class="dr-lbl">(=) Margem bruta</div><div class="dr-val">${brlC(margem)}<div class="dr-sub">margem ${pct(margem)}</div></div></div>
 
     <div class="dre-row"><div class="dr-lbl">(−) Despesas operacionais</div><div class="dr-val">${despOp>0?'− '+brlC(despOp):'R$ 0,00'}</div></div>
@@ -6049,6 +6082,7 @@ function renderDRE(){
 
     <div class="dre-row"><div class="dr-lbl">(+) Receitas financeiras${tagA(D.aj.recFin)}</div><div class="dr-val">${D.aj.recFin ? '+ '+brlC(recFin) : '<span class="dre-tag">bonificações/sobras — entram depois</span>'}${lap('recFin','Receitas financeiras')}</div></div>
     <div class="dre-row"><div class="dr-lbl">(−) Despesas financeiras${tagA(D.aj.despFin)}</div><div class="dr-val">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}${lap('despFin','Despesas financeiras')}<div class="dr-sub">${despFin>0?'taxa de cartão':'taxa de cartão — entra depois'}</div></div></div>
+    ${dfExp}
 
     ${grupos.length ? `<div class="dre-grp-lbl"><i class="ti ti-adjustments"></i>Grupos manuais</div>` + grupos.map(g=>`
       <div class="dre-grp-row">
