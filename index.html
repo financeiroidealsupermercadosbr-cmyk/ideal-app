@@ -490,7 +490,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
         <div class="qcard" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span></div>
-        <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="orcamento" onclick="abrirOrcamento()"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span></div>
         <div class="qcard" data-menu="avarias" onclick="abrirAvarias()"><i class="ti ti-alert-triangle"></i><span class="qnm">Controle de avarias</span></div>
         <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora de preço</span></div>
@@ -1055,18 +1055,19 @@ function doPost(e) {
     <div id="preco-res"><div class="row-sub" style="padding:6px 2px">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div></div>
   </div>
 
-  <!-- leitor de código de barras (câmera) -->
-  <div id="preco-scan" style="display:none;position:fixed;inset:0;background:#000;z-index:70;flex-direction:column">
-    <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#16267A;color:#fff">
-      <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer" onclick="precoScanFechar()"></i>
-      <span style="flex:1;font-size:15px;font-weight:500">Ler código de barras</span>
-    </div>
-    <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">
-      <video id="preco-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
-      <div style="position:absolute;width:80%;max-width:320px;height:120px;border:3px solid #FFC400;border-radius:14px"></div>
-    </div>
-    <div id="preco-scan-msg" style="padding:14px 16px;background:#000;color:#fff;font-size:13px;text-align:center;min-height:20px"></div>
+</div>
+
+<!-- leitor de código de barras (câmera) — fora das telas, funciona de qualquer módulo -->
+<div id="preco-scan" style="display:none;position:fixed;inset:0;background:#000;z-index:70;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#16267A;color:#fff">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer" onclick="precoScanFechar()"></i>
+    <span style="flex:1;font-size:15px;font-weight:500">Ler código de barras</span>
   </div>
+  <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">
+    <video id="preco-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
+    <div style="position:absolute;width:80%;max-width:320px;height:120px;border:3px solid #FFC400;border-radius:14px"></div>
+  </div>
+  <div id="preco-scan-msg" style="padding:14px 16px;background:#000;color:#fff;font-size:13px;text-align:center;min-height:20px"></div>
 </div>
 
 <!-- TELA: Calculadora de Preço de Venda / Margem (chat 22) -->
@@ -1576,6 +1577,39 @@ function doPost(e) {
   </div>
 
   <div id="sa-lista" style="padding:14px 14px 100px"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
+</div>
+
+
+<!-- TELA: Orçamento -->
+<div class="screen" id="s-orcamento">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Orçamento</div>
+      <div style="font-size:11.5px;color:#888780" id="orc-sub">Monte a lista do cliente</div>
+    </div>
+    <i class="ti ti-file-plus" style="font-size:20px;cursor:pointer;color:#16267A" onclick="orcNovo()" title="Novo orçamento"></i>
+  </div>
+
+  <div style="padding:12px 14px 0">
+    <div style="display:flex;gap:8px">
+      <input id="orc-busca" type="text" inputmode="search" autocomplete="off" placeholder="Nome, código ou bipe o produto" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box" oninput="orcBuscarDebounce()">
+      <button class="btn-primary" style="width:52px;padding:0;margin-top:0" onclick="orcScanAbrir()" aria-label="Escanear código de barras"><i class="ti ti-barcode" style="font-size:23px"></i></button>
+    </div>
+    <div id="orc-busca-res" style="margin-top:8px"></div>
+  </div>
+
+  <div style="padding:10px 14px 140px">
+    <div id="orc-itens"></div>
+  </div>
+
+  <div style="position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:460px;background:#fff;border-top:1px solid #e6e6e6;padding:10px 14px 14px;box-shadow:0 -4px 18px rgba(0,0,0,.08);z-index:30">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:11.5px;color:#888780" id="orc-qtd">0 item(ns)</div>
+      <div><span style="font-size:12px;color:#888780;margin-right:6px">Total</span><span id="orc-total" style="font-size:19px;font-weight:700;color:#16267A">R$ 0,00</span></div>
+    </div>
+    <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="orcPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+  </div>
 </div>
 
 <!-- TELA: Checklist dos gerentes -->
@@ -4196,6 +4230,178 @@ function saRecolherTudo(){
   }, {okText:'Recolher tudo'});
 }
 
+// ══════════════════════════════════════════════════════
+// ORÇAMENTO — monta a lista do cliente buscando/bipando produtos do
+// cadastro (PRODUTOS), soma pelo valor de venda (varejo) e exporta PDF.
+// 100% local (não grava no servidor). Reusa PRODUTOS + scanner da Busca de Preço.
+// ══════════════════════════════════════════════════════
+let ORC_ITENS = [];   // [{cod,desc,barras,qtd,venda,manual}]
+let _orcTimer = null;
+
+async function abrirOrcamento(){
+  show('s-orcamento'); window.scrollTo(0,0);
+  var bi=document.getElementById('orc-busca'); if(bi) bi.value='';
+  var br=document.getElementById('orc-busca-res'); if(br) br.innerHTML='';
+  orcRenderItens();
+  if(!PRODUTOS.length){
+    var c = await _precoGet('all').catch(function(){return null;});
+    if(c && c.length){ PRODUTOS=c; } else { try{ await precoSync(true); }catch(e){} }
+    orcRenderItens();
+  }
+}
+function orcSub(){ var el=document.getElementById('orc-sub'); if(el) el.textContent = ORC_ITENS.length ? (ORC_ITENS.length+' item(ns)') : 'Monte a lista do cliente'; }
+function orcBuscarDebounce(){ clearTimeout(_orcTimer); _orcTimer=setTimeout(orcBuscar,160); }
+function orcBuscar(){
+  var termo=_precoNorm((document.getElementById('orc-busca').value||'').trim());
+  var box=document.getElementById('orc-busca-res');
+  if(termo.length<2){ box.innerHTML=''; return; }
+  if(!PRODUTOS.length){ box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>'; return; }
+  var ehNum=/^\d+$/.test(termo); var res=[];
+  for(var i=0;i<PRODUTOS.length && res.length<40;i++){ var p=PRODUTOS[i]; if(p.n.indexOf(termo)>=0 || (ehNum&&(p.c===termo||p.b===termo))) res.push(p); }
+  res.sort(function(a,b){ var ax=(a.c===termo||a.b===termo)?0:1,bx=(b.c===termo||b.b===termo)?0:1; if(ax!==bx)return ax-bx; return a.d<b.d?-1:(a.d>b.d?1:0); });
+  if(!res.length){
+    box.innerHTML='<div style="border:1px solid #E0B23C;background:#FFF8E6;border-radius:10px;padding:10px;font-size:12.5px;color:#9A6B00;margin-top:6px">Nada encontrado pra "'+_precoEsc(termo)+'".<div style="margin-top:8px"><button onclick="orcAddManual()" style="background:#0F6E56;color:#fff;border:none;border-radius:8px;height:32px;padding:0 12px;font-size:13px"><i class="ti ti-pencil-plus"></i> Item manual</button></div></div>';
+    return;
+  }
+  var h='';
+  for(var j=0;j<res.length;j++){ var q=res[j]; var jaTem=ORC_ITENS.some(function(x){return x.cod===q.c;});
+    h+='<div style="border:0.5px solid #B5D4F4;background:#F2F8FE;border-radius:10px;margin-bottom:6px;padding:8px 10px;display:flex;align-items:center;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.25">'+_precoEsc(q.d)+'</div>'
+      +'<div style="font-size:10.5px;color:#9a988f">cód '+_precoEsc(q.c)+' · '+_precoBRL(q.v)+'</div></div>'
+      +(jaTem?'<span style="font-size:12px;color:#0F6E56;white-space:nowrap"><i class="ti ti-check"></i> na lista</span>'
+        :'<button onclick="orcAdd(\''+_precoEsc(q.c)+'\')" style="background:#0F6E56;color:#fff;border:none;border-radius:8px;height:32px;padding:0 12px;font-size:13px;white-space:nowrap"><i class="ti ti-plus"></i> Add</button>')
+      +'</div>';
+  }
+  box.innerHTML=h;
+}
+function orcAdd(cod){
+  cod=String(cod);
+  var ex=null; for(var k=0;k<ORC_ITENS.length;k++){ if(ORC_ITENS[k].cod===cod) ex=ORC_ITENS[k]; }
+  if(ex){ ex.qtd=(ex.qtd||1)+1; }
+  else{
+    var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
+    if(!p) return;
+    ORC_ITENS.push({cod:p.c, desc:p.d, barras:p.b, qtd:1, venda:(Number(p.v)||0)});
+  }
+  var bi=document.getElementById('orc-busca'); if(bi){ bi.value=''; bi.focus(); }
+  document.getElementById('orc-busca-res').innerHTML='';
+  orcRenderItens();
+  toast('Adicionado'+(ex?' (+1)':''));
+}
+function orcScanAbrir(){
+  _scanOnHit = function(code){ orcScanHit(code); };
+  precoScanAbrir();
+}
+function orcScanHit(code){
+  code=String(code||'').replace(/\D/g,''); if(!code) return;
+  var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].b===code || PRODUTOS[i].c===code){ p=PRODUTOS[i]; break; } }
+  if(p){ orcAdd(p.c); }
+  else{ var bi=document.getElementById('orc-busca'); if(bi) bi.value=code; orcBuscar(); toast('Código não cadastrado'); }
+}
+function orcAddManual(){
+  appPrompt('Nome do item manual', '', function(nome){
+    nome=String(nome||'').trim(); if(nome.length<2){ toast('Digite o nome'); return; }
+    appPrompt('Valor de venda (R$) de "'+nome+'"', '', function(val){
+      var s=String(val||'').trim(); if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,'');
+      var v=parseFloat(s); if(!v||v<=0){ toast('Valor inválido'); return; }
+      ORC_ITENS.push({cod:'MAN'+Date.now(), desc:nome, barras:'', qtd:1, venda:v, manual:true});
+      var bi=document.getElementById('orc-busca'); if(bi) bi.value='';
+      var br=document.getElementById('orc-busca-res'); if(br) br.innerHTML='';
+      orcRenderItens();
+      toast('Item manual adicionado');
+    });
+  });
+}
+function orcQtd(cod, delta){
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=Math.max(1,(ORC_ITENS[i].qtd||1)+delta); break; } }
+  orcRenderItens();
+}
+function orcQtdSet(cod, val){
+  var n=parseInt(String(val).replace(/\D/g,''),10); if(isNaN(n)||n<1) n=1;
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=n; break; } }
+  orcRenderItens();
+}
+function orcRemover(cod){
+  ORC_ITENS=ORC_ITENS.filter(function(x){return x.cod!==String(cod);});
+  orcRenderItens();
+}
+function _orcTotal(){ var t=0; ORC_ITENS.forEach(function(it){ t+=(Number(it.venda)||0)*(Number(it.qtd)||0); }); return t; }
+function orcRenderItens(){
+  orcSub();
+  var tot=_orcTotal();
+  var tb=document.getElementById('orc-total'); if(tb) tb.textContent=_precoBRL(tot);
+  var tq=document.getElementById('orc-qtd'); if(tq) tq.textContent=ORC_ITENS.length+' item(ns)';
+  var el=document.getElementById('orc-itens'); if(!el) return;
+  if(!ORC_ITENS.length){ el.innerHTML='<div class="row-sub" style="padding:14px 2px;text-align:center;color:#B4B2A9">Nenhum item ainda. Busque ou bipe um produto.</div>'; return; }
+  var h='';
+  for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var cod=_precoEsc(it.cod); var sub=(Number(it.venda)||0)*(Number(it.qtd)||0);
+    h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
+      +'<div style="display:flex;align-items:flex-start;gap:8px">'
+      +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
+      +'<div style="font-size:10.5px;color:#9a988f;margin-top:2px">'+(it.manual?'<span style="color:#9A6B00">manual</span> · ':'cód '+cod+' · ')+_precoBRL(it.venda)+' un</div></div>'
+      +'<i class="ti ti-trash" style="font-size:17px;color:#A32D2D;cursor:pointer" onclick="orcRemover(\''+cod+'\')"></i>'
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:7px;margin-top:9px">'
+      +'<button onclick="orcQtd(\''+cod+'\',-1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">−</button>'
+      +'<input type="tel" value="'+(it.qtd||1)+'" onchange="orcQtdSet(\''+cod+'\',this.value)" style="width:46px;text-align:center;font-size:15px;font-weight:500;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 0;box-sizing:border-box">'
+      +'<button onclick="orcQtd(\''+cod+'\',1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">+</button>'
+      +'<span style="flex:1"></span>'
+      +'<span style="font-size:14px;font-weight:700;color:#16267A">'+_precoBRL(sub)+'</span>'
+      +'</div>'
+      +'</div>';
+  }
+  el.innerHTML=h;
+}
+function orcNovo(){
+  if(!ORC_ITENS.length){ _orcNovoDo(); return; }
+  appConfirm('Limpar a lista e começar um novo orçamento?', _orcNovoDo, {okText:'Novo'});
+}
+function _orcNovoDo(){
+  ORC_ITENS=[];
+  var bi=document.getElementById('orc-busca'); if(bi) bi.value='';
+  var br=document.getElementById('orc-busca-res'); if(br) br.innerHTML='';
+  orcRenderItens();
+  toast('Novo orçamento');
+}
+function orcPDF(){
+  if(!ORC_ITENS.length){ toast('Adicione itens antes de exportar.'); return; }
+  var loja=(typeof _foNomeLoja==='function')?_foNomeLoja():'';
+  var quando=new Date().toLocaleString('pt-BR');
+  var linhas='', tot=0;
+  for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var q=Number(it.qtd)||0; var v=Number(it.venda)||0; var sub=q*v; tot+=sub;
+    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+'</td><td class="c">'+q+'</td><td class="v">'+_precoBRL(v)+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
+  }
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orçamento — Ideal</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    +'.sheet{max-width:760px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    +'.hd{background:#16267A;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    +'.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    +'.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    +'table{width:100%;border-collapse:collapse;margin:8px 0 4px}'
+    +'th{font-size:11px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:7px 4px;border-bottom:2px solid #C9D0E2}'
+    +'td{padding:8px 4px;font-size:13px;border-bottom:1px solid #f1f1f1;color:#1a1a1a}'
+    +'td.c,th.c{text-align:center}td.v,th.v{text-align:right;white-space:nowrap}'
+    +'.tot{display:flex;justify-content:space-between;margin-top:16px;padding:13px 16px;border-radius:10px;background:#EEF0F6;font-size:16px;font-weight:bold;color:#16267A}'
+    +'.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    +'.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#16267A;color:#fff}.b2{background:#EEF0F6;color:#16267A}'
+    +'@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    +'</style></head><body><div class="sheet">'
+    +'<div class="hd"><h1>Orçamento</h1><div class="sub">Ideal Supermercados'+(loja?(' &middot; '+_precoEsc(loja)):'')+'</div></div><div class="stripe"></div>'
+    +'<div class="body">'
+    +'<div class="meta"><b>Itens:</b> '+ORC_ITENS.length+' &middot; Gerado em '+_precoEsc(quando)+'</div>'
+    +'<table><tr><th>Produto</th><th class="c">Qtd</th><th class="v">Valor un.</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
+    +'<div class="tot"><span>Total do orçamento</span><span>'+_precoBRL(tot)+'</span></div>'
+    +'<div class="foot">Valores sujeitos a alteração sem aviso prévio. Documento gerado pelo app — Ideal Supermercados.</div>'
+    +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    +'</div></div>'
+    +'<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    +'</body></html>';
+  var win=window.open('','_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
+}
+
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
@@ -5023,7 +5229,7 @@ const MENU_ITENS = [
   {k:'lancar',     ic:'ti-edit',             nm:'Lançamentos'},
   {k:'cotacao',    ic:'ti-shopping-cart',    nm:'Lista de cotação'},
   {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias'},
-  {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento', soon:1},
+  {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento'},
   {k:'avarias',    ic:'ti-alert-triangle',   nm:'Controle de avarias'},
   {k:'preco',      ic:'ti-barcode',          nm:'Busca de preço'},
   {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
