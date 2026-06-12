@@ -1330,6 +1330,7 @@ function doPost(e) {
       <div style="font-size:16px;font-weight:600;color:#16267A">Lista de cotação</div>
       <div style="font-size:11.5px;color:#888780" id="cot-sub">Coleta em andamento</div>
     </div>
+    <i class="ti ti-building-store" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirFornecedores()" title="Fornecedores"></i>
     <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirColetas()" title="Coletas salvas"></i>
   </div>
 
@@ -1386,6 +1387,23 @@ function doPost(e) {
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+  </div>
+</div>
+
+<!-- TELA: Fornecedores (Cotação Web) -->
+<div class="screen" id="s-fornec">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
+    <i class="ti ti-building-store" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Fornecedores</div>
+      <div style="font-size:11.5px;color:#888780" id="fn-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fnCarregar()" title="Atualizar"></i>
+  </div>
+  <div style="padding:12px 14px 100px">
+    <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="fnEditar('')"><i class="ti ti-plus"></i> Novo fornecedor</button>
+    <div id="fn-lista" style="margin-top:12px"><div class="loadrow"><span class="spin"></span> Carregando fornecedores…</div></div>
   </div>
 </div>
 
@@ -4725,6 +4743,79 @@ async function mvRenderHora(){
 }
 
 function abrirCotacaoWeb(){ toast('Cotação web — em breve \ud83d\udea7'); }
+
+// ══════════════════════════════════════════════════════
+// COTAÇÃO WEB — Cadastro de fornecedores (gestor) · Fase 1.2a
+// Usa forn_list / forn_save / forn_del (Codigo.gs tok-v4).
+// ══════════════════════════════════════════════════════
+var FORNEC = [];
+function abrirFornecedores(){ show('s-fornec'); window.scrollTo(0,0); fnCarregar(); }
+async function fnCarregar(){
+  var sub=document.getElementById('fn-sub'); var box=document.getElementById('fn-lista');
+  if(box) box.innerHTML=_skel(3);
+  try{
+    var j=await _estPost({acao:'forn_list'});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    FORNEC=j.fornecedores||[];
+    fnRender();
+  }catch(e){
+    console.error('fnCarregar',e);
+    if(box) box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque no atualizar (↻) ali em cima.</div>';
+    if(sub) sub.textContent='sem conexão';
+  }
+}
+function fnRender(){
+  var sub=document.getElementById('fn-sub'); var box=document.getElementById('fn-lista');
+  if(sub) sub.textContent=FORNEC.length+' fornecedor(es)';
+  if(!FORNEC.length){ box.innerHTML=_vazio({ico:'ti-building-store',tit:'Nenhum fornecedor ainda',sub:'Toque em "Novo fornecedor" pra cadastrar o primeiro.'}); return; }
+  var h='';
+  for(var i=0;i<FORNEC.length;i++){ var f=FORNEC[i];
+    h+='<div class="row-card" style="display:flex;align-items:center;gap:10px;margin-bottom:7px;cursor:pointer" onclick="fnEditar(\''+_precoEsc(f.id)+'\')">'
+      +'<i class="ti ti-building-store" style="color:#BA7517;font-size:18px"></i>'
+      +'<div style="flex:1"><div class="row-label">'+_precoEsc(f.nome)+'</div>'
+      +'<div class="row-sub">'+(f.contato?(_precoEsc(f.contato)+' · '):'')+'PIN '+_precoEsc(f.pin||'—')+'</div></div>'
+      +'<i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
+  }
+  box.innerHTML=h;
+}
+function fnEditar(id){
+  var f=null; for(var i=0;i<FORNEC.length;i++){ if(String(FORNEC[i].id)===String(id)){ f=FORNEC[i]; break; } }
+  var novo=!f; f=f||{id:'',nome:'',contato:'',pin:''};
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:360px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:12px">'+(novo?'Novo fornecedor':'Editar fornecedor')+'</div>'
+    +'<label style="font-size:11px;color:#888780">Nome</label>'
+    +'<input id="fn-nome" value="'+_precoEsc(f.nome)+'" placeholder="ex.: Distribuidora Souza" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<label style="font-size:11px;color:#888780">Contato (WhatsApp/telefone)</label>'
+    +'<input id="fn-contato" value="'+_precoEsc(f.contato)+'" placeholder="ex.: (62) 9 9999-9999" inputmode="tel" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<label style="font-size:11px;color:#888780">PIN de acesso (você escolhe)</label>'
+    +'<input id="fn-pin" value="'+_precoEsc(f.pin)+'" placeholder="ex.: 1234" inputmode="numeric" maxlength="8" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 4px">'
+    +'<div style="font-size:11px;color:#9a988f;margin-bottom:12px">O fornecedor usa esse PIN pra entrar e preencher a cotação.</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +(novo?'':'<button id="fn-del" style="padding:11px 14px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Excluir</button>')
+    +'<button id="fn-cancel" style="flex:1;min-width:90px;padding:11px;border:1px solid #ccc;background:#fff;color:#555;border-radius:10px;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="fn-save" class="btn-primary" style="flex:1;min-width:90px;margin-top:0">Salvar</button>'
+    +'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#fn-cancel').onclick=close;
+  card.querySelector('#fn-save').onclick=async function(){
+    var nome=card.querySelector('#fn-nome').value.trim(); if(!nome){ toast('Digite o nome'); return; }
+    var contato=card.querySelector('#fn-contato').value.trim();
+    var pin=card.querySelector('#fn-pin').value.trim(); if(!pin){ toast('Defina um PIN pro fornecedor'); return; }
+    var btn=card.querySelector('#fn-save'); btn.disabled=true; btn.textContent='Salvando…';
+    try{
+      var j=await _estPost({acao:'forn_save', id:f.id, nome:nome, contato:contato, pin:pin});
+      if(!j.ok) throw new Error(j.erro||'falha');
+      toast('✓ Fornecedor salvo'); close(); fnCarregar();
+    }catch(e){ console.error('fnSave',e); toast('⚠ Não consegui salvar'); btn.disabled=false; btn.textContent='Salvar'; }
+  };
+  var del=card.querySelector('#fn-del');
+  if(del){ del.onclick=function(){ close(); appConfirm('Excluir o fornecedor "'+f.nome+'"?\nEle some das próximas cotações.', async function(){ try{ var j=await _estPost({acao:'forn_del', id:f.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Fornecedor excluído'); fnCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
+}
 
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
