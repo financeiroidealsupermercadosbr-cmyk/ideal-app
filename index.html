@@ -106,6 +106,30 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qcard.soon{opacity:0.55;cursor:default}
 .qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
 .qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
+.qsearchwrap{padding:12px 12px 2px}
+.qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(22,38,122,0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:#16267A;background:#fff;outline:none}
+.qsearch::placeholder{color:#9aa0b4}
+.qsearch:focus{border-color:#1B3A9E}
+.qsec{display:flex;align-items:center;gap:9px;padding:15px 14px 5px}
+.qsec .qbar{width:4px;height:16px;border-radius:2px}
+.qsec b{font-size:12.5px;font-weight:700;letter-spacing:.02em}
+.qsec em{font-size:11px;color:#9aa0b4;font-style:normal;font-weight:600}
+.qcard{transition:transform .12s,border-color .12s;animation:qrise .38s ease both}
+.qcard:hover{border-color:rgba(22,38,122,0.25);transform:translateY(-2px)}
+.qcard:active{transform:scale(.96)}
+@keyframes qrise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.qgrid .qcard:nth-child(2){animation-delay:.03s}
+.qgrid .qcard:nth-child(3){animation-delay:.06s}
+.qgrid .qcard:nth-child(4){animation-delay:.09s}
+.qgrid .qcard:nth-child(5){animation-delay:.12s}
+.qc-fin i{color:#0F6E56}
+.qc-rh i{color:#534AB7}
+.qc-pv i{color:#BA7517}
+.qc-op i{color:#D85A30}
+.qsec-fin .qbar{background:#0F6E56}.qsec-fin b{color:#0F6E56}
+.qsec-rh .qbar{background:#534AB7}.qsec-rh b{color:#534AB7}
+.qsec-pv .qbar{background:#BA7517}.qsec-pv b{color:#854F0B}
+.qsec-op .qbar{background:#D85A30}.qsec-op b{color:#993C1D}
 .dre-aj-edit{color:#888780;font-size:14px;cursor:pointer;margin-left:6px;vertical-align:-1px}
 .dre-tag-aj{display:inline-block;background:#FAEEDA;color:#854F0B;font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:5px;vertical-align:1px}
 .dre-soon{background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
@@ -485,23 +509,40 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div id="tab-menu" class="content" style="display:none">
+      <div class="qsearchwrap">
+        <input class="qsearch" type="search" inputmode="search" placeholder="Buscar módulo…" oninput="menuFiltrar(this.value)" aria-label="Buscar módulo">
+      </div>
+
+      <div class="qsec qsec-fin"><span class="qbar"></span><b>Financeiro</b><em>5</em></div>
       <div class="qgrid">
-        <div class="qcard" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
-        <div class="qcard" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
-        <div class="qcard" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
-        <div class="qcard" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span></div>
-        <div class="qcard" data-menu="orcamento" onclick="abrirOrcamento()"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span></div>
-        <div class="qcard" data-menu="avarias" onclick="abrirAvarias()"><i class="ti ti-alert-triangle"></i><span class="qnm">Controle de avarias</span></div>
-        <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
-        <div class="qcard" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora de preço</span></div>
-        <div class="qcard" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
-        <div class="qcard" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
-        <div class="qcard" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Situação dos terminais</span></div>
-        <div class="qcard" data-menu="ck_gerentes" onclick="abrirChecklist()"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span></div>
-        <div class="qcard" data-menu="ck_temp" onclick="abrirFreezers()"><i class="ti ti-temperature-snow"></i><span class="qnm">Checklist temperatura dos freezers</span></div>
-        <div class="qcard" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Checklist contas mensais fixas</span></div>
-        <div class="qcard" data-menu="folha" onclick="abrirFolha()"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span></div>
-        <div class="qcard" data-menu="vale" onclick="abrirVale()"><i class="ti ti-receipt"></i><span class="qnm">Vale / Convênio</span></div>
+        <div class="qcard qc-fin" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
+        <div class="qcard qc-fin" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
+        <div class="qcard qc-fin" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Sangrias</span></div>
+        <div class="qcard qc-fin" data-menu="orcamento" onclick="abrirOrcamento()"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span></div>
+        <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
+      </div>
+
+      <div class="qsec qsec-rh"><span class="qbar"></span><b>Pessoas · RH</b><em>2</em></div>
+      <div class="qgrid">
+        <div class="qcard qc-rh" data-menu="folha" onclick="abrirFolha()"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span></div>
+        <div class="qcard qc-rh" data-menu="vale" onclick="abrirVale()"><i class="ti ti-receipt"></i><span class="qnm">Vale / Convênio</span></div>
+      </div>
+
+      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>5</em></div>
+      <div class="qgrid">
+        <div class="qcard qc-pv" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
+        <div class="qcard qc-pv" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora</span></div>
+        <div class="qcard qc-pv" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
+        <div class="qcard qc-pv" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
+        <div class="qcard qc-pv" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
+      </div>
+
+      <div class="qsec qsec-op"><span class="qbar"></span><b>Operação da loja</b><em>4</em></div>
+      <div class="qgrid">
+        <div class="qcard qc-op" data-menu="ck_gerentes" onclick="abrirChecklist()"><i class="ti ti-clipboard-check"></i><span class="qnm">Checklist gerentes</span></div>
+        <div class="qcard qc-op" data-menu="ck_temp" onclick="abrirFreezers()"><i class="ti ti-temperature-snow"></i><span class="qnm">Temp. freezers</span></div>
+        <div class="qcard qc-op" data-menu="avarias" onclick="abrirAvarias()"><i class="ti ti-alert-triangle"></i><span class="qnm">Avarias</span></div>
+        <div class="qcard qc-op" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Terminais</span></div>
       </div>
     </div>
 
@@ -2369,7 +2410,7 @@ function fzPDF(usarFiltro){
     + '</style></head><body><div class="sheet">'
     + '<div class="hd"><h1>Controle de Temperatura dos Freezers</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_fzNomeLoja())+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
-    + '<div class="meta"><b>Periodo:</b> '+_precoEsc(periodoTxt)+' &middot; Freezers: '+cols.length+' &middot; Datas: '+datas.length+' &middot; Gerado em '+agora+'</div>'
+    + '<div class="meta"><b>Período:</b> '+_precoEsc(periodoTxt)+' &middot; Freezers: '+cols.length+' &middot; Datas: '+datas.length+' &middot; Gerado em '+agora+'</div>'
     + '<table>'+thead+tbody+'</table>'
     + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
@@ -5264,6 +5305,27 @@ async function permsCarregarMenu(){
   }catch(e){ MENU_PERMS = {}; } // aba ainda não criada → tudo liberado
 }
 
+// === Busca do Menu (filtra os cards por nome, ignora acentos) ===
+function menuFiltrar(q){
+  var n=((q||'')+'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  var grids=document.querySelectorAll('#tab-menu .qgrid');
+  for(var i=0;i<grids.length;i++){
+    var g=grids[i], cards=g.querySelectorAll('.qcard'), vis=0;
+    for(var j=0;j<cards.length;j++){
+      var el=cards[j].querySelector('.qnm');
+      var nm=((el?el.textContent:'')+'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      var ok=(!n || nm.indexOf(n)>=0);
+      cards[j].style.display=ok?'':'none';
+      if(ok)vis++;
+    }
+    var sec=g.previousElementSibling;
+    if(sec && (''+sec.className).indexOf('qsec')>=0){
+      sec.style.display=vis?'':'none';
+      var em=sec.querySelector('em'); if(em) em.textContent=vis;
+    }
+  }
+}
+
 // deixa "apagado e travado" (não abre) os itens que o setor não pode acessar.
 // O item continua aparecendo no Menu, igual aos "em breve".
 function aplicarPermsMenu(){
@@ -7832,7 +7894,7 @@ function _colGerarPDF(obs, usuario, data, itens){
   for(var i=0;i<itens.length;i++){ var it=itens[i]; refTot += (Number(it.varejo)||0)*(Number(it.qtd)||0);
     linhas += '<tr><td class="n">'+(i+1)+'</td><td>'+_precoEsc(it.desc)+'<div class="cod">'+(it.manual?'manual · sem cadastro':('cód '+_precoEsc(it.cod)+(it.barras?' · '+_precoEsc(it.barras):'')))+'</div></td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_precoEsc(it.un||'UN')+'</td><td class="v">'+(it.manual?'—':_precoBRL(it.varejo))+'</td></tr>';
   }
-  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lista de Cotacao — Ideal</title>'
+  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lista de Cotação — Ideal</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
@@ -7850,7 +7912,7 @@ function _colGerarPDF(obs, usuario, data, itens){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Lista de Cotacao</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Lista de Cotação</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>'+(_precoEsc(obs)||'Coleta sem observacao')+'</b><br>Coletado por: '+(_precoEsc(usuario)||'—')+' &middot; '+_precoEsc((data||'').slice(0,16))+'<br>Itens: '+itens.length+' &middot; Gerado em '+agora+'</div>'
     + '<table><tr><th class="n">#</th><th>Produto</th><th class="c">Qtd</th><th class="c">Un</th><th class="v">Varejo (ref.)</th></tr>'+linhas+'</table>'
