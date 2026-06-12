@@ -1006,6 +1006,7 @@ function doPost(e) {
 <div class="screen" id="s-estrutura">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-category" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Estrutura mercadológica</div>
       <div style="font-size:11.5px;color:#888780" id="est-sub">Carregando…</div>
@@ -1044,6 +1045,7 @@ function doPost(e) {
 <div class="screen" id="s-relatorios">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-chart-pie" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Vendas por setor</div>
       <div style="font-size:11.5px;color:#888780" id="rel-sub">Carregando…</div>
@@ -1081,8 +1083,9 @@ function doPost(e) {
 <div class="screen" id="s-preco">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-barcode" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Busca de Preço</div>
+      <div style="font-size:16px;font-weight:600;color:#16267A">Busca de preço</div>
       <div style="font-size:11.5px;color:#888780" id="preco-sub">Carregando produtos…</div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="precoAtualizar()" title="Atualizar preços"></i>
@@ -1115,8 +1118,9 @@ function doPost(e) {
 <div class="screen" id="s-calc">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-calculator" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Calculadora de Preço</div>
+      <div style="font-size:16px;font-weight:600;color:#16267A">Calculadora de preço</div>
       <div style="font-size:11.5px;color:#888780">Custo + margem = preço de venda</div>
     </div>
     <i class="ti ti-calculator" style="font-size:20px;color:#16267A"></i>
@@ -1168,6 +1172,7 @@ function doPost(e) {
 <div class="screen" id="s-lucro">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-coin" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Lucratividade</div>
       <div style="font-size:11.5px;color:#888780" id="luc-sub">Carregando…</div>
@@ -1230,6 +1235,7 @@ function doPost(e) {
 <div class="screen" id="s-abc">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-chart-bar" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Curva ABC</div>
       <div style="font-size:11.5px;color:#888780" id="abc-sub">Carregando…</div>
@@ -1270,8 +1276,9 @@ function doPost(e) {
 <div class="screen" id="s-cotacao">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-shopping-cart" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Lista de Cotação</div>
+      <div style="font-size:16px;font-weight:600;color:#16267A">Lista de cotação</div>
       <div style="font-size:11.5px;color:#888780" id="cot-sub">Coleta em andamento</div>
     </div>
     <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirColetas()" title="Coletas salvas"></i>
@@ -1307,6 +1314,7 @@ function doPost(e) {
 <div class="screen" id="s-coletas">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
+    <i class="ti ti-bookmark" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Coletas salvas</div>
       <div style="font-size:11.5px;color:#888780" id="col-sub">Carregando…</div>
@@ -1336,6 +1344,7 @@ function doPost(e) {
 <div class="screen" id="s-avarias">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-alert-triangle" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Controle de avarias</div>
       <div style="font-size:11.5px;color:#888780" id="av-sub">Carregando…</div>
@@ -1436,6 +1445,7 @@ function doPost(e) {
   </style>
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-calendar-dollar" style="font-size:20px;color:#0F6E56;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Contas mensais fixas</div>
       <div style="font-size:11.5px;color:#888780" id="co-sub">Carregando…</div>
@@ -1492,6 +1502,7 @@ function doPost(e) {
   </style>
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-report-money" style="font-size:20px;color:#534AB7;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Folha de pagamento</div>
       <div style="font-size:11.5px;color:#888780" id="fo-sub">Carregando…</div>
@@ -1547,6 +1558,7 @@ function doPost(e) {
   </style>
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-receipt" style="font-size:20px;color:#534AB7;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Vale / Convênio</div>
       <div style="font-size:11.5px;color:#888780" id="va-sub">Carregando…</div>
@@ -1596,6 +1608,7 @@ function doPost(e) {
 <div class="screen" id="s-sangrias">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-cash" style="font-size:20px;color:#0F6E56;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Sangrias / Cofre</div>
       <div style="font-size:11.5px;color:#888780" id="sa-sub">Carregando…</div>
@@ -1625,6 +1638,7 @@ function doPost(e) {
 <div class="screen" id="s-orcamento">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-wallet" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Orçamento</div>
       <div style="font-size:11.5px;color:#888780" id="orc-sub">Monte a lista do cliente</div>
@@ -1657,6 +1671,7 @@ function doPost(e) {
 <div class="screen" id="s-checklist">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-clipboard-check" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Checklist dos gerentes</div>
       <div style="font-size:11.5px;color:#888780" id="ck-sub">Carregando…</div>
@@ -1707,6 +1722,7 @@ function doPost(e) {
 <div class="screen" id="s-freezers">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-temperature-snow" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Temperatura dos freezers</div>
       <div style="font-size:11.5px;color:#888780" id="fz-sub">Carregando…</div>
@@ -1761,6 +1777,7 @@ function doPost(e) {
 <div class="screen" id="s-terminais">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="terminaisFechar()"></i>
+    <i class="ti ti-device-desktop" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Situação dos terminais</div>
       <div style="font-size:11.5px;color:#888780" id="term-sub">Busca-preço da loja</div>
