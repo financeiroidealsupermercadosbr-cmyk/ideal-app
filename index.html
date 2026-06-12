@@ -3855,7 +3855,7 @@ function _vaCardFunc(f){
     +'<div style="flex:1;min-width:0"><div class="row-label" style="line-height:1.25">'+_precoEsc(f.nome)+'</div>'
     +'<div class="row-sub">'+_precoEsc(f.setor||'')+descChip+'</div></div>'
     +totHtml
-    +'<i class="ti ti-user-circle" style="font-size:22px;color:#16267A;cursor:pointer;padding:2px" title="Ficha" onclick="vaFicha(\''+f.id+'\')"></i>'
+    +(ver?'<i class="ti ti-user-circle" style="font-size:22px;color:#16267A;cursor:pointer;padding:2px" title="Ficha" onclick="vaFicha(\''+f.id+'\')"></i>':'')
     +'</div>';
   var linhas='';
   if(vs.length){
