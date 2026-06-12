@@ -538,7 +538,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-pv" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
         <div class="qcard qc-pv" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
         <div class="qcard qc-pv" data-menu="maisvendidos" onclick="abrirMaisVendidos()"><i class="ti ti-trophy"></i><span class="qnm">Mais vendidos</span></div>
-        <div class="qcard qc-pv" data-menu="cotacaoweb" onclick="abrirCotacaoWeb()"><i class="ti ti-world-search"></i><span class="qnm">Cotação web</span></div>
+        <div class="qcard qc-pv" data-menu="compras" onclick="abrirCompras()"><i class="ti ti-truck-delivery"></i><span class="qnm">Compras</span></div>
       </div>
 
       <div class="qsec qsec-op"><span class="qbar"></span><b>Operação da loja</b><em>4</em></div>
@@ -1389,6 +1389,29 @@ function doPost(e) {
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+  </div>
+</div>
+
+<!-- TELA: Compras (espelhos) -->
+<div class="screen" id="s-compras">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-truck-delivery" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Compras</div>
+      <div style="font-size:11.5px;color:#888780" id="cp-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cpCarregar()" title="Atualizar"></i>
+  </div>
+  <div style="padding:12px 14px 100px">
+    <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="cpNovo()"><i class="ti ti-plus"></i> Novo espelho</button>
+    <div style="display:flex;gap:6px;margin:12px 0 10px">
+      <button id="cp-fb-aberto" onclick="cpSetFiltro('ABERTO')">Pra chegar</button>
+      <button id="cp-fb-receb" onclick="cpSetFiltro('RECEBIDO')">Recebidos</button>
+      <button id="cp-fb-todos" onclick="cpSetFiltro('TODOS')">Todos</button>
+    </div>
+    <input id="cp-busca" type="text" placeholder="Buscar fornecedor" oninput="cpBuscaDebounce()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:10px">
+    <div id="cp-lista"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
   </div>
 </div>
 
@@ -4777,6 +4800,107 @@ async function mvRenderHora(){
 }
 
 function abrirCotacaoWeb(){ toast('Cotação web — em breve \ud83d\udea7'); }
+// ══════════════════════════════════════════════════════
+// COMPRAS — espelhos + pra chegar (Fase A)
+// Usa compras_list / compras_save / compras_status / compras_del.
+// ══════════════════════════════════════════════════════
+var COMPRAS=[], _cpFiltro='ABERTO';
+function abrirCompras(){ show('s-compras'); window.scrollTo(0,0); cpSetFiltro(_cpFiltro||'ABERTO', true); }
+function _cpBtnFiltro(on){ return 'flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
+function cpSetFiltro(f, carrega){
+  _cpFiltro=f;
+  var ids={ABERTO:'cp-fb-aberto',RECEBIDO:'cp-fb-receb',TODOS:'cp-fb-todos'};
+  for(var k in ids){ var b=document.getElementById(ids[k]); if(b) b.style.cssText=_cpBtnFiltro(k===f); }
+  if(carrega) cpCarregar(); else cpRender();
+}
+async function cpCarregar(){
+  var box=document.getElementById('cp-lista'); if(box) box.innerHTML=_skel(3);
+  try{ var j=await _estPost({acao:'compras_list'}); if(!j.ok) throw new Error(j.erro||'falha'); COMPRAS=j.pedidos||[]; cpRender(); }
+  catch(e){ console.error('cpCarregar',e); if(box) box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque no ↻.</div>'; }
+}
+function _cpDataBR(s){ s=String(s||''); var m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):s; }
+function _cpAcha(id){ for(var i=0;i<COMPRAS.length;i++){ if(String(COMPRAS[i].id)===String(id)) return COMPRAS[i]; } return null; }
+function cpBuscaDebounce(){ clearTimeout(window._cpBT); window._cpBT=setTimeout(cpRender, 200); }
+function cpRender(){
+  var box=document.getElementById('cp-lista'); var sub=document.getElementById('cp-sub');
+  var bi=document.getElementById('cp-busca'); var termo=(bi&&bi.value||'').trim().toLowerCase();
+  var lista=COMPRAS.filter(function(p){
+    if(_cpFiltro==='ABERTO' && p.status!=='ABERTO') return false;
+    if(_cpFiltro==='RECEBIDO' && p.status!=='RECEBIDO') return false;
+    if(termo && (p.fornecedor||'').toLowerCase().indexOf(termo)===-1) return false;
+    return true;
+  });
+  var nAbertos=COMPRAS.filter(function(p){return p.status==='ABERTO';}).length;
+  if(sub) sub.textContent=nAbertos+' pra chegar · '+COMPRAS.length+' no total';
+  if(!lista.length){ box.innerHTML=_vazio({ico:'ti-truck-delivery',tit:'Nada por aqui',sub:'Toque em "Novo espelho" pra registrar um pedido.'}); return; }
+  var h='';
+  for(var i=0;i<lista.length;i++){ var p=lista[i]; var aberto=p.status==='ABERTO';
+    var badge='<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;'+(aberto?'background:#FFF3D6;color:#9A6B00':'background:#E5F4EE;color:#0F6E56')+'">'+(aberto?'PRA CHEGAR':'RECEBIDO')+'</span>';
+    h+='<div class="row-card" style="display:block;margin-bottom:8px">'
+      +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-file-invoice" style="color:#BA7517;font-size:18px"></i>'
+      +'<div style="flex:1"><div class="row-label">'+_precoEsc(p.fornecedor)+'</div><div class="row-sub">'+_precoEsc(_cpDataBR(p.data))+(p.obs?(' · '+_precoEsc(p.obs)):'')+'</div></div>'
+      +badge+'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">';
+    if(p.espelhoUrl){ h+='<a href="'+_precoEsc(p.espelhoUrl)+'" target="_blank" rel="noopener" class="btn-primary" style="flex:1;min-width:130px;margin-top:0;text-decoration:none;text-align:center;background:#16267A"><i class="ti ti-file-type-pdf"></i> Ver espelho</a>'; }
+    else { h+='<span style="flex:1;min-width:130px;font-size:11.5px;color:#9a988f;align-self:center">sem PDF anexado</span>'; }
+    if(aberto){ h+='<button class="btn-primary" style="flex:1;min-width:130px;margin-top:0;background:#0F6E56" onclick="cpStatus(\''+_precoEsc(p.id)+'\',\'RECEBIDO\')"><i class="ti ti-check"></i> Recebido</button>'; }
+    else { h+='<button onclick="cpStatus(\''+_precoEsc(p.id)+'\',\'ABERTO\')" style="flex:0 0 auto;padding:0 12px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:10px;font-size:12.5px;cursor:pointer">Reabrir</button>'; }
+    h+='<button onclick="cpEditar(\''+_precoEsc(p.id)+'\')" style="flex:0 0 auto;padding:0 13px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:10px;font-size:14px;cursor:pointer"><i class="ti ti-dots"></i></button>';
+    h+='</div></div>';
+  }
+  box.innerHTML=h;
+}
+async function cpStatus(id, novo){
+  try{ var j=await _estPost({acao:'compras_status', id:id, status:novo}); if(!j.ok) throw new Error(j.erro||'falha'); var p=_cpAcha(id); if(p) p.status=novo; cpRender(); toast(novo==='RECEBIDO'?'✓ Recebido':'Reaberto'); }
+  catch(e){ toast('⚠ Não consegui atualizar'); }
+}
+function _fileToB64(file){ return new Promise(function(res,rej){ var r=new FileReader(); r.onload=function(){ res(String(r.result).split(',')[1]||''); }; r.onerror=function(){ rej(new Error('leitura')); }; r.readAsDataURL(file); }); }
+function cpNovo(){ cpEditar(''); }
+function cpEditar(id){
+  var p=_cpAcha(id); var novo=!p; p=p||{id:'',fornecedor:'',data:'',obs:'',status:'ABERTO',espelhoUrl:''};
+  var hoje=new Date(); var hojeISO=hoje.getFullYear()+'-'+('0'+(hoje.getMonth()+1)).slice(-2)+'-'+('0'+hoje.getDate()).slice(-2);
+  var dataVal=(p.data&&/^\d{4}-\d{2}-\d{2}/.test(p.data))?p.data.slice(0,10):hojeISO;
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;max-height:88vh;overflow:auto;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:12px">'+(novo?'Novo espelho':'Editar espelho')+'</div>'
+    +'<label style="font-size:11px;color:#888780">Fornecedor</label>'
+    +'<input id="cp-forn" value="'+_precoEsc(p.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<label style="font-size:11px;color:#888780">Data do pedido</label>'
+    +'<input id="cp-data" type="date" value="'+dataVal+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<label style="font-size:11px;color:#888780">Espelho (PDF)</label>'
+    +'<input id="cp-pdf" type="file" accept="application/pdf,.pdf" style="width:100%;font-size:13px;margin:4px 0 4px">'
+    +(p.espelhoUrl?'<div style="font-size:11px;color:#0F6E56;margin-bottom:8px"><i class="ti ti-check"></i> já tem um PDF anexado (mande outro pra trocar)</div>':'<div style="font-size:11px;color:#9a988f;margin-bottom:8px">opcional — pode anexar depois</div>')
+    +'<label style="font-size:11px;color:#888780">Observação</label>'
+    +'<input id="cp-obs" value="'+_precoEsc(p.obs)+'" placeholder="ex.: bebidas / semana 24" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 12px">'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +(novo?'':'<button id="cp-del" style="padding:11px 14px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Excluir</button>')
+    +'<button id="cp-cancel" style="flex:1;min-width:90px;padding:11px;border:1px solid #ccc;background:#fff;color:#555;border-radius:10px;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="cp-save" class="btn-primary" style="flex:1;min-width:90px;margin-top:0">Salvar</button>'
+    +'</div><div id="cp-prog" style="font-size:11.5px;color:#9a988f;margin-top:8px;display:none">Enviando o PDF… pode levar uns segundos.</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#cp-cancel').onclick=close;
+  card.querySelector('#cp-save').onclick=async function(){
+    var forn=card.querySelector('#cp-forn').value.trim(); if(!forn){ toast('Digite o fornecedor'); return; }
+    var data=card.querySelector('#cp-data').value; var obs=card.querySelector('#cp-obs').value.trim();
+    var fileEl=card.querySelector('#cp-pdf'); var file=fileEl&&fileEl.files&&fileEl.files[0];
+    var payload={acao:'compras_save', id:p.id, fornecedor:forn, data:data, obs:obs, usuario:(userAtual&&userAtual.usuario)||''};
+    var btn=card.querySelector('#cp-save'); btn.disabled=true; btn.textContent='Salvando…';
+    try{
+      if(file){
+        if(file.size>9*1024*1024){ toast('PDF muito grande (máx ~9MB)'); btn.disabled=false; btn.textContent='Salvar'; return; }
+        document.getElementById('cp-prog').style.display='block';
+        payload.espelhoBase64=await _fileToB64(file); payload.espelhoMime=file.type||'application/pdf';
+      }
+      var j=await _estPost(payload);
+      if(!j.ok) throw new Error(j.erro||'falha');
+      toast('✓ Espelho salvo'); close(); cpCarregar();
+    }catch(e){ console.error('cpSave',e); toast('⚠ Não consegui salvar'); btn.disabled=false; btn.textContent='Salvar'; var pr=document.getElementById('cp-prog'); if(pr) pr.style.display='none'; }
+  };
+  var del=card.querySelector('#cp-del');
+  if(del){ del.onclick=function(){ close(); appConfirm('Excluir este espelho?\nO PDF continua no Drive, mas some da lista.', async function(){ try{ var j=await _estPost({acao:'compras_del', id:p.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Excluído'); cpCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
+}
 
 // ══════════════════════════════════════════════════════
 // COTAÇÃO WEB — Cadastro de fornecedores (gestor) · Fase 1.2a
