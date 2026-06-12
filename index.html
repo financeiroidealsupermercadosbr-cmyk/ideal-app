@@ -5134,7 +5134,8 @@ function cwRenderResultado(){
     +'<div style="flex:1;background:#FDECEC;border-radius:11px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:#A32D2D">'+naoCotados.length+'</div><div style="font-size:11px;color:#5F5E5A">não cotados</div></div>'
     +'<div style="flex:1.3;background:#EAF2FF;border-radius:11px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:700;color:#16267A">'+_precoBRL(totalCompra)+'</div><div style="font-size:11px;color:#5F5E5A">compra (vencedores)</div></div>'
     +'</div>';
-  h+='<div style="font-size:13px;font-weight:700;color:#16267A;margin:8px 2px 8px">Itens cotados — vencedor por item</div>';
+  h+='<div onclick="_cwToggleCotados()" style="display:flex;align-items:center;gap:8px;margin:8px 2px 8px;cursor:pointer"><span style="font-size:13px;font-weight:700;color:#16267A;flex:1">Itens cotados — vencedor por item</span><span id="cwr-cot-toggle" style="font-size:11px;color:#16267A;font-weight:600">ocultar <i class="ti ti-chevron-up"></i></span></div>';
+  h+='<div id="cwr-cotados-list">';
   if(!cotados.length){ h+='<div class="row-sub" style="padding:6px 2px">Nenhum item recebeu preço ainda.</div>'; }
   for(var k=0;k<cotados.length;k++){ var item=cotados[k]; var it=item.it; var venc=item.venc;
     var outras='';
@@ -5153,8 +5154,10 @@ function cwRenderResultado(){
       +outras
       +'</div>';
   }
+  h+='</div>';
   if(naoCotados.length){
-    h+='<div style="font-size:13px;font-weight:700;color:#A32D2D;margin:16px 2px 8px">Não cotados ('+naoCotados.length+')</div>';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:#A32D2D;flex:1">Não cotados ('+naoCotados.length+')</span>'
+      +'<button onclick="cwPdfNaoCotados()" style="padding:7px 12px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-printer"></i> Exportar</button></div>';
     h+='<div style="font-size:11px;color:#9a988f;margin:0 2px 6px">Ninguém deu preço (marcaram "não tenho" ou não responderam).</div>';
     for(var n=0;n<naoCotados.length;n++){ var ni=naoCotados[n];
       h+='<div style="border:0.5px solid #f0d6d6;background:#FDF6F6;border-radius:10px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
@@ -5184,7 +5187,7 @@ function cwRenderResultado(){
     h+=_cwGraficoGanhos(ganhosArr);
     h+=cards;
   }
-  _cwResult={ titulo:(c.titulo||'Cotação'), ganhosArr:ganhosArr };
+  _cwResult={ titulo:(c.titulo||'Cotação'), ganhosArr:ganhosArr, naoCotados:naoCotados };
   h+='<div style="font-size:10.5px;color:#9a988f;margin-top:14px;line-height:1.5">Margem = (nosso preço de venda − preço do vencedor) ÷ preço de venda. Considera o preço do vencedor como custo de compra.</div>';
   document.getElementById('cwr-box').innerHTML=h;
   _cwAnimaBarras();
@@ -5219,6 +5222,30 @@ function _cwPrintPedido(titulo, secoes){
 }
 function cwPdfTodos(){ if(!_cwResult||!_cwResult.ganhosArr.length){ toast('Sem vencedores pra exportar.'); return; } _cwPrintPedido((_cwResult.titulo||'Cotação')+' — todos os vencedores', _cwResult.ganhosArr); }
 function cwPdfForn(idx){ if(!_cwResult||!_cwResult.ganhosArr[idx]) return; _cwPrintPedido(_cwResult.titulo||'Cotação', [_cwResult.ganhosArr[idx]]); }
+function _cwToggleCotados(){
+  var el=document.getElementById('cwr-cotados-list'); var tg=document.getElementById('cwr-cot-toggle'); if(!el) return;
+  var hide=el.style.display!=='none'; el.style.display=hide?'none':'block';
+  if(tg) tg.innerHTML=hide?'mostrar <i class="ti ti-chevron-down"></i>':'ocultar <i class="ti ti-chevron-up"></i>';
+}
+function cwPdfNaoCotados(){
+  var arr=(_cwResult&&_cwResult.naoCotados)||[];
+  if(!arr.length){ toast('Não há itens não cotados.'); return; }
+  var titulo=(_cwResult&&_cwResult.titulo)||'Cotação';
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var linhas='';
+  for(var i=0;i<arr.length;i++){ var it=arr[i];
+    linhas+='<tr><td class="n">'+(i+1)+'</td><td>'+_cwEscP(it.desc)+(it.barras?('<div class="cod">c&oacute;d. barras '+_cwEscP(it.barras)+'</div>'):'')+'</td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_cwEscP(it.un||'UN')+'</td></tr>';
+  }
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>N&atilde;o cotados</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}.hd{background:#A32D2D;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 12px;border-bottom:1px solid #eee;line-height:1.7}table{width:100%;border-collapse:collapse;margin-top:10px}th{font-size:10px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:5px 4px;border-bottom:1px solid #ccd}td{padding:7px 4px;font-size:12.5px;border-bottom:1px solid #f1f1f1;color:#1a1a1a}td.c,th.c{text-align:center;white-space:nowrap}td.n,th.n{color:#9a988f;width:26px;text-align:center}.cod{font-size:10px;color:#9a988f;margin-top:2px}.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}</style></head><body><div class="sheet">'
+    +'<div class="hd"><h1>Itens n&atilde;o cotados</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    +'<div class="body"><div class="meta"><b>'+_cwEscP(titulo)+'</b><br>Gerado em '+agora+'<br>'+arr.length+' item(ns) sem pre&ccedil;o</div>'
+    +'<table><thead><tr><th class="n">#</th><th>Item</th><th class="c">Qtd</th><th class="c">Un</th></tr></thead><tbody>'+linhas+'</tbody></table>'
+    +'<div class="foot">Itens que nenhum fornecedor cotou (marcaram &ldquo;n&atilde;o tenho&rdquo; ou n&atilde;o responderam). Documento gerado pelo app &mdash; Ideal Supermercados.</div>'
+    +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    +'</div></div><scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt></body></html>';
+  _cwAbrePrint(html);
+}
 function _cwGraficoGanhos(arr){
   if(!arr || !arr.length) return '';
   var ord=arr.slice().sort(function(a,b){ return b.subtotal-a.subtotal; });
@@ -8777,7 +8804,18 @@ function colVoltar(){
   document.getElementById('col-detalhe-view').style.display='none';
   document.getElementById('col-lista-view').style.display='block';
 }
-function colAbrir(id){
+function _colVarejoDe(it){
+  var v=Number(it.varejo)||0; if(v>0) return v;
+  if(typeof PRODUTOS!=='undefined' && PRODUTOS && PRODUTOS.length){
+    var b=String(it.barras||''), c=String(it.cod||'');
+    for(var i=0;i<PRODUTOS.length;i++){ var pr=PRODUTOS[i];
+      if((b && String(pr.b)===b) || (c && String(pr.c)===c)) return Number(pr.v)||0;
+    }
+  }
+  return 0;
+}
+function _colCodMostra(it){ return it.barras?('cód barras '+_precoEsc(it.barras)):('cód '+_precoEsc(it.cod)); }
+async function colAbrir(id){
   var c=null; for(var i=0;i<COLETAS.length;i++){ if(COLETAS[i].id===String(id)){ c=COLETAS[i]; break; } }
   if(!c) return;
   _colAtual=c;
@@ -8785,11 +8823,13 @@ function colAbrir(id){
   document.getElementById('col-detalhe-view').style.display='block';
   document.getElementById('col-det-titulo').textContent = c.obs || 'Coleta sem observação';
   document.getElementById('col-det-sub').textContent = (c.usuario||'—')+' · '+(c.data||'').slice(0,16)+' · '+c.n+' itens';
+  document.getElementById('col-det-itens').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  await _cwGaranteProdutos();
   var h='';
   for(var j=0;j<c.itens.length;j++){ var it=c.itens[j];
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:9px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
-      +'<div style="font-size:10px;color:#9a988f">'+(it.manual?'✎ manual · sem cadastro':('cód '+_precoEsc(it.cod)+' · varejo '+_precoBRL(it.varejo)))+'</div></div>'
+      +'<div style="font-size:10px;color:#9a988f">'+(it.manual?'✎ manual · sem cadastro':(_colCodMostra(it)+' · venda '+_precoBRL(_colVarejoDe(it))))+'</div></div>'
       +'<div style="font-size:14px;font-weight:600;color:#16267A;white-space:nowrap">'+(Number(it.qtd)||0)+' '+_precoEsc(it.un||'UN')+'</div>'
       +'</div>';
   }
@@ -8812,7 +8852,7 @@ function _colGerarPDF(obs, usuario, data, itens){
   var agora = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   var linhas=''; var refTot=0;
   for(var i=0;i<itens.length;i++){ var it=itens[i]; refTot += (Number(it.varejo)||0)*(Number(it.qtd)||0);
-    linhas += '<tr><td class="n">'+(i+1)+'</td><td>'+_precoEsc(it.desc)+'<div class="cod">'+(it.manual?'manual · sem cadastro':('cód '+_precoEsc(it.cod)+(it.barras?' · '+_precoEsc(it.barras):'')))+'</div></td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_precoEsc(it.un||'UN')+'</td><td class="v">'+(it.manual?'—':_precoBRL(it.varejo))+'</td></tr>';
+    linhas += '<tr><td class="n">'+(i+1)+'</td><td>'+_precoEsc(it.desc)+'<div class="cod">'+(it.manual?'manual · sem cadastro':(it.barras?('cód barras '+_precoEsc(it.barras)):('cód '+_precoEsc(it.cod))))+'</div></td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_precoEsc(it.un||'UN')+'</td><td class="v">'+(it.manual?'—':_precoBRL(_colVarejoDe(it)))+'</td></tr>';
   }
   var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Lista de Cotação — Ideal</title>'
     + '<style>'
@@ -8853,7 +8893,8 @@ function _colCruzarDados(){
   for(var i=0;i<COLETAS.length;i++){ var c=COLETAS[i];
     for(var j=0;j<c.itens.length;j++){ var it=c.itens[j];
       var key = it.manual ? ('M:'+_precoNorm(it.desc||'')) : ('C:'+String(it.cod||''));
-      if(!map[key]){ map[key]={cod:(it.manual?'manual':String(it.cod||'')), desc:it.desc, barras:it.barras||'', manual:!!it.manual, entries:[]}; ordem.push(key); }
+      if(!map[key]){ map[key]={cod:(it.manual?'manual':String(it.cod||'')), desc:it.desc, barras:it.barras||'', varejo:(Number(it.varejo)||0), manual:!!it.manual, entries:[]}; ordem.push(key); }
+      if((!map[key].varejo||map[key].varejo<=0) && Number(it.varejo)>0) map[key].varejo=Number(it.varejo);
       map[key].entries.push({usuario:c.usuario, data:(c.data||'').slice(0,16), qtd:(Number(it.qtd)||0), un:it.un||'UN', obs:c.obs});
     }
   }
@@ -8918,7 +8959,7 @@ function colRenderCruza(){
 function _colItemAgr(p, en){
   var manual=!!p.manual;
   return { cod: manual?('MAN'+Date.now()+Math.floor(Math.random()*1000)):String(p.cod||''),
-           desc: p.desc||'', barras: p.barras||'',
+           desc: p.desc||'', barras: p.barras||'', varejo: Number(p.varejo)||0,
            qtd: Number(en.qtd)||0, un: en.un||'UN', manual: manual };
 }
 async function _colSalvarAgrupada(){
