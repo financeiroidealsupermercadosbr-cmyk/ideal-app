@@ -4826,6 +4826,16 @@ function abrirCotacaoWeb(){ toast('Cotação web — em breve \ud83d\udea7'); }
 // Usa compras_list / compras_save / compras_status / compras_del.
 // ══════════════════════════════════════════════════════
 var COMPRAS=[], _cpFiltro='ABERTO';
+async function _garanteFornec(){
+  if(typeof FORNEC!=='undefined' && FORNEC && FORNEC.length) return;
+  try{ var jf=await _estPost({acao:'forn_list'}); if(jf&&jf.ok) FORNEC=jf.fornecedores||[]; }catch(e){}
+}
+async function _preencheFornDatalist(dlId){
+  await _garanteFornec();
+  var dl=document.getElementById(dlId); if(!dl) return;
+  var opts=''; if(typeof FORNEC!=='undefined' && FORNEC){ for(var i=0;i<FORNEC.length;i++){ if(FORNEC[i] && FORNEC[i].nome) opts+='<option value="'+_precoEsc(FORNEC[i].nome)+'"></option>'; } }
+  dl.innerHTML=opts;
+}
 function abrirCompras(){ show('s-compras'); window.scrollTo(0,0); cpSetFiltro(_cpFiltro||'ABERTO', true); lemCarregar(); }
 function _cpBtnFiltro(on){ return 'flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
 function cpSetFiltro(f, carrega){
@@ -4885,7 +4895,7 @@ function cpEditar(id){
   var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;max-height:88vh;overflow:auto;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
   card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:12px">'+(novo?'Novo espelho':'Editar espelho')+'</div>'
     +'<label style="font-size:11px;color:#888780">Fornecedor</label>'
-    +'<input id="cp-forn" value="'+_precoEsc(p.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<input id="cp-forn" list="cp-forn-list" value="'+_precoEsc(p.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px"><datalist id="cp-forn-list"></datalist>'
     +'<label style="font-size:11px;color:#888780">Data do pedido</label>'
     +'<input id="cp-data" type="date" value="'+dataVal+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
     +'<label style="font-size:11px;color:#888780">Espelho (PDF)</label>'
@@ -4902,6 +4912,7 @@ function cpEditar(id){
   function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
   ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
   card.querySelector('#cp-cancel').onclick=close;
+  _preencheFornDatalist('cp-forn-list');
   card.querySelector('#cp-save').onclick=async function(){
     var forn=card.querySelector('#cp-forn').value.trim(); if(!forn){ toast('Digite o fornecedor'); return; }
     var data=card.querySelector('#cp-data').value; var obs=card.querySelector('#cp-obs').value.trim();
@@ -5072,7 +5083,7 @@ function lemEditar(id){
     +'<label style="font-size:11px;color:#888780">Lembrete</label>'
     +'<textarea id="lem-texto" rows="2" placeholder="ex.: cobrar pedido de bebidas do BH" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px;resize:vertical">'+_precoEsc(l.texto)+'</textarea>'
     +'<label style="font-size:11px;color:#888780">Fornecedor (opcional)</label>'
-    +'<input id="lem-forn" value="'+_precoEsc(l.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<input id="lem-forn" list="lem-forn-list" value="'+_precoEsc(l.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px"><datalist id="lem-forn-list"></datalist>'
     +'<label style="font-size:11px;color:#888780">Data (opcional)</label>'
     +'<input id="lem-data" type="date" value="'+dataVal+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 12px">'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
@@ -5084,6 +5095,7 @@ function lemEditar(id){
   function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
   ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
   card.querySelector('#lem-cancel').onclick=close;
+  _preencheFornDatalist('lem-forn-list');
   card.querySelector('#lem-save').onclick=async function(){
     var texto=card.querySelector('#lem-texto').value.trim(); if(!texto){ toast('Escreva o lembrete'); return; }
     var forn=card.querySelector('#lem-forn').value.trim(); var data=card.querySelector('#lem-data').value;
