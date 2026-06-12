@@ -5060,6 +5060,7 @@ function cwRenderPainel(){
   if(aberta){ h+='<button class="btn-primary" style="margin-top:14px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwFechar()"><i class="ti ti-lock"></i> Fechar cotação</button>'; }
   else { h+='<div class="row-sub" style="padding:12px 2px;text-align:center">Cotação fechada — fornecedores não respondem mais.</div>'; }
   h+='<button class="btn-primary" style="margin-top:10px;background:#16267A" onclick="cwVerResultado()"><i class="ti ti-table"></i> Ver resultado</button>';
+  h+='<button class="btn-primary" style="margin-top:10px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwExcluir()"><i class="ti ti-trash"></i> Excluir cotação</button>';
   document.getElementById('cw-painel').innerHTML=h;
 }
 function cwCopiar(){ if(_cwAtual) _cwCopiarTxt(_cwLink(_cwAtual.id)); }
@@ -5153,24 +5154,28 @@ function cwRenderResultado(){
   var nomesGanho=Object.keys(ganhos);
   var ganhosArr=[];
   if(nomesGanho.length){
-    h+='<div style="display:flex;align-items:center;gap:8px;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:#16267A;flex:1">Ganhos por fornecedor</span>'
-      +'<button onclick="cwPdfTodos()" style="padding:7px 12px;border:1px solid #16267A;background:#fff;color:#16267A;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-printer"></i> Exportar todos</button></div>';
+    var cards='';
     for(var g=0;g<nomesGanho.length;g++){ var nm=nomesGanho[g]; var lst=ganhos[nm]; var sub=0; var lhtml=''; var itensF=[];
       for(var x=0;x<lst.length;x++){ var li=lst[x]; var q=(Number(li.it.qtd)||0); sub+=li.venc.preco*q;
         itensF.push({desc:li.it.desc, qtd:q, un:(li.it.un||'UN'), preco:li.venc.preco});
         lhtml+='<div style="display:flex;gap:8px;font-size:12px;color:#5F5E5A;padding:3px 0;border-top:1px solid #f0f0f0"><span style="flex:1">'+_precoEsc(li.it.desc)+'</span><span style="font-weight:600;color:#16267A;white-space:nowrap">'+_precoBRL(li.venc.preco)+'</span></div>';
       }
       ganhosArr.push({nome:nm, itens:itensF, subtotal:sub});
-      h+='<div style="border:1px solid #cfe0d6;background:#F3FAF6;border-radius:11px;padding:10px;margin-bottom:8px">'
+      cards+='<div style="border:1px solid #cfe0d6;background:#F3FAF6;border-radius:11px;padding:10px;margin-bottom:8px">'
         +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-trophy" style="color:#0F6E56;font-size:17px"></i><span style="flex:1;font-size:13px;font-weight:700;color:#0F6E56">'+_precoEsc(nm)+'</span><span style="font-size:11px;color:#5F5E5A">'+lst.length+' itens · '+_precoBRL(sub)+'</span></div>'
         +lhtml
         +'<button onclick="cwPdfForn('+g+')" style="margin-top:9px;width:100%;padding:9px;border:1px solid #0F6E56;background:#fff;color:#0F6E56;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="ti ti-file-type-pdf"></i> Imprimir / enviar pra este</button>'
         +'</div>';
     }
+    h+='<div style="display:flex;align-items:center;gap:8px;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:#16267A;flex:1">Ganhos por fornecedor</span>'
+      +'<button onclick="cwPdfTodos()" style="padding:7px 12px;border:1px solid #16267A;background:#fff;color:#16267A;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-printer"></i> Exportar todos</button></div>';
+    h+=_cwGraficoGanhos(ganhosArr);
+    h+=cards;
   }
   _cwResult={ titulo:(c.titulo||'Cotação'), ganhosArr:ganhosArr };
   h+='<div style="font-size:10.5px;color:#9a988f;margin-top:14px;line-height:1.5">Margem = (nosso preço de venda − preço do vencedor) ÷ preço de venda. Considera o preço do vencedor como custo de compra.</div>';
   document.getElementById('cwr-box').innerHTML=h;
+  _cwAnimaBarras();
 }
 var _cwResult=null;
 function _cwEscP(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -5202,6 +5207,32 @@ function _cwPrintPedido(titulo, secoes){
 }
 function cwPdfTodos(){ if(!_cwResult||!_cwResult.ganhosArr.length){ toast('Sem vencedores pra exportar.'); return; } _cwPrintPedido((_cwResult.titulo||'Cotação')+' — todos os vencedores', _cwResult.ganhosArr); }
 function cwPdfForn(idx){ if(!_cwResult||!_cwResult.ganhosArr[idx]) return; _cwPrintPedido(_cwResult.titulo||'Cotação', [_cwResult.ganhosArr[idx]]); }
+function _cwGraficoGanhos(arr){
+  if(!arr || !arr.length) return '';
+  var ord=arr.slice().sort(function(a,b){ return b.subtotal-a.subtotal; });
+  var max=0; for(var i=0;i<ord.length;i++){ if(ord[i].subtotal>max) max=ord[i].subtotal; }
+  if(max<=0) return '';
+  var cores=['#0F6E56','#1B3A9E','#BA7517','#7A4FB5','#C53434','#2E8BC0','#E08A2B','#1FA85A'];
+  var h='<div style="background:#fff;border:1px solid #e6e9f0;border-radius:12px;padding:12px 12px 6px;margin:4px 0 10px">'
+    +'<div style="font-size:12px;font-weight:700;color:#16267A;margin-bottom:10px"><i class="ti ti-chart-bar" style="color:#BA7517"></i> Quem ganhou mais nesta cotação</div>';
+  for(var k=0;k<ord.length;k++){ var f=ord[k]; var pct=Math.round((f.subtotal/max)*100); var cor=cores[k%cores.length];
+    h+='<div style="margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px"><span style="color:#1a1a1a;font-weight:600">'+(k===0?'🏆 ':'')+_precoEsc(f.nome)+'</span><span style="color:'+cor+';font-weight:700">'+_precoBRL(f.subtotal)+'</span></div>'
+      +'<div style="background:#eef1f6;border-radius:8px;height:15px;overflow:hidden"><div class="cwbar" data-w="'+pct+'" style="width:0;height:100%;border-radius:8px;background:'+cor+';transition:width 1s cubic-bezier(.22,1,.36,1)"></div></div>'
+      +'</div>';
+  }
+  h+='</div>';
+  return h;
+}
+function _cwAnimaBarras(){
+  setTimeout(function(){ var bars=document.querySelectorAll('#cwr-box .cwbar'); for(var i=0;i<bars.length;i++){ bars[i].style.width=(bars[i].getAttribute('data-w')||0)+'%'; } }, 60);
+}
+function cwExcluir(){
+  if(!_cwAtual) return;
+  appConfirm('Excluir a cotação "'+(_cwAtual.titulo||'')+'"?\nEla some da lista (não dá pra desfazer).', async function(){
+    try{ var j=await _estPost({acao:'cotweb_fechar', cotId:_cwAtual.id, status:'REMOVIDA'}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Cotação excluída'); abrirCotacoesWeb(); }catch(e){ toast('⚠ Não consegui excluir'); }
+  }, {okText:'Excluir', danger:true});
+}
 function cwFechar(){
   if(!_cwAtual) return;
   appConfirm('Fechar a cotação "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores não vão mais conseguir responder.', async function(){
@@ -8696,6 +8727,7 @@ async function abrirColetas(){
   show('s-coletas');
   document.getElementById('col-lista-view').style.display='block';
   document.getElementById('col-detalhe-view').style.display='none';
+  var _czv=document.getElementById('col-cruza-view'); if(_czv) _czv.style.display='none';
   document.getElementById('col-lista').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando coletas…</div>';
   document.getElementById('col-sub').textContent='Carregando…';
   try{ await _colCarregar(); colRenderLista(); }
