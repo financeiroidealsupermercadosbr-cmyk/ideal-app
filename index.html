@@ -529,7 +529,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
       </div>
 
-      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>7</em></div>
+      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>8</em></div>
       <div class="qgrid">
         <div class="qcard qc-pv" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard qc-pv" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora</span></div>
@@ -538,6 +538,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-pv" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
         <div class="qcard qc-pv" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
         <div class="qcard qc-pv" data-menu="maisvendidos" onclick="abrirMaisVendidos()"><i class="ti ti-trophy"></i><span class="qnm">Mais vendidos</span></div>
+        <div class="qcard qc-pv" data-menu="cotacaoweb" onclick="abrirCotacaoWeb()"><i class="ti ti-world-search"></i><span class="qnm">Cotação web</span></div>
       </div>
 
       <div class="qsec qsec-op"><span class="qbar"></span><b>Operação da loja</b><em>4</em></div>
@@ -1247,18 +1248,36 @@ function doPost(e) {
     <i class="ti ti-trophy" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Mais vendidos</div>
-      <div style="font-size:11.5px;color:#888780" id="mv-sub">Carregando\u2026</div>
+      <div style="font-size:11.5px;color:#888780" id="mv-sub">Carregando…</div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="mvAtualizar()" title="Atualizar"></i>
   </div>
   <div style="padding:0 14px 90px">
-    <div id="mv-chips" style="display:flex;gap:7px;overflow-x:auto;padding:12px 0 2px;-webkit-overflow-scrolling:touch"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button id="mv-mt-fat" onclick="mvSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Por faturamento</button>
-      <button id="mv-mt-qtd" onclick="mvSetMetric('qtd')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por quantidade</button>
+    <div style="display:flex;gap:8px;margin:12px 0 4px">
+      <button id="mv-tabbtn-rank" onclick="mvSetTab('rank')" style="flex:1;border-radius:10px;height:38px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Mais vendidos</button>
+      <button id="mv-tabbtn-hora" onclick="mvSetTab('hora')" style="flex:1;border-radius:10px;height:38px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por horário</button>
     </div>
-    <div id="mv-lista" style="margin-top:14px"></div>
-    <div style="font-size:11px;color:#888780;margin-top:10px;line-height:1.5">Top 50 produtos do período. O hist\u00f3rico cobre ~60 dias \u2014 ent\u00e3o \u201cAno\u201d mostra o que j\u00e1 tem.</div>
+    <div id="mv-chips" style="display:flex;gap:7px;overflow-x:auto;padding:10px 0 2px;-webkit-overflow-scrolling:touch"></div>
+    <div id="mv-custom" style="display:none;gap:7px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <input id="mv-de" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box">
+      <span style="font-size:12px;color:#888780">até</span>
+      <input id="mv-ate" type="date" style="flex:1;min-width:120px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box">
+      <button class="btn-primary" style="width:auto;padding:8px 14px;margin-top:0" onclick="mvAplicarCustom()">Aplicar</button>
+    </div>
+
+    <div id="mv-tab-rank">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="mv-mt-fat" onclick="mvSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Por faturamento</button>
+        <button id="mv-mt-qtd" onclick="mvSetMetric('qtd')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por quantidade</button>
+      </div>
+      <div id="mv-lista" style="margin-top:14px"></div>
+      <div style="font-size:11px;color:#888780;margin-top:10px;line-height:1.5">Top 50 produtos do período. O histórico cobre ~60 dias.</div>
+    </div>
+
+    <div id="mv-tab-hora" style="display:none">
+      <div id="mv-hora-sub" style="font-size:12px;color:#888780;margin:14px 2px 8px">Carregando…</div>
+      <div id="mv-hora-chart"></div>
+    </div>
   </div>
 </div>
 
@@ -4493,25 +4512,30 @@ function orcPDF(){
   win.document.open(); win.document.write(html); win.document.close();
 }
 
-// ════════════ MAIS VENDIDOS (ranking de produtos por período) ════════════
-// Lê o VD_BASE (Vendas_Diaria: venda por produto por dia) que a ponte já sobe.
-let mvPeriodo='dia', mvMetric='fat', mvDe='', mvAte='';
-const MV_PRESETS=[['dia','Dia'],['semana','Semana'],['mes','Mês'],['ano','Ano']];
+// ════════════ MAIS VENDIDOS (ranking + por horário, com 2 abas) ════════════
+// Aba "rank": top produtos lendo VD_BASE (Vendas_Diaria). Aba "hora": gráfico de
+// faturamento por hora lendo a aba Vendas_Hora (que a ponte sobe).
+let mvPeriodo='mes', mvMetric='fat', mvTab='rank', mvDe='', mvAte='', mvCustomDe='', mvCustomAte='';
+let MV_HORA=null;
+const MV_PRESETS=[['dia','Dia'],['semana','Semana'],['mes','Mês'],['mespassado','Mês passado'],['ano','Ano'],['custom','Período']];
 
-function _mvMaxIso(){ var mx=''; for(var i=0;i<VD_BASE.length;i++){ if(VD_BASE[i].iso>mx) mx=VD_BASE[i].iso; } return mx; }
+function _mvMaxIso(){ var mx=''; for(var i=0;i<VD_BASE.length;i++){ if(VD_BASE[i].iso>mx) mx=VD_BASE[i].iso; }
+  if(MV_HORA){ for(var j=0;j<MV_HORA.length;j++){ if(MV_HORA[j].iso>mx) mx=MV_HORA[j].iso; } } return mx; }
 function _mvRange(key){
+  if(key==='custom') return {de:mvCustomDe||'', ate:mvCustomAte||''};
   var mx=_mvMaxIso(); if(!mx) return {de:'',ate:''};
   var d=new Date(mx+'T00:00:00'), de=new Date(d), ate=new Date(d);
   if(key==='dia'){ de=new Date(d); }
   else if(key==='semana'){ de=new Date(d); de.setDate(de.getDate()-6); }
   else if(key==='mes'){ de=new Date(d.getFullYear(), d.getMonth(), 1); }
+  else if(key==='mespassado'){ de=new Date(d.getFullYear(), d.getMonth()-1, 1); ate=new Date(d.getFullYear(), d.getMonth(), 0); }
   else if(key==='ano'){ de=new Date(d.getFullYear(), 0, 1); }
   return { de:_relISO(de), ate:_relISO(ate) };
 }
-function _mvPeriodoLabel(){ var nm={dia:'Dia',semana:'Semana',mes:'Mês',ano:'Ano'};
+function _mvPeriodoLabel(){ var nm={dia:'Dia',semana:'Semana',mes:'Mês',mespassado:'Mês passado',ano:'Ano',custom:'Período'};
   return (nm[mvPeriodo]||'Período')+' · '+_relBR(mvDe)+(mvDe!==mvAte?(' a '+_relBR(mvAte)):''); }
-function _mvItens(de, ate, lim){
-  lim=lim||50; var agg={};
+function _mvItens(de, ate){
+  var agg={};
   for(var i=0;i<VD_BASE.length;i++){ var v=VD_BASE[i];
     if(de && v.iso<de) continue; if(ate && v.iso>ate) continue;
     if(!agg[v.codigo]) agg[v.codigo]={fat:0,qtd:0}; agg[v.codigo].fat+=v.fat; agg[v.codigo].qtd+=v.qtd; }
@@ -4522,27 +4546,55 @@ function _mvItens(de, ate, lim){
 function mvRenderChips(){
   var el=document.getElementById('mv-chips'); if(!el) return; var h='';
   for(var i=0;i<MV_PRESETS.length;i++){ var pp=MV_PRESETS[i], on=(pp[0]===mvPeriodo);
-    h+='<button onclick="mvSetPeriodo(\''+pp[0]+'\')" style="flex:0 0 auto;border:1px solid '+(on?'#16267A':'#D3D1C7')+';background:'+(on?'#16267A':'#fff')+';color:'+(on?'#fff':'#16267A')+';border-radius:999px;height:32px;padding:0 16px;font-size:12.5px;font-weight:500;white-space:nowrap">'+pp[1]+'</button>'; }
+    h+='<button onclick="mvSetPeriodo(\''+pp[0]+'\')" style="flex:0 0 auto;border:1px solid '+(on?'#16267A':'#D3D1C7')+';background:'+(on?'#16267A':'#fff')+';color:'+(on?'#fff':'#16267A')+';border-radius:999px;height:32px;padding:0 14px;font-size:12.5px;font-weight:500;white-space:nowrap">'+pp[1]+'</button>'; }
   el.innerHTML=h;
 }
-function mvSetPeriodo(key){ mvPeriodo=key; mvRenderChips(); mvRender(); }
+function mvRenderActive(){ if(mvTab==='hora') mvRenderHora(); else mvRender(); }
+function mvSetTab(tab){
+  mvTab=tab;
+  function st(b,act){ if(!b)return; b.style.background=act?'#16267A':'#fff'; b.style.color=act?'#fff':'#16267A'; b.style.borderColor=act?'#16267A':'#D3D1C7'; }
+  st(document.getElementById('mv-tabbtn-rank'), tab==='rank'); st(document.getElementById('mv-tabbtn-hora'), tab==='hora');
+  var tr=document.getElementById('mv-tab-rank'), th=document.getElementById('mv-tab-hora');
+  if(tr) tr.style.display = tab==='rank'?'block':'none';
+  if(th) th.style.display = tab==='hora'?'block':'none';
+  mvRenderActive();
+}
+function mvSetPeriodo(key){
+  if(key==='custom'){ mvPeriodo='custom'; mvRenderChips();
+    var c=document.getElementById('mv-custom'); if(c) c.style.display='flex';
+    var di=document.getElementById('mv-de'), ai=document.getElementById('mv-ate');
+    if(di&&!di.value) di.value=mvDe||_relISO(new Date());
+    if(ai&&!ai.value) ai.value=mvAte||_relISO(new Date());
+    return;
+  }
+  mvPeriodo=key; var c=document.getElementById('mv-custom'); if(c) c.style.display='none';
+  mvRenderChips(); mvRenderActive();
+}
+function mvAplicarCustom(){
+  var di=document.getElementById('mv-de'), ai=document.getElementById('mv-ate');
+  var de=di&&di.value?di.value:'', ate=ai&&ai.value?ai.value:'';
+  if(!de||!ate){ toast('Escolha as duas datas'); return; }
+  if(de>ate){ var t=de; de=ate; ate=t; }
+  mvPeriodo='custom'; mvCustomDe=de; mvCustomAte=ate; mvRenderActive();
+}
 function mvSetMetric(m){
   mvMetric=m;
   function st(b,act){ if(!b) return; b.style.background=act?'#16267A':'#fff'; b.style.color=act?'#fff':'#16267A'; b.style.borderColor=act?'#16267A':'#D3D1C7'; }
   st(document.getElementById('mv-mt-fat'), m==='fat'); st(document.getElementById('mv-mt-qtd'), m==='qtd');
   mvRender();
 }
-async function mvAtualizar(){ toast('Atualizando…'); try{ await estSync(true); }catch(e){} mvRender(); }
+async function mvAtualizar(){ toast('Atualizando…'); MV_HORA=null; try{ await estSync(true); }catch(e){} mvRenderActive(); }
 async function abrirMaisVendidos(){
   show('s-maisvendidos');
-  if(!mvPeriodo) mvPeriodo='dia';
+  if(!mvPeriodo) mvPeriodo='mes';
+  if(!mvTab) mvTab='rank';
   mvRenderChips();
   if(!VD_BASE.length){
     _syncSplash(true, 'Baixando vendas por dia (1ª vez)…');
     try{ await _estReady(); await _vdReady(); }catch(e){ console.error('abrirMaisVendidos sync',e); }
     _syncSplash(false);
   }
-  mvRender();
+  mvSetTab(mvTab);
 }
 async function mvRender(){
   var r=_mvRange(mvPeriodo); mvDe=r.de; mvAte=r.ate;
@@ -4552,7 +4604,7 @@ async function mvRender(){
     try{ await _estReady(); await _vdReady(); }catch(e){}
   }
   if(!VD_BASE.length){ if(sub) sub.textContent='Sem dados'; box.innerHTML=_vazio({ico:'ti-trophy',tit:'Sem vendas ainda',sub:'Os dados de vendas por dia ainda não chegaram. Toque em ↻ pra sincronizar.'}); return; }
-  var itens=_mvItens(mvDe, mvAte, 50);
+  var itens=_mvItens(mvDe, mvAte);
   var lbl=_mvPeriodoLabel();
   if(!itens.length){ if(sub) sub.textContent=lbl; box.innerHTML='<div class="row-sub" style="padding:8px 2px">Nenhuma venda em '+lbl+'.</div>'; return; }
   var metric=mvMetric;
@@ -4574,6 +4626,49 @@ async function mvRender(){
   }
   box.innerHTML=html;
 }
+async function mvHoraLoad(){
+  var rows = await fetchRange('Vendas_Hora!A:D');
+  var out=[];
+  for(var i=0;i<rows.length;i++){ var rr=rows[i]; if(!rr||!rr[0]) continue;
+    var iso=String(rr[0]).trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+    out.push({iso:iso, hora:parseInt(rr[1],10)||0, fat:parseFloat(rr[2])||0, cupons:parseInt(rr[3],10)||0}); }
+  return out;
+}
+function mvBarInfo(h){ var a=window.MV_HORA_AGG; if(!a) return; toast(h+'h · '+_relMoney(a.acc[h]||0)+' · '+(a.cup[h]||0)+' cupons'); }
+async function mvRenderHora(){
+  var r=_mvRange(mvPeriodo); mvDe=r.de; mvAte=r.ate;
+  var sub=document.getElementById('mv-hora-sub'), box=document.getElementById('mv-hora-chart'); if(!box) return;
+  var subMv=document.getElementById('mv-sub'); if(subMv) subMv.textContent=_mvPeriodoLabel();
+  if(MV_HORA===null){
+    box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando vendas por hora…</div>';
+    try{ MV_HORA = await mvHoraLoad(); }catch(e){ console.error('mvHora',e); if(sub) sub.textContent=''; box.innerHTML='<div class="row-sub" style="padding:8px 2px;color:#B23C3C">Não consegui carregar. Toque em ↻.</div>'; return; }
+  }
+  if(!MV_HORA || !MV_HORA.length){ if(sub) sub.textContent=''; box.innerHTML=_vazio({ico:'ti-clock',tit:'Sem dados por hora ainda',sub:'Assim que a ponte de “vendas por hora” subir, o gráfico aparece aqui.'}); return; }
+  var acc={}, cup={};
+  for(var i=0;i<MV_HORA.length;i++){ var rh=MV_HORA[i];
+    if(mvDe && rh.iso<mvDe) continue; if(mvAte && rh.iso>mvAte) continue;
+    acc[rh.hora]=(acc[rh.hora]||0)+rh.fat; cup[rh.hora]=(cup[rh.hora]||0)+rh.cupons; }
+  window.MV_HORA_AGG={acc:acc, cup:cup};
+  var horas=Object.keys(acc).map(Number).sort(function(a,b){ return a-b; });
+  if(!horas.length){ if(sub) sub.textContent=_mvPeriodoLabel(); box.innerHTML='<div class="row-sub" style="padding:8px 2px">Nenhuma venda por hora em '+_mvPeriodoLabel()+'.</div>'; return; }
+  var max=0, total=0, totCup=0, pico=horas[0];
+  horas.forEach(function(h){ if(acc[h]>max){ max=acc[h]; pico=h; } total+=acc[h]; totCup+=(cup[h]||0); });
+  if(sub) sub.textContent='Pico: '+pico+'h · '+_relMoney(max)+' · '+_mvPeriodoLabel();
+  var H=140;
+  var html='<div style="display:flex;gap:14px;margin:2px 2px 10px"><div><div style="font-size:11px;color:#888780">Faturamento</div><div style="font-size:15px;font-weight:600;color:#16267A">'+_relMoney(total)+'</div></div>'
+    +'<div><div style="font-size:11px;color:#888780">Cupons</div><div style="font-size:15px;font-weight:600;color:#16267A">'+totCup.toLocaleString('pt-BR')+'</div></div></div>';
+  html+='<div style="display:flex;align-items:flex-end;gap:4px;overflow-x:auto;padding:6px 2px 0;-webkit-overflow-scrolling:touch">';
+  horas.forEach(function(h){
+    var hp=Math.max(3, Math.round(H*acc[h]/max));
+    html+='<div onclick="mvBarInfo('+h+')" style="flex:0 0 auto;width:26px;display:flex;flex-direction:column;align-items:center;cursor:pointer">'
+      +'<div style="width:18px;height:'+hp+'px;background:linear-gradient(#F2A938,#E07C0B);border-radius:4px 4px 0 0"></div>'
+      +'<div style="font-size:9px;color:#888780;margin-top:4px">'+h+'</div></div>';
+  });
+  html+='</div><div style="font-size:11px;color:#888780;margin-top:8px;text-align:center">Toque numa barra pra ver o valor da hora.</div>';
+  box.innerHTML=html;
+}
+
+function abrirCotacaoWeb(){ toast('Cotação web — em breve \ud83d\udea7'); }
 
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
