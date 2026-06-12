@@ -5027,21 +5027,57 @@ function cwRenderResultado(){
     }
   }
   var nomesGanho=Object.keys(ganhos);
+  var ganhosArr=[];
   if(nomesGanho.length){
-    h+='<div style="font-size:13px;font-weight:700;color:#16267A;margin:16px 2px 8px">Ganhos por fornecedor</div>';
-    for(var g=0;g<nomesGanho.length;g++){ var nm=nomesGanho[g]; var lst=ganhos[nm]; var sub=0;
-      var lhtml='';
-      for(var x=0;x<lst.length;x++){ var li=lst[x]; sub+=li.venc.preco*(Number(li.it.qtd)||0);
+    h+='<div style="display:flex;align-items:center;gap:8px;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:#16267A;flex:1">Ganhos por fornecedor</span>'
+      +'<button onclick="cwPdfTodos()" style="padding:7px 12px;border:1px solid #16267A;background:#fff;color:#16267A;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-printer"></i> Exportar todos</button></div>';
+    for(var g=0;g<nomesGanho.length;g++){ var nm=nomesGanho[g]; var lst=ganhos[nm]; var sub=0; var lhtml=''; var itensF=[];
+      for(var x=0;x<lst.length;x++){ var li=lst[x]; var q=(Number(li.it.qtd)||0); sub+=li.venc.preco*q;
+        itensF.push({desc:li.it.desc, qtd:q, un:(li.it.un||'UN'), preco:li.venc.preco});
         lhtml+='<div style="display:flex;gap:8px;font-size:12px;color:#5F5E5A;padding:3px 0;border-top:1px solid #f0f0f0"><span style="flex:1">'+_precoEsc(li.it.desc)+'</span><span style="font-weight:600;color:#16267A;white-space:nowrap">'+_precoBRL(li.venc.preco)+'</span></div>';
       }
+      ganhosArr.push({nome:nm, itens:itensF, subtotal:sub});
       h+='<div style="border:1px solid #cfe0d6;background:#F3FAF6;border-radius:11px;padding:10px;margin-bottom:8px">'
         +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-trophy" style="color:#0F6E56;font-size:17px"></i><span style="flex:1;font-size:13px;font-weight:700;color:#0F6E56">'+_precoEsc(nm)+'</span><span style="font-size:11px;color:#5F5E5A">'+lst.length+' itens · '+_precoBRL(sub)+'</span></div>'
-        +lhtml+'</div>';
+        +lhtml
+        +'<button onclick="cwPdfForn('+g+')" style="margin-top:9px;width:100%;padding:9px;border:1px solid #0F6E56;background:#fff;color:#0F6E56;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="ti ti-file-type-pdf"></i> Imprimir / enviar pra este</button>'
+        +'</div>';
     }
   }
+  _cwResult={ titulo:(c.titulo||'Cotação'), ganhosArr:ganhosArr };
   h+='<div style="font-size:10.5px;color:#9a988f;margin-top:14px;line-height:1.5">Margem = (nosso preço de venda − preço do vencedor) ÷ preço de venda. Considera o preço do vencedor como custo de compra.</div>';
   document.getElementById('cwr-box').innerHTML=h;
 }
+var _cwResult=null;
+function _cwEscP(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _cwAbrePrint(html){ var w=window.open('','_blank'); if(!w){ toast('Permita pop-ups pra gerar o PDF'); return; } w.document.open(); w.document.write(html); w.document.close(); }
+function _cwSecaoForn(sec){
+  var linhas=''; var tot=0;
+  for(var i=0;i<sec.itens.length;i++){ var it=sec.itens[i]; var subt=it.preco*(Number(it.qtd)||0); tot+=subt;
+    linhas+='<tr><td>'+_cwEscP(it.desc)+'</td><td class="c">'+(Number(it.qtd)||0)+' '+_cwEscP(it.un||'UN')+'</td><td class="v">'+_precoBRL(it.preco)+'</td><td class="v">'+_precoBRL(subt)+'</td></tr>';
+  }
+  return '<div class="forn"><div class="fname">'+_cwEscP(sec.nome)+' <span>&middot; '+sec.itens.length+' itens</span></div>'
+    +'<table><tr><th>Produto</th><th class="c">Qtd</th><th class="v">Pre&ccedil;o unit.</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
+    +'<div class="tot"><span>Total '+_cwEscP(sec.nome)+'</span><span>'+_precoBRL(tot)+'</span></div></div>';
+}
+function _cwPrintPedido(titulo, secoes){
+  if(!secoes || !secoes.length){ toast('Sem itens pra exportar.'); return; }
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var corpo='', grand=0;
+  for(var s=0;s<secoes.length;s++){ corpo+=_cwSecaoForn(secoes[s]); for(var j=0;j<secoes[s].itens.length;j++){ grand+=secoes[s].itens[j].preco*(Number(secoes[s].itens[j].qtd)||0); } }
+  var grandHtml=(secoes.length>1)?('<div class="grand"><span>Total geral</span><span>'+_precoBRL(grand)+'</span></div>'):'';
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Cota&ccedil;&atilde;o &mdash; itens vencedores</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 12px;border-bottom:1px solid #eee;line-height:1.7}.forn{margin:14px 0;border:1px solid #cfe0d6;border-radius:8px;padding:10px}.fname{font-size:14px;font-weight:bold;color:#0F6E56}.fname span{font-weight:normal;font-size:11px;color:#5F5E5A}table{width:100%;border-collapse:collapse;margin-top:6px}th{font-size:10px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:5px 4px;border-bottom:1px solid #ccd}td{padding:6px 4px;font-size:12.5px;border-bottom:1px solid #f1f1f1;color:#1a1a1a}td.c,th.c{text-align:center;white-space:nowrap}td.v,th.v{text-align:right;white-space:nowrap}.tot{display:flex;justify-content:space-between;font-size:13px;font-weight:bold;padding:8px 4px 2px;color:#16267A}.grand{display:flex;justify-content:space-between;font-size:15px;font-weight:bold;padding:12px 4px;margin-top:10px;border-top:2px solid #1B3A9E;color:#1B3A9E}.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}</style></head><body><div class="sheet">'
+    +'<div class="hd"><h1>Cota&ccedil;&atilde;o &mdash; itens vencedores</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    +'<div class="body"><div class="meta"><b>'+_cwEscP(titulo)+'</b><br>Gerado em '+agora+'</div>'
+    +corpo+grandHtml
+    +'<div class="foot">Pre&ccedil;os conforme cota&ccedil;&atilde;o respondida pelos fornecedores. Documento gerado pelo app &mdash; Ideal Supermercados.</div>'
+    +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    +'</div></div><scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt></body></html>';
+  _cwAbrePrint(html);
+}
+function cwPdfTodos(){ if(!_cwResult||!_cwResult.ganhosArr.length){ toast('Sem vencedores pra exportar.'); return; } _cwPrintPedido((_cwResult.titulo||'Cotação')+' — todos os vencedores', _cwResult.ganhosArr); }
+function cwPdfForn(idx){ if(!_cwResult||!_cwResult.ganhosArr[idx]) return; _cwPrintPedido(_cwResult.titulo||'Cotação', [_cwResult.ganhosArr[idx]]); }
 function cwFechar(){
   if(!_cwAtual) return;
   appConfirm('Fechar a cotação "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores não vão mais conseguir responder.', async function(){
