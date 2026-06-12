@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Cotação — Ideal Supermercados</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#eef1f6;color:#16267A;padding:0 0 40px}
+  .top{background:#16267A;color:#fff;padding:16px 18px;display:flex;align-items:center;gap:10px}
+  .top .logo{width:34px;height:34px;border-radius:50%;background:#FFC400;display:flex;align-items:center;justify-content:center;color:#16267A;font-weight:800;font-size:15px;flex:0 0 auto}
+  .top h1{font-size:16px;font-weight:700}.top .sub{font-size:11px;opacity:.85}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 14px}
+  .card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:14px}
+  .card h2{font-size:16px;margin-bottom:4px}
+  .muted{font-size:12.5px;color:#6b6b6b;line-height:1.5}
+  label{font-size:12px;color:#6b6b6b;display:block;margin:12px 0 4px}
+  select,input[type=text],input[type=tel]{width:100%;padding:12px;border:1px solid #d8dde6;border-radius:10px;font-size:15px;background:#fff;color:#16267A}
+  .btn{display:block;width:100%;border:none;border-radius:11px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px}
+  .btn-prim{background:#0F6E56;color:#fff}
+  .btn-amber{background:#BA7517;color:#fff}
+  .btn-ghost{background:#fff;color:#16267A;border:1px solid #c9d3e6}
+  .btn:disabled{opacity:.6;cursor:default}
+  .erro{background:#FDECEC;border:1px solid #F3B5B5;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none}
+  .item{border:1px solid #e6e9f0;border-radius:12px;padding:12px;margin-bottom:10px}
+  .item .nome{font-size:14.5px;font-weight:600;color:#1a1a1a;line-height:1.3}
+  .item .meta{font-size:11.5px;color:#9a988f;margin-top:2px}
+  .row{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .preco{flex:1;display:flex;align-items:center;border:1px solid #d8dde6;border-radius:10px;padding:0 10px;background:#fff}
+  .preco span{font-size:14px;color:#9a988f}
+  .preco input{border:none;outline:none;flex:1;padding:11px 6px;font-size:16px;color:#16267A;font-weight:600;background:transparent}
+  .preco.off{opacity:.4}
+  .nt{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#A32D2D;white-space:nowrap;cursor:pointer;user-select:none}
+  .nt input{width:18px;height:18px;accent-color:#A32D2D}
+  .barra{position:sticky;bottom:0;background:linear-gradient(transparent,#eef1f6 22%);padding:14px;max-width:560px;margin:0 auto}
+  .ok{text-align:center;padding:24px 10px}
+  .ok .big{font-size:46px}
+  .ok h2{font-size:20px;margin:8px 0 4px;color:#0F6E56}
+  .center{text-align:center}
+  .load{display:flex;align-items:center;justify-content:center;gap:10px;color:#6b6b6b;font-size:14px;padding:30px}
+  .spin{width:18px;height:18px;border:3px solid #cfd6e4;border-top-color:#16267A;border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#E5F4EE;color:#0F6E56}
+  .pill.fech{background:#FDECEC;color:#A32D2D}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">ID</div>
+  <div><h1>Cotação de Preços</h1><div class="sub">Ideal Supermercados</div></div>
+</div>
+
+<div class="wrap" id="app">
+  <div class="load"><span class="spin"></span> Carregando cotação…</div>
+</div>
+
+<script>
+var APPS_URL = 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+var COT_ID = (function(){ var m=location.search.match(/[?&]c=([^&]+)/); return m?decodeURIComponent(m[1]):''; })();
+var ESTADO = { titulo:'', status:'', fornecedores:[], fornId:'', nome:'', itens:[], respostas:[] };
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function el(){ return document.getElementById('app'); }
+function precoNum(v){ v=String(v==null?'':v).replace(/[^\d.,]/g,'').replace(/\./g,'').replace(',', '.'); var n=parseFloat(v); return isNaN(n)?0:n; }
+function precoBR(n){ n=Number(n)||0; return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+async function api(payload){
+  payload.cotId = COT_ID;
+  var res = await fetch(APPS_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+async function init(){
+  if(!COT_ID){ el().innerHTML='<div class="card"><h2>Link inválido</h2><div class="muted">Este link não tem o código da cotação. Peça o link certo pro supermercado.</div></div>'; return; }
+  try{
+    var j = await api({acao:'cotweb_publico'});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    ESTADO.titulo=j.titulo||'Cotação'; ESTADO.status=j.status||''; ESTADO.fornecedores=j.fornecedores||[];
+    renderLogin();
+  }catch(e){
+    el().innerHTML='<div class="card"><h2>Não consegui abrir</h2><div class="muted">'+esc(e.message||'Tente novamente em instantes.')+'</div></div>';
+  }
+}
+
+function renderLogin(){
+  var fech = String(ESTADO.status).toUpperCase()!=='ABERTA';
+  var opts='<option value="">— escolha seu nome —</option>';
+  for(var i=0;i<ESTADO.fornecedores.length;i++){ var f=ESTADO.fornecedores[i]; opts+='<option value="'+esc(f.id)+'">'+esc(f.nome)+'</option>'; }
+  el().innerHTML=''
+    +'<div class="card">'
+    +'<h2>'+esc(ESTADO.titulo)+'</h2>'
+    +'<div class="muted" style="margin-top:4px">'+(fech?'<span class="pill fech">FECHADA</span> Esta cotação já foi encerrada.':'<span class="pill">ABERTA</span> Preencha os preços dos itens que você tem.')+'</div>'
+    +'<label>Seu nome (fornecedor)</label>'
+    +'<select id="lg-forn">'+opts+'</select>'
+    +'<label>PIN de acesso</label>'
+    +'<input id="lg-pin" type="tel" inputmode="numeric" maxlength="8" placeholder="ex.: 1234" autocomplete="off">'
+    +'<button class="btn btn-prim" id="lg-btn">Entrar</button>'
+    +'<div class="erro" id="lg-erro"></div>'
+    +'</div>'
+    +'<div class="muted center">Cada fornecedor enxerga apenas a própria cotação.</div>';
+  document.getElementById('lg-btn').onclick=entrar;
+}
+
+async function entrar(){
+  var fornId=document.getElementById('lg-forn').value;
+  var pin=(document.getElementById('lg-pin').value||'').trim();
+  var err=document.getElementById('lg-erro');
+  err.style.display='none';
+  if(!fornId){ err.textContent='Escolha seu nome na lista.'; err.style.display='block'; return; }
+  if(!pin){ err.textContent='Digite o PIN.'; err.style.display='block'; return; }
+  var btn=document.getElementById('lg-btn'); btn.disabled=true; btn.textContent='Entrando…';
+  try{
+    var j=await api({acao:'cotweb_login', fornId:fornId, pin:pin});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    ESTADO.fornId=fornId; ESTADO.nome=j.nome||''; ESTADO.pin=pin; ESTADO.titulo=j.titulo||ESTADO.titulo; ESTADO.status=j.status||ESTADO.status;
+    ESTADO.itens=j.itens||[]; ESTADO.respostas=j.respostas||[];
+    renderFill();
+  }catch(e){
+    err.textContent=(e.message==='PIN incorreto')?'PIN incorreto. Confira com o supermercado.':(e.message||'Não consegui entrar.');
+    err.style.display='block'; btn.disabled=false; btn.textContent='Entrar';
+  }
+}
+
+function _respDe(cod){ for(var i=0;i<ESTADO.respostas.length;i++){ if(String(ESTADO.respostas[i].cod)===String(cod)) return ESTADO.respostas[i]; } return null; }
+
+function renderFill(){
+  var fech = String(ESTADO.status).toUpperCase()!=='ABERTA';
+  var h='<div class="card"><h2>'+esc(ESTADO.titulo)+'</h2>'
+    +'<div class="muted" style="margin-top:4px">Fornecedor: <b>'+esc(ESTADO.nome)+'</b> · '+ESTADO.itens.length+' itens</div>'
+    +'<div class="muted" style="margin-top:6px">Preencha o <b>preço unitário</b> de cada item. Se não tiver o produto, marque <b>"Não tenho"</b>.</div></div>';
+  for(var i=0;i<ESTADO.itens.length;i++){ var it=ESTADO.itens[i]; var r=_respDe(it.cod);
+    var temNao = r && r.tem===false;
+    var precoVal = (r && r.tem!==false && r.preco) ? precoBR(r.preco) : '';
+    h+='<div class="item" data-cod="'+esc(it.cod)+'">'
+      +'<div class="nome">'+esc(it.desc)+'</div>'
+      +'<div class="meta">'+(Number(it.qtd)||0)+' '+esc(it.un||'UN')+(it.manual?'':(' · cód '+esc(it.cod)))+'</div>'
+      +'<div class="row">'
+      +'<div class="preco'+(temNao?' off':'')+'"><span>R$</span><input class="ip-preco" inputmode="decimal" placeholder="0,00" value="'+esc(precoVal)+'" '+(temNao?'disabled':'')+'></div>'
+      +'<label class="nt"><input type="checkbox" class="ip-nt" '+(temNao?'checked':'')+'> Não tenho</label>'
+      +'</div></div>';
+  }
+  if(fech){
+    h+='<div class="card center muted">Esta cotação está <b>fechada</b>. Você pode ver, mas não enviar.</div>';
+  }
+  el().innerHTML=h;
+  if(!fech){
+    var b=document.createElement('div'); b.className='barra';
+    b.innerHTML='<button class="btn btn-amber" id="fl-enviar">Enviar cotação</button><div class="erro" id="fl-erro"></div>';
+    el().appendChild(b);
+    document.getElementById('fl-enviar').onclick=enviar;
+  }
+  // ligar comportamento "não tenho" <-> preço
+  var items=el().querySelectorAll('.item');
+  for(var k=0;k<items.length;k++){ (function(box){
+    var nt=box.querySelector('.ip-nt'); var pr=box.querySelector('.ip-preco'); var wrap=box.querySelector('.preco');
+    nt.addEventListener('change',function(){ if(nt.checked){ pr.value=''; pr.disabled=true; wrap.classList.add('off'); } else { pr.disabled=false; wrap.classList.remove('off'); pr.focus(); } });
+    pr.addEventListener('input',function(){ if(pr.value && nt.checked){ nt.checked=false; pr.disabled=false; wrap.classList.remove('off'); } });
+  })(items[k]); }
+}
+
+async function enviar(){
+  var err=document.getElementById('fl-erro'); if(err){ err.style.display='none'; }
+  var items=el().querySelectorAll('.item'); var respostas=[];
+  for(var i=0;i<items.length;i++){ var box=items[i]; var cod=box.getAttribute('data-cod');
+    var nt=box.querySelector('.ip-nt').checked; var preco=precoNum(box.querySelector('.ip-preco').value);
+    respostas.push({ cod:cod, preco:(nt?0:preco), tem:(nt?false:(preco>0)) });
+  }
+  var btn=document.getElementById('fl-enviar'); btn.disabled=true; btn.textContent='Enviando…';
+  try{
+    var j=await api({acao:'cotweb_responder', fornId:ESTADO.fornId, pin:ESTADO.pin, respostas:respostas});
+    if(!j.ok && j.erro==='PIN incorreto'){ throw new Error('Sessão expirada. Recarregue a página e entre de novo.'); }
+    if(!j.ok) throw new Error(j.erro||'falha');
+    renderDone();
+  }catch(e){
+    if(err){ err.textContent=e.message||'Não consegui enviar.'; err.style.display='block'; }
+    btn.disabled=false; btn.textContent='Enviar cotação';
+  }
+}
+
+function renderDone(){
+  el().innerHTML='<div class="card ok"><div class="big">✅</div><h2>Cotação enviada!</h2>'
+    +'<div class="muted">Obrigado, <b>'+esc(ESTADO.nome)+'</b>. Seus preços foram registrados.</div>'
+    +'<button class="btn btn-ghost" id="dn-edit" style="margin-top:18px">Editar minha cotação</button></div>'
+    +'<div class="muted center">Você pode fechar esta página.</div>';
+  document.getElementById('dn-edit').onclick=function(){ renderFill(); };
+}
+
+init();
+</script>
+</body>
+</html>
