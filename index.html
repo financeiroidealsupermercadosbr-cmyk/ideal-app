@@ -4908,12 +4908,17 @@ function cwRenderPainel(){
     +'<div style="font-size:11.5px;color:#16267A;word-break:break-all;background:#fff;border:1px solid #E0D6B0;border-radius:8px;padding:8px;margin-bottom:8px">'+_precoEsc(link)+'</div>'
     +'<button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="cwCopiar()"><i class="ti ti-copy"></i> Copiar link</button>'
     +'</div>';
-  h+='<div style="font-size:12px;font-weight:600;color:#16267A;margin:6px 2px 8px">Fornecedores</div>';
-  for(var f=0;f<c.fornecedores.length;f++){ var fo=c.fornecedores[f]; var cor=fo.respondeu?'#1FA85A':'#C9A23A';
-    h+='<div class="row-card" style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+  h+='<div style="font-size:12px;font-weight:600;color:#16267A;margin:6px 2px 8px">Fornecedores — toque pra mandar no WhatsApp</div>';
+  for(var f=0;f<c.fornecedores.length;f++){ var fo=c.fornecedores[f]; var cor=fo.respondeu?'#1FA85A':'#C9A23A'; var fid=_precoEsc(fo.id);
+    h+='<div class="row-card" style="display:block;margin-bottom:8px">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
       +'<i class="ti '+(fo.respondeu?'ti-circle-check-filled':'ti-clock')+'" style="color:'+cor+';font-size:19px"></i>'
       +'<div style="flex:1"><div class="row-label">'+_precoEsc(fo.nome)+'</div>'
-      +'<div class="row-sub">'+(fo.respondeu?('respondeu · '+_precoEsc(fo.em)):('aguardando · PIN '+_precoEsc(fo.pin)))+'</div></div></div>';
+      +'<div class="row-sub">'+(fo.respondeu?('respondeu · '+_precoEsc(fo.em)):('aguardando · PIN '+_precoEsc(fo.pin)))+'</div></div></div>'
+      +'<div style="display:flex;gap:8px;margin-top:9px">'
+      +'<button class="btn-primary" style="flex:1;margin-top:0;background:#1FA85A" onclick="cwWhats(\''+fid+'\')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>'
+      +'<button style="flex:0 0 auto;padding:0 14px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" onclick="cwCopiarMsg(\''+fid+'\')"><i class="ti ti-copy"></i> Msg</button>'
+      +'</div></div>';
   }
   if(aberta){ h+='<button class="btn-primary" style="margin-top:14px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwFechar()"><i class="ti ti-lock"></i> Fechar cotação</button>'; }
   else { h+='<div class="row-sub" style="padding:12px 2px;text-align:center">Cotação fechada — fornecedores não respondem mais.</div>'; }
@@ -4921,6 +4926,22 @@ function cwRenderPainel(){
   document.getElementById('cw-painel').innerHTML=h;
 }
 function cwCopiar(){ if(_cwAtual) _cwCopiarTxt(_cwLink(_cwAtual.id)); }
+function _cwForn(fid){ var c=_cwAtual; if(!c) return null; for(var i=0;i<c.fornecedores.length;i++){ if(String(c.fornecedores[i].id)===String(fid)) return c.fornecedores[i]; } return null; }
+function _cwMsgFor(fid){
+  var c=_cwAtual; var fo=_cwForn(fid); if(!c||!fo) return '';
+  return 'Olá, '+fo.nome+'! Segue a cotação "'+(c.titulo||'')+'" da Ideal Supermercados: '+_cwLink(c.id)+' — Entre com o nome da sua empresa e o PIN '+fo.pin+'. Qualquer dúvida, estamos à disposição!';
+}
+function _cwWaNum(contato){ var d=String(contato||'').replace(/\D/g,''); if(!d) return ''; if(d.length<=11 && d.indexOf('55')!==0) d='55'+d; return d; }
+function cwWhats(fid){
+  var fo=_cwForn(fid); var msg=_cwMsgFor(fid); if(!fo||!msg) return;
+  var num=_cwWaNum(fo.contato);
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg), '_blank');
+}
+function cwCopiarMsg(fid){
+  var msg=_cwMsgFor(fid); if(!msg) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(msg).then(function(){ toast('✓ Mensagem copiada'); }).catch(function(){ toast('Segure no texto pra copiar'); }); }
+  else { toast('Segure no texto pra copiar'); }
+}
 function cwFechar(){
   if(!_cwAtual) return;
   appConfirm('Fechar a cotação "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores não vão mais conseguir responder.', async function(){
