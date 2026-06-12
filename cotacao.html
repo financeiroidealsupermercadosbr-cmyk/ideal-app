@@ -134,7 +134,7 @@ function renderFill(){
     var precoVal = (r && r.tem!==false && r.preco) ? precoBR(r.preco) : '';
     h+='<div class="item" data-cod="'+esc(it.cod)+'">'
       +'<div class="nome">'+esc(it.desc)+'</div>'
-      +'<div class="meta">'+(Number(it.qtd)||0)+' '+esc(it.un||'UN')+(it.manual?'':(' · cód '+esc(it.cod)))+'</div>'
+      +'<div class="meta">'+(Number(it.qtd)||0)+' '+esc(it.un||'UN')+(it.barras?(' · cód. barras '+esc(it.barras)):'')+'</div>'
       +'<div class="row">'
       +'<div class="preco'+(temNao?' off':'')+'"><span>R$</span><input class="ip-preco" inputmode="decimal" placeholder="0,00" value="'+esc(precoVal)+'" '+(temNao?'disabled':'')+'></div>'
       +'<label class="nt"><input type="checkbox" class="ip-nt" '+(temNao?'checked':'')+'> Não tenho</label>'
