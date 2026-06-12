@@ -1427,11 +1427,31 @@ function doPost(e) {
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cwCarregar()" title="Atualizar"></i>
   </div>
   <div id="cw-lista-view" style="padding:12px 14px 100px">
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px">
+      <div style="flex:1"><label style="font-size:10.5px;color:#888780">De</label><input id="cw-fdata-de" type="date" oninput="cwRenderLista()" style="width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
+      <div style="flex:1"><label style="font-size:10.5px;color:#888780">Até</label><input id="cw-fdata-ate" type="date" oninput="cwRenderLista()" style="width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
+      <button onclick="cwLimparData()" style="padding:8px 10px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:9px;font-size:12px;cursor:pointer;white-space:nowrap">Limpar</button>
+    </div>
+    <button class="btn-primary" style="margin-top:0;background:#1B3A9E" onclick="cwAbrirResumo()"><i class="ti ti-chart-bar"></i> Ranking dos fornecedores</button>
+    <div style="height:12px"></div>
     <div id="cw-lista"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
   </div>
   <div id="cw-painel-view" style="display:none;padding:0 14px 100px">
     <div id="cw-painel"></div>
   </div>
+</div>
+
+<!-- TELA: Ranking dos fornecedores (resumo) -->
+<div class="screen" id="s-cwresumo">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="abrirCotacoesWeb()"></i>
+    <i class="ti ti-chart-bar" style="font-size:20px;color:#1B3A9E;flex-shrink:0"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Ranking dos fornecedores</div>
+      <div style="font-size:11.5px;color:#888780" id="cwres-sub">—</div>
+    </div>
+  </div>
+  <div style="padding:14px 14px 100px"><div id="cwres-box"></div></div>
 </div>
 
 <!-- TELA: Resultado da Cotação Web -->
@@ -5011,12 +5031,23 @@ async function cwCarregar(){
     COTWEB=j.cotacoes||[]; cwRenderLista();
   }catch(e){ console.error('cwCarregar',e); if(box) box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque no ↻.</div>'; if(sub) sub.textContent='sem conexão'; }
 }
+function _cwEpDe(id){ id=String(id||''); return id.charAt(0)==='Q'?(Number(id.slice(1))||0):0; }
+function _cwRangeEp(){
+  var de=document.getElementById('cw-fdata-de'); var ate=document.getElementById('cw-fdata-ate');
+  var dv=de&&de.value, av=ate&&ate.value;
+  return { deEp: dv?new Date(dv+'T00:00:00').getTime():0, ateEp: av?new Date(av+'T23:59:59').getTime():0 };
+}
+function cwLimparData(){ var de=document.getElementById('cw-fdata-de'); var ate=document.getElementById('cw-fdata-ate'); if(de) de.value=''; if(ate) ate.value=''; cwRenderLista(); }
+function _cwFmtDia(ep){ ep=Number(ep)||0; if(!ep) return ''; var d=new Date(ep); var p=function(n){return ('0'+n).slice(-2);}; return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear(); }
 function cwRenderLista(){
   var sub=document.getElementById('cw-sub'); var box=document.getElementById('cw-lista');
-  if(sub) sub.textContent=COTWEB.length+' cotação(ões)';
-  if(!COTWEB.length){ box.innerHTML=_vazio({ico:'ti-world',tit:'Nenhuma cotação web ainda',sub:'Crie uma a partir de uma coleta salva (botão "Mandar pra Cotação Web").'}); return; }
+  if(!COTWEB.length){ if(sub) sub.textContent='0 cotação(ões)'; box.innerHTML=_vazio({ico:'ti-world',tit:'Nenhuma cotação web ainda',sub:'Crie uma a partir de uma coleta salva (botão "Mandar pra Cotação Web").'}); return; }
+  var rng=_cwRangeEp();
+  var lista=COTWEB.filter(function(c){ var ep=_cwEpDe(c.id); if(rng.deEp&&ep&&ep<rng.deEp) return false; if(rng.ateEp&&ep&&ep>rng.ateEp) return false; return true; });
+  if(sub) sub.textContent=lista.length+' de '+COTWEB.length+' cotação(ões)';
+  if(!lista.length){ box.innerHTML='<div class="row-sub" style="padding:14px 2px;text-align:center;color:#888780">Nenhuma cotação nesse período.</div>'; return; }
   var h='';
-  for(var i=0;i<COTWEB.length;i++){ var c=COTWEB[i];
+  for(var i=0;i<lista.length;i++){ var c=lista[i];
     h+='<div class="row-card" style="display:block;cursor:pointer;margin-bottom:7px" onclick="cwAbrir(\''+_precoEsc(c.id)+'\')">'
       +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-world" style="color:#BA7517;font-size:18px"></i>'
       +'<span style="flex:1;font-size:13.5px;font-weight:500;color:#1a1a1a">'+_precoEsc(c.titulo||'Cotação')+'</span>'+_cwBadge(c.status)
@@ -5025,6 +5056,57 @@ function cwRenderLista(){
       +'</div>';
   }
   box.innerHTML=h;
+}
+async function cwAbrirResumo(){
+  if(!COTWEB.length){ toast('Crie/carregue cotações primeiro.'); return; }
+  show('s-cwresumo'); window.scrollTo(0,0);
+  var rng=_cwRangeEp();
+  var per=(rng.deEp||rng.ateEp)?((rng.deEp?_cwFmtDia(rng.deEp):'início')+' até '+(rng.ateEp?_cwFmtDia(rng.ateEp):'hoje')):'todas as cotações';
+  document.getElementById('cwres-sub').textContent=per;
+  document.getElementById('cwres-box').innerHTML='<div class="loadrow"><span class="spin"></span> Somando cotações…</div>';
+  try{
+    var j=await _estPost({acao:'cotweb_resumo', deEp:rng.deEp, ateEp:rng.ateEp});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    cwRenderResumo(j);
+  }catch(e){ console.error('cwAbrirResumo',e); document.getElementById('cwres-box').innerHTML='<div class="row-sub" style="padding:12px 2px;color:#C53434">Não consegui montar o ranking. Confira se o backend está no tok-v7 e tente de novo.</div>'; }
+}
+function _cwResumoChart(arr){
+  if(!arr||!arr.length) return '<div class="row-sub" style="padding:8px 2px">Nenhum ganho no período.</div>';
+  var ord=arr.slice().sort(function(a,b){return b.ganho-a.ganho;});
+  var max=0; for(var i=0;i<ord.length;i++){ if(ord[i].ganho>max) max=ord[i].ganho; }
+  var cores=['#0F6E56','#1B3A9E','#BA7517','#7A4FB5','#C53434','#2E8BC0','#E08A2B','#1FA85A'];
+  var h='<div style="background:#fff;border:1px solid #e6e9f0;border-radius:12px;padding:12px 12px 6px;margin-bottom:12px">'
+    +'<div style="font-size:12px;font-weight:700;color:#16267A;margin-bottom:10px"><i class="ti ti-trophy" style="color:#BA7517"></i> Quem ganhou mais no período</div>';
+  for(var k=0;k<ord.length;k++){ var f=ord[k]; var pct=max>0?Math.round((f.ganho/max)*100):0; var cor=cores[k%cores.length];
+    h+='<div style="margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px"><span style="color:#1a1a1a;font-weight:600">'+(k===0?'🏆 ':'')+_precoEsc(f.nome)+'</span><span style="color:'+cor+';font-weight:700">'+_precoBRL(f.ganho)+'</span></div>'
+      +'<div style="background:#eef1f6;border-radius:8px;height:15px;overflow:hidden"><div class="cwrbar" data-w="'+pct+'" style="width:0;height:100%;border-radius:8px;background:'+cor+';transition:width 1s cubic-bezier(.22,1,.36,1)"></div></div>'
+      +'</div>';
+  }
+  h+='</div>'; return h;
+}
+function _cwResumoAnima(){ setTimeout(function(){ var b=document.querySelectorAll('#cwres-box .cwrbar'); for(var i=0;i<b.length;i++){ b[i].style.width=(b[i].getAttribute('data-w')||0)+'%'; } },60); }
+function cwRenderResumo(j){
+  var arr=j.fornecedores||[];
+  var h='<div style="display:flex;gap:8px;margin-bottom:12px">'
+    +'<div style="flex:1;background:#EAF2FF;border-radius:11px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;color:#16267A">'+(j.nCotacoes||0)+'</div><div style="font-size:11px;color:#5F5E5A">cotações</div></div>'
+    +'<div style="flex:1.3;background:#E5F4EE;border-radius:11px;padding:10px;text-align:center"><div style="font-size:16px;font-weight:700;color:#0F6E56">'+_precoBRL(j.totalGanho||0)+'</div><div style="font-size:11px;color:#5F5E5A">total (vencedores)</div></div>'
+    +'</div>';
+  h+=_cwResumoChart(arr);
+  if(arr.length){
+    h+='<div style="font-size:13px;font-weight:700;color:#16267A;margin:6px 2px 8px">Por fornecedor</div>';
+    var ord=arr.slice().sort(function(a,b){return b.ganho-a.ganho;});
+    for(var i=0;i<ord.length;i++){ var f=ord[i];
+      h+='<div style="border:1px solid #e6e9f0;border-radius:11px;padding:10px 11px;margin-bottom:7px">'
+        +'<div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:6px">'+_precoEsc(f.nome)+'</div>'
+        +'<div style="display:flex;gap:10px;font-size:11.5px;flex-wrap:wrap">'
+        +'<span style="color:#0F6E56;font-weight:700">Ganhou '+_precoBRL(f.ganho)+'</span><span style="color:#9a988f">'+(f.itensGanhos||0)+' itens</span>'
+        +'<span style="margin-left:auto;color:#16267A;font-weight:700">Cotou '+_precoBRL(f.cotado)+'</span><span style="color:#9a988f">'+(f.itensCotados||0)+' itens</span>'
+        +'</div></div>';
+    }
+  }
+  document.getElementById('cwres-box').innerHTML=h;
+  _cwResumoAnima();
 }
 function cwVoltar(){ document.getElementById('cw-painel-view').style.display='none'; document.getElementById('cw-lista-view').style.display='block'; }
 async function cwAbrir(id){
