@@ -529,7 +529,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
       </div>
 
-      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>6</em></div>
+      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>7</em></div>
       <div class="qgrid">
         <div class="qcard qc-pv" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard qc-pv" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora</span></div>
@@ -537,6 +537,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-pv" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
         <div class="qcard qc-pv" data-menu="lucro" onclick="abrirLucro()"><i class="ti ti-coin"></i><span class="qnm">Lucratividade</span></div>
         <div class="qcard qc-pv" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
+        <div class="qcard qc-pv" data-menu="maisvendidos" onclick="abrirMaisVendidos()"><i class="ti ti-trophy"></i><span class="qnm">Mais vendidos</span></div>
       </div>
 
       <div class="qsec qsec-op"><span class="qbar"></span><b>Operação da loja</b><em>4</em></div>
@@ -1240,6 +1241,27 @@ function doPost(e) {
 </div>
 
 <!-- TELA: Curva ABC (chat 22) -->
+<div class="screen" id="s-maisvendidos">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-trophy" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Mais vendidos</div>
+      <div style="font-size:11.5px;color:#888780" id="mv-sub">Carregando\u2026</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="mvAtualizar()" title="Atualizar"></i>
+  </div>
+  <div style="padding:0 14px 90px">
+    <div id="mv-chips" style="display:flex;gap:7px;overflow-x:auto;padding:12px 0 2px;-webkit-overflow-scrolling:touch"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="mv-mt-fat" onclick="mvSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Por faturamento</button>
+      <button id="mv-mt-qtd" onclick="mvSetMetric('qtd')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por quantidade</button>
+    </div>
+    <div id="mv-lista" style="margin-top:14px"></div>
+    <div style="font-size:11px;color:#888780;margin-top:10px;line-height:1.5">Top 50 produtos do período. O hist\u00f3rico cobre ~60 dias \u2014 ent\u00e3o \u201cAno\u201d mostra o que j\u00e1 tem.</div>
+  </div>
+</div>
+
 <div class="screen" id="s-abc">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
@@ -4469,6 +4491,88 @@ function orcPDF(){
   var win=window.open('','_blank');
   if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
   win.document.open(); win.document.write(html); win.document.close();
+}
+
+// ════════════ MAIS VENDIDOS (ranking de produtos por período) ════════════
+// Lê o VD_BASE (Vendas_Diaria: venda por produto por dia) que a ponte já sobe.
+let mvPeriodo='dia', mvMetric='fat', mvDe='', mvAte='';
+const MV_PRESETS=[['dia','Dia'],['semana','Semana'],['mes','Mês'],['ano','Ano']];
+
+function _mvMaxIso(){ var mx=''; for(var i=0;i<VD_BASE.length;i++){ if(VD_BASE[i].iso>mx) mx=VD_BASE[i].iso; } return mx; }
+function _mvRange(key){
+  var mx=_mvMaxIso(); if(!mx) return {de:'',ate:''};
+  var d=new Date(mx+'T00:00:00'), de=new Date(d), ate=new Date(d);
+  if(key==='dia'){ de=new Date(d); }
+  else if(key==='semana'){ de=new Date(d); de.setDate(de.getDate()-6); }
+  else if(key==='mes'){ de=new Date(d.getFullYear(), d.getMonth(), 1); }
+  else if(key==='ano'){ de=new Date(d.getFullYear(), 0, 1); }
+  return { de:_relISO(de), ate:_relISO(ate) };
+}
+function _mvPeriodoLabel(){ var nm={dia:'Dia',semana:'Semana',mes:'Mês',ano:'Ano'};
+  return (nm[mvPeriodo]||'Período')+' · '+_relBR(mvDe)+(mvDe!==mvAte?(' a '+_relBR(mvAte)):''); }
+function _mvItens(de, ate, lim){
+  lim=lim||50; var agg={};
+  for(var i=0;i<VD_BASE.length;i++){ var v=VD_BASE[i];
+    if(de && v.iso<de) continue; if(ate && v.iso>ate) continue;
+    if(!agg[v.codigo]) agg[v.codigo]={fat:0,qtd:0}; agg[v.codigo].fat+=v.fat; agg[v.codigo].qtd+=v.qtd; }
+  var out=[]; for(var cod in agg){ var inf=(ESTMAP&&ESTMAP[cod])||{};
+    out.push({codigo:cod, codbarras:(inf.codbarras||cod), desc:(inf.descricao||''), fat:agg[cod].fat, qtd:agg[cod].qtd}); }
+  return out;
+}
+function mvRenderChips(){
+  var el=document.getElementById('mv-chips'); if(!el) return; var h='';
+  for(var i=0;i<MV_PRESETS.length;i++){ var pp=MV_PRESETS[i], on=(pp[0]===mvPeriodo);
+    h+='<button onclick="mvSetPeriodo(\''+pp[0]+'\')" style="flex:0 0 auto;border:1px solid '+(on?'#16267A':'#D3D1C7')+';background:'+(on?'#16267A':'#fff')+';color:'+(on?'#fff':'#16267A')+';border-radius:999px;height:32px;padding:0 16px;font-size:12.5px;font-weight:500;white-space:nowrap">'+pp[1]+'</button>'; }
+  el.innerHTML=h;
+}
+function mvSetPeriodo(key){ mvPeriodo=key; mvRenderChips(); mvRender(); }
+function mvSetMetric(m){
+  mvMetric=m;
+  function st(b,act){ if(!b) return; b.style.background=act?'#16267A':'#fff'; b.style.color=act?'#fff':'#16267A'; b.style.borderColor=act?'#16267A':'#D3D1C7'; }
+  st(document.getElementById('mv-mt-fat'), m==='fat'); st(document.getElementById('mv-mt-qtd'), m==='qtd');
+  mvRender();
+}
+async function mvAtualizar(){ toast('Atualizando…'); try{ await estSync(true); }catch(e){} mvRender(); }
+async function abrirMaisVendidos(){
+  show('s-maisvendidos');
+  if(!mvPeriodo) mvPeriodo='dia';
+  mvRenderChips();
+  if(!VD_BASE.length){
+    _syncSplash(true, 'Baixando vendas por dia (1ª vez)…');
+    try{ await _estReady(); await _vdReady(); }catch(e){ console.error('abrirMaisVendidos sync',e); }
+    _syncSplash(false);
+  }
+  mvRender();
+}
+async function mvRender(){
+  var r=_mvRange(mvPeriodo); mvDe=r.de; mvAte=r.ate;
+  var sub=document.getElementById('mv-sub'), box=document.getElementById('mv-lista'); if(!box) return;
+  if(!VD_BASE.length){
+    box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando vendas…</div>';
+    try{ await _estReady(); await _vdReady(); }catch(e){}
+  }
+  if(!VD_BASE.length){ if(sub) sub.textContent='Sem dados'; box.innerHTML=_vazio({ico:'ti-trophy',tit:'Sem vendas ainda',sub:'Os dados de vendas por dia ainda não chegaram. Toque em ↻ pra sincronizar.'}); return; }
+  var itens=_mvItens(mvDe, mvAte, 50);
+  var lbl=_mvPeriodoLabel();
+  if(!itens.length){ if(sub) sub.textContent=lbl; box.innerHTML='<div class="row-sub" style="padding:8px 2px">Nenhuma venda em '+lbl+'.</div>'; return; }
+  var metric=mvMetric;
+  itens.sort(function(a,b){ return b[metric]-a[metric]; });
+  if(itens.length>50) itens=itens.slice(0,50);
+  var max=itens[0][metric]||1;
+  if(sub) sub.textContent=itens.length+' produtos · '+lbl;
+  var html='';
+  for(var i=0;i<itens.length;i++){ var x=itens[i];
+    var w=Math.max(5, Math.round(100*x[metric]/max));
+    var val=(metric==='fat')?_relMoney(x.fat):(Math.round(x.qtd).toLocaleString('pt-BR')+' un');
+    var sec=(metric==='fat')?(Math.round(x.qtd).toLocaleString('pt-BR')+' un'):_relMoney(x.fat);
+    html+='<div class="row-card" style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+      +'<span style="flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:#FAEEDA;color:#854F0B;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;color:#16267A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_estEsc(x.desc||x.codbarras||x.codigo)+'</div>'
+      +'<div style="height:6px;background:#E8EAF2;border-radius:3px;margin-top:6px;overflow:hidden"><div style="height:6px;width:'+w+'%;background:#EF9F27;border-radius:3px"></div></div></div>'
+      +'<div style="flex:0 0 auto;text-align:right"><div style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+val+'</div><div style="font-size:11px;color:#888780">'+sec+'</div></div>'
+      +'</div>';
+  }
+  box.innerHTML=html;
 }
 
 function calcChip(m){
