@@ -99,14 +99,14 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .nav-btn.active{color:#1B3A9E;font-weight:600}
 .nav-btn i{font-size:21px}
 .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 6px 4px}
-.qcard{position:relative;background:#fff;border-radius:12px;padding:18px 3px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
-.qcard i{font-size:26px;color:#1B3A9E}
-.qcard .qnm{font-size:11px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
+.qcard{position:relative;background:#fff;border-radius:12px;padding:22px 3px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
+.qcard i{font-size:28px;color:#1B3A9E}
+.qcard .qnm{font-size:11.5px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
 .qcard .qsoon{font-size:10px;color:#888780}
 .qcard.soon{opacity:0.55;cursor:default}
 .qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
 .qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
-#tab-menu{padding:0 6px 8px}
+#tab-menu{padding:8px 6px 8px}
 .qsearchwrap{padding:8px 6px 4px}
 .qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(22,38,122,0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:#16267A;background:#fff;outline:none}
 .qsearch::placeholder{color:#9aa0b4}
@@ -521,22 +521,12 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
     </div>
 
     <div id="tab-menu" class="content" style="display:none">
-      <div class="qsearchwrap">
-        <input class="qsearch" type="search" inputmode="search" placeholder="Buscar módulo…" oninput="menuFiltrar(this.value)" aria-label="Buscar módulo">
-      </div>
-
       <div class="qsec qsec-fin"><span class="qbar"></span><b>Financeiro</b><em>4</em></div>
       <div class="qgrid">
         <div class="qcard qc-fin" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard qc-fin" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard qc-fin" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Sangrias</span></div>
         <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
-      </div>
-
-      <div class="qsec qsec-rh"><span class="qbar"></span><b>Pessoas · RH</b><em>2</em></div>
-      <div class="qgrid">
-        <div class="qcard qc-rh" data-menu="folha" onclick="abrirFolha()"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span></div>
-        <div class="qcard qc-rh" data-menu="vale" onclick="abrirVale()"><i class="ti ti-receipt"></i><span class="qnm">Vale / Convênio</span></div>
       </div>
 
       <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>6</em></div>
@@ -555,6 +545,12 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard qc-op" data-menu="ck_temp" onclick="abrirFreezers()"><i class="ti ti-temperature-snow"></i><span class="qnm">Temp. freezers</span></div>
         <div class="qcard qc-op" data-menu="avarias" onclick="abrirAvarias()"><i class="ti ti-alert-triangle"></i><span class="qnm">Avarias</span></div>
         <div class="qcard qc-op" data-menu="terminais" onclick="abrirTerminais()"><i class="ti ti-device-desktop"></i><span class="qnm">Terminais</span></div>
+      </div>
+
+      <div class="qsec qsec-rh"><span class="qbar"></span><b>Pessoas · RH</b><em>2</em></div>
+      <div class="qgrid">
+        <div class="qcard qc-rh" data-menu="folha" onclick="abrirFolha()"><i class="ti ti-report-money"></i><span class="qnm">Folha de pagamento</span></div>
+        <div class="qcard qc-rh" data-menu="vale" onclick="abrirVale()"><i class="ti ti-receipt"></i><span class="qnm">Vale / Convênio</span></div>
       </div>
     </div>
 
