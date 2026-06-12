@@ -1863,7 +1863,11 @@ function vigiaTerminaisParar(){
   _termBannerEsconder();
 }
 
+// terminais ficam desligados de propósito à noite (loja fechada): das 22h às 6h não notifica
+function _termHorarioFechado(){ var h=new Date().getHours(); return (h>=22 || h<6); }
+
 async function terminaisCheckSilencioso(){
+  if(_termHorarioFechado()){ _termBannerEsconder(); return; }   // loja fechada: silêncio
   try{
     var res = await fetch(_urlApps(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
