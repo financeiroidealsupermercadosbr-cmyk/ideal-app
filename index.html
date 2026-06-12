@@ -1404,6 +1404,7 @@ function doPost(e) {
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cpCarregar()" title="Atualizar"></i>
   </div>
   <div style="padding:12px 14px 100px">
+    <div id="cp-lembretes" style="margin-bottom:14px"></div>
     <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="cpNovo()"><i class="ti ti-plus"></i> Novo espelho</button>
     <div style="display:flex;gap:6px;margin:12px 0 10px">
       <button id="cp-fb-aberto" onclick="cpSetFiltro('ABERTO')">Pra chegar</button>
@@ -4825,7 +4826,7 @@ function abrirCotacaoWeb(){ toast('Cotação web — em breve \ud83d\udea7'); }
 // Usa compras_list / compras_save / compras_status / compras_del.
 // ══════════════════════════════════════════════════════
 var COMPRAS=[], _cpFiltro='ABERTO';
-function abrirCompras(){ show('s-compras'); window.scrollTo(0,0); cpSetFiltro(_cpFiltro||'ABERTO', true); }
+function abrirCompras(){ show('s-compras'); window.scrollTo(0,0); cpSetFiltro(_cpFiltro||'ABERTO', true); lemCarregar(); }
 function _cpBtnFiltro(on){ return 'flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
 function cpSetFiltro(f, carrega){
   _cpFiltro=f;
@@ -5015,6 +5016,83 @@ function _cwBadge(status){
 function _cwCopiarTxt(link){
   if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(function(){ toast('✓ Link copiado'); }).catch(function(){ toast('Segure no texto pra copiar'); }); }
   else { toast('Segure no texto pra copiar'); }
+}
+// ══════════════════════════════════════════════════════
+// COMPRAS — Lembretes (Fase B). Dispensa por usuário.
+// ══════════════════════════════════════════════════════
+var LEMBRETES=[], _lemShowAll=false;
+function _lemUser(){ return (typeof userAtual!=='undefined' && userAtual && userAtual.usuario)||''; }
+function _lemAcha(id){ for(var i=0;i<LEMBRETES.length;i++){ if(String(LEMBRETES[i].id)===String(id)) return LEMBRETES[i]; } return null; }
+async function lemCarregar(){
+  try{ var j=await _estPost({acao:'lembrete_list'}); LEMBRETES=(j&&j.ok&&j.lembretes)||[]; }
+  catch(e){ console.error('lemCarregar',e); LEMBRETES=[]; }
+  lemRender();
+}
+function _lemToggleAll(){ _lemShowAll=!_lemShowAll; lemRender(); }
+function lemRender(){
+  var box=document.getElementById('cp-lembretes'); if(!box) return;
+  var me=_lemUser();
+  var ativos=LEMBRETES.filter(function(l){ return (l.dispensadoPor||[]).indexOf(me)===-1; });
+  var lista=_lemShowAll?LEMBRETES:ativos;
+  var h='<div style="display:flex;align-items:center;gap:8px;margin:0 2px 8px"><span style="font-size:13px;font-weight:700;color:#9A6B00;flex:1"><i class="ti ti-bell"></i> Lembretes'+(ativos.length?(' ('+ativos.length+')'):'')+'</span>'
+    +'<button onclick="lemNovo()" style="padding:6px 11px;border:1px solid #BA7517;background:#fff;color:#BA7517;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-plus"></i> Novo</button></div>';
+  if(!lista.length){
+    h+='<div style="font-size:11.5px;color:#9a988f;padding:2px 2px 4px">Nenhum lembrete'+(_lemShowAll?'':' ativo')+'.</div>';
+  } else {
+    for(var i=0;i<lista.length;i++){ var l=lista[i]; var disp=(l.dispensadoPor||[]).indexOf(me)>=0;
+      h+='<div style="border:1px solid #E0B23C;background:'+(disp?'#FBF7EE':'#FFF8E6')+';border-radius:11px;padding:10px 12px;margin-bottom:7px'+(disp?';opacity:.7':'')+'">'
+        +'<div style="display:flex;gap:8px;align-items:flex-start"><i class="ti ti-bell" style="color:#BA7517;font-size:17px;margin-top:1px"></i>'
+        +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.3">'+_precoEsc(l.texto)+'</div>'
+        +'<div style="font-size:10.5px;color:#9A6B00;margin-top:3px">'+(l.fornecedor?(_precoEsc(l.fornecedor)+' · '):'')+(l.data?_precoEsc(_cpDataBR(l.data)):'')+(l.quem?(' · '+_precoEsc(l.quem)):'')+'</div></div></div>'
+        +'<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">';
+      if(!disp){ h+='<button onclick="lemDispensar(\''+_precoEsc(l.id)+'\')" style="flex:1;min-width:140px;padding:8px;border:none;background:#BA7517;color:#fff;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="ti ti-check"></i> Ok, não mostrar de novo</button>'; }
+      else { h+='<span style="flex:1;min-width:120px;font-size:11.5px;color:#9a988f;align-self:center">dispensado por você</span>'; }
+      h+='<button onclick="lemEditar(\''+_precoEsc(l.id)+'\')" style="flex:0 0 auto;padding:0 13px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:9px;font-size:14px;cursor:pointer"><i class="ti ti-dots"></i></button>';
+      h+='</div></div>';
+    }
+  }
+  var temDisp=LEMBRETES.some(function(l){ return (l.dispensadoPor||[]).indexOf(me)>=0; });
+  if(temDisp){ h+='<div onclick="_lemToggleAll()" style="text-align:center;font-size:11.5px;color:#16267A;cursor:pointer;padding:2px 0 4px">'+(_lemShowAll?'esconder dispensados':'ver dispensados')+'</div>'; }
+  box.innerHTML=h;
+}
+async function lemDispensar(id){
+  try{ var j=await _estPost({acao:'lembrete_dispensar', id:id, usuario:_lemUser()}); if(!j.ok) throw new Error(j.erro||'falha');
+    var l=_lemAcha(id); if(l){ if(!l.dispensadoPor) l.dispensadoPor=[]; if(l.dispensadoPor.indexOf(_lemUser())===-1) l.dispensadoPor.push(_lemUser()); }
+    lemRender(); toast('Lembrete dispensado');
+  }catch(e){ toast('⚠ Não consegui dispensar'); }
+}
+function lemNovo(){ lemEditar(''); }
+function lemEditar(id){
+  var l=_lemAcha(id); var novo=!l; l=l||{id:'',data:'',fornecedor:'',texto:''};
+  var hoje=new Date(); var hojeISO=hoje.getFullYear()+'-'+('0'+(hoje.getMonth()+1)).slice(-2)+'-'+('0'+hoje.getDate()).slice(-2);
+  var dataVal=(l.data&&/^\d{4}-\d{2}-\d{2}/.test(l.data))?l.data.slice(0,10):hojeISO;
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;max-height:88vh;overflow:auto;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:12px">'+(novo?'Novo lembrete':'Editar lembrete')+'</div>'
+    +'<label style="font-size:11px;color:#888780">Lembrete</label>'
+    +'<textarea id="lem-texto" rows="2" placeholder="ex.: cobrar pedido de bebidas do BH" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px;resize:vertical">'+_precoEsc(l.texto)+'</textarea>'
+    +'<label style="font-size:11px;color:#888780">Fornecedor (opcional)</label>'
+    +'<input id="lem-forn" value="'+_precoEsc(l.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
+    +'<label style="font-size:11px;color:#888780">Data (opcional)</label>'
+    +'<input id="lem-data" type="date" value="'+dataVal+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 12px">'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +(novo?'':'<button id="lem-del" style="padding:11px 14px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Excluir</button>')
+    +'<button id="lem-cancel" style="flex:1;min-width:90px;padding:11px;border:1px solid #ccc;background:#fff;color:#555;border-radius:10px;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="lem-save" class="btn-primary" style="flex:1;min-width:90px;margin-top:0">Salvar</button>'
+    +'</div><div style="font-size:10.5px;color:#9a988f;margin-top:8px;line-height:1.5">Quem dispensar deixa de ver. Se você editar, ele volta a aparecer pra todos.</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#lem-cancel').onclick=close;
+  card.querySelector('#lem-save').onclick=async function(){
+    var texto=card.querySelector('#lem-texto').value.trim(); if(!texto){ toast('Escreva o lembrete'); return; }
+    var forn=card.querySelector('#lem-forn').value.trim(); var data=card.querySelector('#lem-data').value;
+    var btn=card.querySelector('#lem-save'); btn.disabled=true; btn.textContent='Salvando…';
+    try{ var j=await _estPost({acao:'lembrete_save', id:l.id, texto:texto, fornecedor:forn, data:data, usuario:_lemUser()}); if(!j.ok) throw new Error(j.erro||'falha'); toast('✓ Lembrete salvo'); close(); _lemShowAll=false; lemCarregar(); }
+    catch(e){ console.error('lemSave',e); toast('⚠ Não consegui salvar'); btn.disabled=false; btn.textContent='Salvar'; }
+  };
+  var del=card.querySelector('#lem-del');
+  if(del){ del.onclick=function(){ close(); appConfirm('Excluir este lembrete pra todos?', async function(){ try{ var j=await _estPost({acao:'lembrete_del', id:l.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Excluído'); lemCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
 }
 function abrirCotacoesWeb(){
   show('s-cotweb'); window.scrollTo(0,0);
