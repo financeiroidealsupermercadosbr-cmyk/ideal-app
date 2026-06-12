@@ -1632,6 +1632,34 @@ const BASE_URL  = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/val
 let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url') || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
 
 // ══════════════════════════════════════════════════════
+// CAMADA 2 — TOKEN DE ACESSO (segurança das escritas)
+// O MESMO valor tem que estar no Codigo.gs (var APP_TOKEN).
+// Se mudar aqui, muda lá também — senão o app para de gravar.
+// ══════════════════════════════════════════════════════
+const APP_TOKEN = 'idealapp_2026_x7Kq9Rv3LpZ8nW';
+
+// Ponto único: carimba o token em TODA escrita (POST) pro Apps Script.
+// Assim não precisa mexer em cada chamada — e nenhuma fica esquecida.
+(function(){
+  const _fetchOrig = window.fetch.bind(window);
+  window.fetch = function(url, opts){
+    try{
+      const alvo = (typeof url === 'string') ? url : (url && url.url) || '';
+      const ehPost = opts && opts.method && String(opts.method).toUpperCase() === 'POST';
+      const ehApps = alvo.indexOf('script.google.com/macros/') !== -1;
+      if (ehPost && ehApps && typeof opts.body === 'string') {
+        const corpo = JSON.parse(opts.body);
+        if (corpo && typeof corpo === 'object' && corpo.tok === undefined) {
+          corpo.tok = APP_TOKEN;
+          opts = Object.assign({}, opts, { body: JSON.stringify(corpo) });
+        }
+      }
+    }catch(e){ /* se o corpo não for JSON, deixa passar como estava */ }
+    return _fetchOrig(url, opts);
+  };
+})();
+
+// ══════════════════════════════════════════════════════
 // MAPEAMENTO CORRETO DAS COLUNAS (baseado no sincronizar_sheets.py)
 // Lancamento_Diario:
 //   [0]=DATA [1]=DIA_SEMANA [2]=TOTAL_VENDAS [3]=DINHEIRO
