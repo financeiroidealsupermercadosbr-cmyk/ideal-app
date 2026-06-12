@@ -1330,6 +1330,7 @@ function doPost(e) {
       <div style="font-size:16px;font-weight:600;color:#16267A">Lista de cotação</div>
       <div style="font-size:11.5px;color:#888780" id="cot-sub">Coleta em andamento</div>
     </div>
+    <i class="ti ti-world" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirCotacoesWeb()" title="Cotações Web"></i>
     <i class="ti ti-building-store" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirFornecedores()" title="Fornecedores"></i>
     <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirColetas()" title="Coletas salvas"></i>
   </div>
@@ -1378,7 +1379,8 @@ function doPost(e) {
   <div id="col-detalhe-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div></div>
     <div id="col-det-itens"></div>
-    <div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn-primary" style="margin-top:14px;background:#BA7517" onclick="cwAbrirCriar()"><i class="ti ti-world"></i> Mandar pra Cotação Web</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn-primary" style="flex:1;margin-top:0" onclick="colPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
       <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="colExcluir()"><i class="ti ti-trash"></i> Excluir</button>
     </div>
@@ -1387,6 +1389,25 @@ function doPost(e) {
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+  </div>
+</div>
+
+<!-- TELA: Cotação Web (gestor) -->
+<div class="screen" id="s-cotweb">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
+    <i class="ti ti-world" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Cotações Web</div>
+      <div style="font-size:11.5px;color:#888780" id="cw-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cwCarregar()" title="Atualizar"></i>
+  </div>
+  <div id="cw-lista-view" style="padding:12px 14px 100px">
+    <div id="cw-lista"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
+  </div>
+  <div id="cw-painel-view" style="display:none;padding:0 14px 100px">
+    <div id="cw-painel"></div>
   </div>
 </div>
 
@@ -4815,6 +4836,157 @@ function fnEditar(id){
   };
   var del=card.querySelector('#fn-del');
   if(del){ del.onclick=function(){ close(); appConfirm('Excluir o fornecedor "'+f.nome+'"?\nEle some das próximas cotações.', async function(){ try{ var j=await _estPost({acao:'forn_del', id:f.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Fornecedor excluído'); fnCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
+}
+
+// ══════════════════════════════════════════════════════
+// COTAÇÃO WEB — criar cotação + painel (gestor) · Fase 1.2b
+// Usa cotweb_criar / cotweb_list / cotweb_painel / cotweb_fechar.
+// ══════════════════════════════════════════════════════
+var COTWEB=[], _cwAtual=null;
+var COTWEB_BASE='https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/cotacao.html';
+function _cwLink(cotId){ return COTWEB_BASE+'?c='+encodeURIComponent(cotId); }
+function _cwBadgeTxt(s){ return String(s).toUpperCase()==='ABERTA'?'Aberta':'Fechada'; }
+function _cwBadge(status){
+  var aberta=String(status).toUpperCase()==='ABERTA';
+  var cor=aberta?'#0F6E56':'#888780', bg=aberta?'#E5F4EE':'#EFEFEC';
+  return '<span style="font-size:10.5px;font-weight:700;color:'+cor+';background:'+bg+';padding:2px 8px;border-radius:20px">'+(aberta?'ABERTA':'FECHADA')+'</span>';
+}
+function _cwCopiarTxt(link){
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(function(){ toast('✓ Link copiado'); }).catch(function(){ toast('Segure no texto pra copiar'); }); }
+  else { toast('Segure no texto pra copiar'); }
+}
+function abrirCotacoesWeb(){
+  show('s-cotweb'); window.scrollTo(0,0);
+  document.getElementById('cw-lista-view').style.display='block';
+  document.getElementById('cw-painel-view').style.display='none';
+  cwCarregar();
+}
+async function cwCarregar(){
+  var sub=document.getElementById('cw-sub'); var box=document.getElementById('cw-lista');
+  if(box) box.innerHTML=_skel(3);
+  try{
+    var j=await _estPost({acao:'cotweb_list'});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    COTWEB=j.cotacoes||[]; cwRenderLista();
+  }catch(e){ console.error('cwCarregar',e); if(box) box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar. Toque no ↻.</div>'; if(sub) sub.textContent='sem conexão'; }
+}
+function cwRenderLista(){
+  var sub=document.getElementById('cw-sub'); var box=document.getElementById('cw-lista');
+  if(sub) sub.textContent=COTWEB.length+' cotação(ões)';
+  if(!COTWEB.length){ box.innerHTML=_vazio({ico:'ti-world',tit:'Nenhuma cotação web ainda',sub:'Crie uma a partir de uma coleta salva (botão "Mandar pra Cotação Web").'}); return; }
+  var h='';
+  for(var i=0;i<COTWEB.length;i++){ var c=COTWEB[i];
+    h+='<div class="row-card" style="display:block;cursor:pointer;margin-bottom:7px" onclick="cwAbrir(\''+_precoEsc(c.id)+'\')">'
+      +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-world" style="color:#BA7517;font-size:18px"></i>'
+      +'<span style="flex:1;font-size:13.5px;font-weight:500;color:#1a1a1a">'+_precoEsc(c.titulo||'Cotação')+'</span>'+_cwBadge(c.status)
+      +'<i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>'
+      +'<div style="font-size:11px;color:#888780;margin-top:4px;margin-left:26px">'+_precoEsc((c.data||'').slice(0,16))+' · '+c.nItens+' itens · <b style="color:#16267A">'+c.nResp+'/'+c.nForn+'</b> responderam</div>'
+      +'</div>';
+  }
+  box.innerHTML=h;
+}
+function cwVoltar(){ document.getElementById('cw-painel-view').style.display='none'; document.getElementById('cw-lista-view').style.display='block'; }
+async function cwAbrir(id){
+  show('s-cotweb');
+  document.getElementById('cw-lista-view').style.display='none';
+  document.getElementById('cw-painel-view').style.display='block';
+  document.getElementById('cw-painel').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  try{
+    var j=await _estPost({acao:'cotweb_painel', cotId:id});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    _cwAtual=j; cwRenderPainel();
+  }catch(e){ console.error('cwAbrir',e); document.getElementById('cw-painel').innerHTML='<div class="row-sub" style="padding:10px 2px;color:#C53434">Não consegui carregar.</div>'; }
+}
+function cwRenderPainel(){
+  var c=_cwAtual; if(!c) return;
+  var aberta=String(c.status).toUpperCase()==='ABERTA';
+  var nResp=0; for(var i=0;i<c.fornecedores.length;i++){ if(c.fornecedores[i].respondeu) nResp++; }
+  var link=_cwLink(c.id); var h='';
+  h+='<div class="row-card" style="cursor:pointer;margin:12px 0" onclick="cwVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">'+_precoEsc(c.titulo||'Cotação')+'</div><div class="row-sub">'+_cwBadgeTxt(c.status)+' · '+c.itens.length+' itens · '+nResp+'/'+c.fornecedores.length+' responderam</div></div></div>';
+  h+='<div style="background:#FFF8E6;border:1px solid #E0B23C;border-radius:11px;padding:11px 12px;margin-bottom:12px">'
+    +'<div style="font-size:11px;color:#9A6B00;font-weight:600;margin-bottom:6px">Link único (mande no WhatsApp dos fornecedores)</div>'
+    +'<div style="font-size:11.5px;color:#16267A;word-break:break-all;background:#fff;border:1px solid #E0D6B0;border-radius:8px;padding:8px;margin-bottom:8px">'+_precoEsc(link)+'</div>'
+    +'<button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="cwCopiar()"><i class="ti ti-copy"></i> Copiar link</button>'
+    +'</div>';
+  h+='<div style="font-size:12px;font-weight:600;color:#16267A;margin:6px 2px 8px">Fornecedores</div>';
+  for(var f=0;f<c.fornecedores.length;f++){ var fo=c.fornecedores[f]; var cor=fo.respondeu?'#1FA85A':'#C9A23A';
+    h+='<div class="row-card" style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+      +'<i class="ti '+(fo.respondeu?'ti-circle-check-filled':'ti-clock')+'" style="color:'+cor+';font-size:19px"></i>'
+      +'<div style="flex:1"><div class="row-label">'+_precoEsc(fo.nome)+'</div>'
+      +'<div class="row-sub">'+(fo.respondeu?('respondeu · '+_precoEsc(fo.em)):('aguardando · PIN '+_precoEsc(fo.pin)))+'</div></div></div>';
+  }
+  if(aberta){ h+='<button class="btn-primary" style="margin-top:14px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwFechar()"><i class="ti ti-lock"></i> Fechar cotação</button>'; }
+  else { h+='<div class="row-sub" style="padding:12px 2px;text-align:center">Cotação fechada — fornecedores não respondem mais.</div>'; }
+  h+='<button class="btn-primary" style="margin-top:10px;background:#16267A" onclick="toast(\'Demonstrativo de resultado — chega na próxima fatia 🚧\')"><i class="ti ti-table"></i> Ver resultado (em breve)</button>';
+  document.getElementById('cw-painel').innerHTML=h;
+}
+function cwCopiar(){ if(_cwAtual) _cwCopiarTxt(_cwLink(_cwAtual.id)); }
+function cwFechar(){
+  if(!_cwAtual) return;
+  appConfirm('Fechar a cotação "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores não vão mais conseguir responder.', async function(){
+    try{ var j=await _estPost({acao:'cotweb_fechar', cotId:_cwAtual.id, status:'FECHADA'}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Cotação fechada'); cwAbrir(_cwAtual.id); }catch(e){ toast('⚠ Não consegui fechar'); }
+  }, {okText:'Fechar', danger:true});
+}
+async function cwAbrirCriar(){
+  if(!_colAtual || !_colAtual.itens || !_colAtual.itens.length){ toast('Abra uma coleta com itens primeiro.'); return; }
+  if(!FORNEC.length){ try{ var jf=await _estPost({acao:'forn_list'}); if(jf.ok) FORNEC=jf.fornecedores||[]; }catch(e){} }
+  if(!FORNEC.length){ toast('Cadastre ao menos 1 fornecedor (ícone 🏪) antes.'); return; }
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;max-height:86vh;overflow:auto;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  var fhtml='';
+  for(var i=0;i<FORNEC.length;i++){ var f=FORNEC[i];
+    fhtml+='<label style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer">'
+      +'<input type="checkbox" class="cw-forn-chk" value="'+_precoEsc(f.id)+'" checked style="width:18px;height:18px;accent-color:#0F6E56">'
+      +'<span style="font-size:13.5px;color:#1a1a1a">'+_precoEsc(f.nome)+'</span></label>';
+  }
+  var tituloDefault=_colAtual.obs||('Cotação '+(new Date().toLocaleDateString('pt-BR')));
+  card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:4px">Nova cotação web</div>'
+    +'<div style="font-size:11.5px;color:#888780;margin-bottom:12px">'+_colAtual.itens.length+' itens desta coleta</div>'
+    +'<label style="font-size:11px;color:#888780">Título</label>'
+    +'<input id="cw-titulo" value="'+_precoEsc(tituloDefault)+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 12px">'
+    +'<div style="font-size:11px;color:#888780;margin-bottom:4px">Fornecedores convidados</div>'
+    +'<div style="border:1px solid #eee;border-radius:10px;padding:2px 8px;margin-bottom:14px">'+fhtml+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="cw-cancel" style="flex:1;padding:11px;border:1px solid #ccc;background:#fff;color:#555;border-radius:10px;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="cw-criar" class="btn-primary" style="flex:1;margin-top:0;background:#BA7517">Criar cotação</button>'
+    +'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#cw-cancel').onclick=close;
+  card.querySelector('#cw-criar').onclick=async function(){
+    var titulo=card.querySelector('#cw-titulo').value.trim()||'Cotação';
+    var chks=card.querySelectorAll('.cw-forn-chk'); var ids=[];
+    for(var k=0;k<chks.length;k++){ if(chks[k].checked) ids.push(chks[k].value); }
+    if(!ids.length){ toast('Escolha ao menos 1 fornecedor'); return; }
+    var btn=card.querySelector('#cw-criar'); btn.disabled=true; btn.textContent='Criando…';
+    try{
+      var j=await _estPost({acao:'cotweb_criar', titulo:titulo, itens:_colAtual.itens, fornecedores:ids, coletaId:_colAtual.id});
+      if(!j.ok) throw new Error(j.erro||'falha');
+      close(); cwMostrarLink(j.id);
+    }catch(e){ console.error('cwCriar',e); toast('⚠ Não consegui criar'); btn.disabled=false; btn.textContent='Criar cotação'; }
+  };
+}
+function cwMostrarLink(cotId){
+  var link=_cwLink(cotId);
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  card.innerHTML='<div style="font-size:15px;font-weight:600;color:#0F6E56;margin-bottom:6px"><i class="ti ti-circle-check-filled"></i> Cotação criada!</div>'
+    +'<div style="font-size:12.5px;color:#5F5E5A;margin-bottom:10px">Mande este <b>link único</b> no WhatsApp dos fornecedores. Cada um entra com o nome dele + o PIN.</div>'
+    +'<div style="font-size:11.5px;color:#16267A;word-break:break-all;background:#F4F8FF;border:1px solid #D5E2F7;border-radius:8px;padding:9px;margin-bottom:12px">'+_precoEsc(link)+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button id="cwl-copy" class="btn-primary" style="flex:1;margin-top:0;background:#0F6E56"><i class="ti ti-copy"></i> Copiar link</button>'
+    +'<button id="cwl-ver" class="btn-primary" style="flex:1;margin-top:0">Ver cotações</button>'
+    +'</div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#cwl-copy').onclick=function(){ _cwCopiarTxt(link); };
+  card.querySelector('#cwl-ver').onclick=function(){ close(); abrirCotacoesWeb(); };
 }
 
 function calcChip(m){
