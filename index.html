@@ -489,7 +489,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div class="qcard" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
         <div class="qcard" data-menu="cotacao" onclick="abrirCotacao()"><span class="qdot"></span><i class="ti ti-shopping-cart"></i><span class="qnm">Lista de cotação</span></div>
-        <div class="qcard soon" data-menu="sangrias"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span><span class="qsoon">em breve</span></div>
+        <div class="qcard" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Lançamento de sangrias</span></div>
         <div class="qcard soon" data-menu="orcamento"><i class="ti ti-wallet"></i><span class="qnm">Orçamento</span><span class="qsoon">em breve</span></div>
         <div class="qcard" data-menu="avarias" onclick="abrirAvarias()"><i class="ti ti-alert-triangle"></i><span class="qnm">Controle de avarias</span></div>
         <div class="qcard" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
@@ -1547,6 +1547,35 @@ function doPost(e) {
     <div id="va-cal-dia" style="margin-top:14px"></div>
     <div id="va-cal-resumo" style="margin-top:20px"></div>
   </div>
+</div>
+
+
+<!-- TELA: Sangrias / Cofre -->
+<div class="screen" id="s-sangrias">
+  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <div style="flex:1">
+      <div style="font-size:16px;font-weight:600;color:#16267A">Sangrias / Cofre</div>
+      <div style="font-size:11.5px;color:#888780" id="sa-sub">Carregando…</div>
+    </div>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="saCarregar()" title="Atualizar"></i>
+  </div>
+
+  <div style="padding:12px 14px 0">
+    <div style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">No cofre agora</div><div id="sa-total" style="font-size:22px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
+        <div id="sa-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 sangrias</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:12px 14px 0">
+    <button class="btn-primary" onclick="saLancar()"><i class="ti ti-plus"></i> Lançar sangria</button>
+    <button class="btn-primary" id="sa-recolher-btn" style="margin-top:10px;background:#0F6E56;display:none" onclick="saRecolherTudo()"><i class="ti ti-lock-open"></i> Recolher cofre</button>
+  </div>
+
+  <div id="sa-lista" style="padding:14px 14px 100px"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
 </div>
 
 <!-- TELA: Checklist dos gerentes -->
@@ -4039,6 +4068,127 @@ function fichaModal(func, post, onSaved){
   };
 }
 
+// ══════════════════════════════════════════════════════
+// SANGRIAS / COFRE (por loja). Fiscal lança; gerência/gestor/financeiro recolhe.
+// Reusa _foLoja, _foNomeLoja, _precoBRL, _precoEsc, _foNum, _setorKey,
+// appConfirm, toast, show, userAtual, _urlApps, SHEET_ID.
+// ══════════════════════════════════════════════════════
+var _saCofre=[], _saRecolhidas=[];
+function _saPodeRecolher(){ return _setorKey(userAtual && userAtual.setor) !== 'fiscal'; }
+async function _saPost(payload){
+  var res=await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_foLoja()}, payload)) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+function _saFmt(iso){ var p=String(iso||'').split('-'); return p.length===3?(p[2]+'/'+p[1]):''; }
+function _saTotalCofre(){ var t=0; _saCofre.forEach(function(s){ t+=_foNum(s.valor); }); return t; }
+
+function abrirSangrias(){
+  show('s-sangrias'); window.scrollTo(0,0);
+  saCarregar();
+}
+async function saCarregar(){
+  var sub=document.getElementById('sa-sub'); if(sub) sub.textContent=_foNomeLoja();
+  var box=document.getElementById('sa-lista');
+  box.innerHTML='<div class="loadrow"><span class="spin"></span> Carregando…</div>';
+  try{
+    var j=await _saPost({acao:'sangrias_list'});
+    if(!j.ok || !Array.isArray(j.cofre)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
+    _saCofre=j.cofre||[]; _saRecolhidas=j.recolhidas||[];
+    saRender();
+  }catch(e){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">Não consegui carregar. Toque em ↻.</div>'; }
+}
+function saRender(){
+  var tot=_saTotalCofre();
+  document.getElementById('sa-total').textContent=_precoBRL(tot);
+  document.getElementById('sa-qtd').innerHTML=_saCofre.length+' sangria(s)';
+  var rb=document.getElementById('sa-recolher-btn'); if(rb) rb.style.display=(_saPodeRecolher() && _saCofre.length)?'block':'none';
+  var box=document.getElementById('sa-lista');
+  var pode=_saPodeRecolher();
+  var html='';
+  if(_saCofre.length){
+    html+='<div style="font-size:11.5px;color:#16267A;font-weight:700;letter-spacing:.3px;margin:6px 2px 8px">NO COFRE · '+_saCofre.length+'</div>';
+    var arr=_saCofre.slice().sort(function(a,b){ return String(b.data+b.hora).localeCompare(String(a.data+a.hora)); });
+    arr.forEach(function(s){ html+=_saCard(s, pode); });
+  } else {
+    html+='<div class="row-sub" style="padding:18px 2px;text-align:center;color:#B4B2A9">Cofre vazio — nenhuma sangria pendente.</div>';
+  }
+  if(pode && _saRecolhidas.length){
+    var t2=0; _saRecolhidas.forEach(function(s){ t2+=_foNum(s.valor); });
+    html+='<div style="font-size:11.5px;color:#888780;font-weight:700;letter-spacing:.3px;margin:20px 2px 8px;display:flex;justify-content:space-between"><span>RECOLHIDAS · ÚLT. 7 DIAS</span><span>'+_precoBRL(t2)+'</span></div>';
+    var arr2=_saRecolhidas.slice().sort(function(a,b){ return String(b.recolhidoData||'').localeCompare(String(a.recolhidoData||'')); });
+    arr2.forEach(function(s){ html+=_saCardHist(s); });
+  }
+  box.innerHTML=html;
+}
+function _saCard(s, pode){
+  var rec = pode ? ('<i class="ti ti-circle-check" title="Recolher esta" onclick="saRecolherUma(\''+s.id+'\')" style="font-size:21px;color:#1FA85A;cursor:pointer;padding:2px"></i>') : '';
+  var del = pode ? ('<i class="ti ti-trash" title="Excluir" onclick="saDel(\''+s.id+'\')" style="font-size:17px;color:#cdaaaa;cursor:pointer;padding:2px"></i>') : '';
+  return '<div class="row-card" style="flex-direction:column;align-items:stretch;margin-bottom:9px">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div style="width:40px;height:40px;border-radius:10px;background:#FFF1C2;color:#7a5a00;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-cash" style="font-size:20px"></i></div>'
+    +'<div style="flex:1;min-width:0"><div class="row-label" style="font-size:15px;font-weight:700;color:#16267A">'+_precoBRL(_foNum(s.valor))+'</div>'
+    +'<div class="row-sub">'+_precoEsc(s.caixa||'sem caixa')+' · '+_precoEsc(_saFmt(s.data))+' '+_precoEsc(s.hora||'')+'</div></div>'
+    +rec+del+'</div>'
+    +((s.obs||s.quem)?('<div class="row-sub" style="margin-top:6px;padding-top:6px;border-top:1px solid #F0F0F0">'+(s.obs?_precoEsc(s.obs)+' · ':'')+'<span style="color:#B4B2A9">por '+_precoEsc(s.quem||'?')+'</span></div>'):'')
+    +'</div>';
+}
+function _saCardHist(s){
+  return '<div class="row-card" style="align-items:center;margin-bottom:8px;background:#F7F8FA">'
+    +'<div style="flex:1;min-width:0"><div class="row-label" style="font-size:13.5px">'+_precoBRL(_foNum(s.valor))+' <span style="color:#B4B2A9;font-weight:400;font-size:12px">'+_precoEsc(s.caixa||'')+'</span></div>'
+    +'<div class="row-sub">recolhida em '+_precoEsc(_saFmt(s.recolhidoData))+' · '+_precoEsc(s.recolhidoQuem||'?')+'</div></div></div>';
+}
+function saLancar(){
+  var ov=document.createElement('div'); ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:350px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25);max-height:88vh;overflow:auto';
+  var chips=['Caixa 01','Caixa 02','Caixa 03','Caixa 04','Caixa 05','Caixa 06'].map(function(c){ return '<span class="_sa_cx" style="font-size:12px;color:#16267A;background:#E6E9F5;padding:5px 10px;border-radius:16px;cursor:pointer">'+c+'</span>'; }).join('');
+  card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:12px;font-weight:500">Lançar sangria</div>'
+    +'<label style="font-size:11.5px;color:#5F5E5A">Valor retirado (R$)</label>'
+    +'<input id="_sa_valor" inputmode="decimal" placeholder="ex: 500,00" style="width:100%;padding:10px;border:1px solid #D3D1C7;border-radius:9px;font-size:14px;box-sizing:border-box;margin:3px 0 10px">'
+    +'<label style="font-size:11.5px;color:#5F5E5A">Caixa / terminal</label>'
+    +'<input id="_sa_caixa" placeholder="ex: Caixa 02" style="width:100%;padding:10px;border:1px solid #D3D1C7;border-radius:9px;font-size:14px;box-sizing:border-box;margin:3px 0 8px">'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+chips+'</div>'
+    +'<label style="font-size:11.5px;color:#5F5E5A">Observação <span style="color:#B4B2A9">(opcional)</span></label>'
+    +'<input id="_sa_obs" placeholder="ex: troca de turno" style="width:100%;padding:10px;border:1px solid #D3D1C7;border-radius:9px;font-size:14px;box-sizing:border-box;margin:3px 0 4px">'
+    +'<div style="display:flex;gap:8px;margin-top:16px"><button id="_sa_no" style="flex:1;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px">Cancelar</button>'
+    +'<button id="_sa_yes" style="flex:1;background:#16267A;color:#fff;border:none;border-radius:9px;height:42px;font-size:14px;font-weight:500">Lançar</button></div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  var inV=card.querySelector('#_sa_valor'), inC=card.querySelector('#_sa_caixa'), inO=card.querySelector('#_sa_obs');
+  var cxs=card.querySelectorAll('._sa_cx'); for(var i=0;i<cxs.length;i++){ (function(el){ el.onclick=function(){ inC.value=el.textContent; }; })(cxs[i]); }
+  setTimeout(function(){ try{ inV.focus(); }catch(e){} },80);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#_sa_no').onclick=close;
+  card.querySelector('#_sa_yes').onclick=function(){
+    var s=String(inV.value||'').trim(); if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,'');
+    var valor=parseFloat(s); if(!valor||valor<=0){ toast('Informe o valor'); return; }
+    var caixa=inC.value.trim(); if(!caixa){ toast('Diga de qual caixa'); return; }
+    close();
+    _saPost({acao:'sangria_save', valor:s, caixa:caixa, obs:inO.value.trim(), quem:(userAtual&&userAtual.nome)||''}).then(function(j){ if(j.ok){ toast('✓ Sangria lançada'); saCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Sem conexão'); });
+  };
+}
+function saDel(id){
+  if(!_saPodeRecolher()){ toast('Só a gerência exclui'); return; }
+  appConfirm('Excluir esta sangria?', function(){
+    _saPost({acao:'sangria_del', id:id}).then(function(j){ if(j.ok){ toast('Excluída'); saCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
+  }, {danger:true, okText:'Excluir'});
+}
+function saRecolherUma(id){
+  if(!_saPodeRecolher()){ toast('Só a gerência recolhe'); return; }
+  var s=null; for(var i=0;i<_saCofre.length;i++){ if(_saCofre[i].id===id) s=_saCofre[i]; }
+  appConfirm('Recolher '+_precoBRL(_foNum(s?s.valor:0))+(s&&s.caixa?(' ('+_precoEsc(s.caixa)+')'):'')+'?\nConfira que o dinheiro bate antes de dar baixa.', function(){
+    _saPost({acao:'sangria_recolher', modo:'uma', id:id, quem:(userAtual&&userAtual.nome)||''}).then(function(j){ if(j.ok){ toast('✓ Recolhida'); saCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
+  }, {okText:'Recolher'});
+}
+function saRecolherTudo(){
+  if(!_saPodeRecolher()){ toast('Só a gerência recolhe'); return; }
+  if(!_saCofre.length){ toast('Cofre vazio'); return; }
+  var tot=_saTotalCofre();
+  appConfirm('No cofre: '+_precoBRL(tot)+' em '+_saCofre.length+' sangria(s).\nConfira que o dinheiro bate e confirme o recolhimento de tudo.', function(){
+    _saPost({acao:'sangria_recolher', modo:'todas', quem:(userAtual&&userAtual.nome)||''}).then(function(j){ if(j.ok){ toast('✓ '+(j.recolhidas||0)+' recolhida(s)'); saCarregar(); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
+  }, {okText:'Recolher tudo'});
+}
+
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
@@ -4865,7 +5015,7 @@ const MENU_ITENS = [
   {k:'contas',     ic:'ti-file-invoice',     nm:'Contas a pagar'},
   {k:'lancar',     ic:'ti-edit',             nm:'Lançamentos'},
   {k:'cotacao',    ic:'ti-shopping-cart',    nm:'Lista de cotação'},
-  {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias', soon:1},
+  {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias'},
   {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento', soon:1},
   {k:'avarias',    ic:'ti-alert-triangle',   nm:'Controle de avarias'},
   {k:'preco',      ic:'ti-barcode',          nm:'Busca de preço'},
