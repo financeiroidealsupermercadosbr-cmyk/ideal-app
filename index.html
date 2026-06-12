@@ -453,7 +453,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 3.5 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 5.7 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -5060,7 +5060,7 @@ function renderizarPainel() {
   hero.className = 'saldo-hero'+(saldo>=0?'':' red');
   document.getElementById('p-saldo-verdict').textContent = saldo>=0
     ? 'Entra mais do que sai hoje'
-    : 'Atencao: falta '+brl(Math.abs(saldo))+' para cobrir hoje';
+    : 'Atenção: falta '+brl(Math.abs(saldo))+' para cobrir hoje';
 
   const nVenc = dadosContas.filter(b=>!b.pago&&statusB(b)==='vencido').length;
   const av = document.getElementById('alerta-vencido');
@@ -5489,6 +5489,7 @@ async function salvarMeuPerfil(){
     if(!data.ok) throw new Error(data.erro||'falha');
     userAtual.nome=nome; userAtual.telefone=tel; userAtual.email=email;
     const hu = document.getElementById('h-user'); if(hu) hu.textContent = userAtual.nome+' · '+(userAtual.setor||'');
+    if(typeof carregarUsuarios==='function') carregarUsuarios();
     toast('✓ Perfil atualizado');
     fecharMeuPerfil();
   }catch(e){ console.error('salvarMeuPerfil:',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
