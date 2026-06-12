@@ -1513,7 +1513,7 @@ function doPost(e) {
   </div>
 
   <div style="padding:12px 14px 0">
-    <div style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+    <div id="va-totcard" style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">A descontar no mês</div><div id="va-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
         <div id="va-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 pessoas</div>
@@ -3316,6 +3316,7 @@ var _foDiaSel=0;
 var _foSetorFiltro='';
 var _foBusca='';
 var _foPagos={};
+var _foVale=[], _foVaBaixas={};
 var FO_SETOR_ORDEM=['FRENTE DE CAIXA','FISCAIS DE CAIXA','REPOSITORES','AÇOUGUE','PADARIA','LIMPEZA','VERDURÃO','CONFERÊNCIA','ESTAGIÁRIOS','GERÊNCIA'];
 var FO_TIPOS_SUGESTAO=['Salário','Passagem','Quebra de caixa','Auxílio aluguel','Bonificação','Extra','Auxílio cesta','Vale','Comissão'];
 
@@ -3334,6 +3335,10 @@ function _foEh5DU(diaStr){ return String(diaStr||'').trim()==='5DU'; }
 function _foPagoMes(pagId){ return !!_foPagos[pagId+'|'+_foMesYM()]; }
 function _foPagsDe(funcId){ return _foPag.filter(function(p){ return p.funcId===funcId; }); }
 function _foTotalFunc(funcId){ var t=0; _foPagsDe(funcId).forEach(function(p){ t+=_foNum(p.valor); }); return t; }
+// ── integração com o módulo Vale ──
+function _foValeDe(funcId){ var ym=_foMesYM(), t=0; _foVale.forEach(function(v){ if(v.funcId===funcId && String(v.data||'').slice(0,7)===ym) t+=_foNum(v.valor); }); return t; }
+function _foValeBaixa(funcId){ return !!_foVaBaixas[funcId+'|'+_foMesYM()]; }
+function _foEhSalario(tipo){ return _foNorm(tipo).indexOf('salario')>=0; }
 async function _foPost(payload){
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_foLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
@@ -3366,6 +3371,7 @@ async function foCarregar(){
     if(!j.ok || !Array.isArray(j.funcionarios)){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">O servidor ainda está na versão antiga. Publique a <b>NOVA VERSÃO</b> do Apps Script e toque em ↻.</div>'; return; }
     _foFunc=j.funcionarios; _foPag=j.pagamentos||[];
     _foPagos={}; var pgs=j.pagos||[]; for(var pp=0;pp<pgs.length;pp++){ if(pgs[pp].pagId&&pgs[pp].mes) _foPagos[pgs[pp].pagId+'|'+pgs[pp].mes]=true; }
+    _foVale=j.vales||[]; _foVaBaixas={}; var bxs=j.baixas||[]; for(var bb=0;bb<bxs.length;bb++){ if(bxs[bb].funcId&&bxs[bb].mes) _foVaBaixas[bxs[bb].funcId+'|'+bxs[bb].mes]=true; }
     foRenderTotal();
     if(document.getElementById('fo-tab-cal').style.display!=='none') foRenderCal(); else foRenderLista();
   }catch(e){ box.innerHTML='<div class="row-sub" style="padding:10px 2px;color:#A32D2D">Não consegui carregar. Toque em ↻.</div>'; }
@@ -3442,7 +3448,20 @@ function _foCardFunc(f,g){
       +'<span class="fo-chip'+(amber?' fo-chip-amber':'')+'">'+_precoEsc(_foDiaLabel(p.dia))+'</span>'+acoes+'</div>';
   });
   var add=g?('<button onclick="foNovoPag(\''+f.id+'\')" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed #16267A;background:#FFF8E1;color:#16267A;font-size:12.5px;border-radius:9px;cursor:pointer;margin-top:2px"><i class="ti ti-plus" style="font-size:15px"></i> Adicionar pagamento</button>'):'';
-  var rodape=pags.length?('<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid #F0F0F0"><span style="font-size:11.5px;color:#888780">Total no mês</span><span style="font-size:14.5px;font-weight:700;color:#16267A">'+_precoBRL(tot)+'</span></div>'):'';
+  var vale=_foValeDe(f.id);
+  var baixa=_foValeBaixa(f.id);
+  var rodape='';
+  if(pags.length || vale>0){
+    var inner='';
+    if(vale>0){
+      inner ='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:11.5px;color:#888780">Pagamentos</span><span style="font-size:13px;font-weight:600;color:#16267A">'+_precoBRL(tot)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:11.5px;color:#A32D2D">Vale (desconto)'+(baixa?' · <span style="color:#1FA85A">✓ descontado</span>':'')+'</span><span style="font-size:13px;font-weight:600;color:#A32D2D">− '+_precoBRL(vale)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;padding-top:7px;border-top:1px solid #F0F0F0"><span style="font-size:12px;color:#16267A;font-weight:700">A receber</span><span style="font-size:15px;font-weight:700;color:#0F6E56">'+_precoBRL(Math.max(0,tot-vale))+'</span></div>';
+    } else {
+      inner ='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11.5px;color:#888780">Total no mês</span><span style="font-size:14.5px;font-weight:700;color:#16267A">'+_precoBRL(tot)+'</span></div>';
+    }
+    rodape='<div style="margin-top:10px;padding-top:9px;border-top:1px solid #F0F0F0">'+inner+'</div>';
+  }
   return '<div class="row-card fo-fcard" style="flex-direction:column;align-items:stretch;margin-bottom:10px">'+head+linhas+add+rodape+'</div>';
 }
 
@@ -3455,6 +3474,13 @@ function foMesNav(delta){
 function foTogglePagoLinha(pagId){
   var mes=_foMesYM(); var key=pagId+'|'+mes; var novo=!_foPagos[key];
   if(novo) _foPagos[key]=true; else delete _foPagos[key];
+  // se a linha for o SALÁRIO, dá baixa automática no vale daquele mês (manual continua valendo)
+  var pag=null; for(var i=0;i<_foPag.length;i++){ if(_foPag[i].id===pagId) pag=_foPag[i]; }
+  if(pag && _foEhSalario(pag.tipo)){
+    var bkey=pag.funcId+'|'+mes;
+    if(novo) _foVaBaixas[bkey]=true; else delete _foVaBaixas[bkey];
+    _foPost({acao:'valebaixa_set', funcId:pag.funcId, mes:mes, baixado:novo, quem:(userAtual&&userAtual.nome)||''}).catch(function(){});
+  }
   foRenderTotal();
   if(document.getElementById('fo-tab-cal').style.display!=='none') foRenderCal(); else foRenderLista();
   _foPost({acao:'folhapag_set', pagId:pagId, mes:mes, pago:novo, quem:(userAtual&&userAtual.nome)||''}).then(function(j){ if(!j.ok) toast(j.erro||'Erro ao salvar'); }).catch(function(){ toast('Sem conexão — tente de novo'); });
@@ -3724,6 +3750,8 @@ var _vaMesRef=new Date();
 var _vaDiaSel=0;
 var _vaSetorFiltro='';
 var _vaBusca='';
+// fiscal de caixa lança, mas NÃO vê valores/totais dos vales
+function _vaVerValores(){ return _setorKey(userAtual && userAtual.setor) !== 'fiscal'; }
 
 function _vaMesYM(){ return _vaMesRef.getFullYear()+'-'+('0'+(_vaMesRef.getMonth()+1)).slice(-2); }
 function _vaRenderMes(){ var el=document.getElementById('va-mes-titulo'); if(el) el.textContent=_fzMesNomes[_vaMesRef.getMonth()]+' '+_vaMesRef.getFullYear(); }
@@ -3742,6 +3770,7 @@ function abrirVale(){
   show('s-vale'); window.scrollTo(0,0);
   var bq=document.getElementById('va-busca'); if(bq) bq.value='';
   _vaMesRef=new Date(); _vaDiaSel=0; _vaSetorFiltro=''; _vaBusca='';
+  var tc=document.getElementById('va-totcard'); if(tc) tc.style.display=_vaVerValores()?'block':'none';
   _vaRenderMes(); vaTab('lista'); vaCarregar();
 }
 function vaTab(qual){
@@ -3802,39 +3831,45 @@ function vaRenderLista(){
     if(_vaBusca) arr=arr.filter(function(f){ return _foNorm(f.nome).indexOf(_vaBusca)>=0; });
     if(!arr.length) return;
     var totSetor=0; arr.forEach(function(f){ totSetor+=_vaTotalDe(f.id); });
+    var setorTot=_vaVerValores()?('<div style="font-size:11.5px;color:#888780">'+_precoBRL(totSetor)+'</div>'):'';
     html+='<div style="display:flex;align-items:center;justify-content:space-between;margin:14px 2px 8px">'
       +'<div style="font-size:11.5px;color:#16267A;font-weight:700;letter-spacing:.3px">'+_precoEsc(s)+' · '+arr.length+'</div>'
-      +'<div style="font-size:11.5px;color:#888780">'+_precoBRL(totSetor)+'</div></div>';
+      +setorTot+'</div>';
     arr.forEach(function(f){ html+=_vaCardFunc(f); });
   });
   box.innerHTML=html || '<div class="row-sub" style="padding:14px 2px;text-align:center;color:#B4B2A9">'+(_vaBusca?'Ninguém encontrado.':'Nada neste setor.')+'</div>';
 }
 function _vaCardFunc(f){
+  var ver=_vaVerValores();
   var vs=_vaValesDe(f.id).slice().sort(function(a,b){ return String(a.data).localeCompare(String(b.data)); });
   var tot=_vaTotalDe(f.id);
   var desc=_vaTemBaixa(f.id);
+  var totHtml = ver ? ('<div style="text-align:right;margin-right:2px"><div style="font-size:14.5px;font-weight:700;color:'+(tot>0?'#16267A':'#B4B2A9')+'">'+(tot>0?_precoBRL(tot):'sem vale')+'</div></div>') : '';
+  var descChip = (ver && desc) ? ' · <span style="color:#1FA85A">✓ descontado</span>' : '';
   var head='<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(vs.length?'10px':'4px')+'">'
     +'<div style="width:38px;height:38px;border-radius:50%;background:#16267A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0">'+_precoEsc(_foIniciais(f.nome))+'</div>'
     +'<div style="flex:1;min-width:0"><div class="row-label" style="line-height:1.25">'+_precoEsc(f.nome)+'</div>'
-    +'<div class="row-sub">'+_precoEsc(f.setor||'')+(desc?' · <span style="color:#1FA85A">✓ descontado</span>':'')+'</div></div>'
-    +'<div style="text-align:right;margin-right:2px"><div style="font-size:14.5px;font-weight:700;color:'+(tot>0?'#16267A':'#B4B2A9')+'">'+(tot>0?_precoBRL(tot):'sem vale')+'</div></div>'
+    +'<div class="row-sub">'+_precoEsc(f.setor||'')+descChip+'</div></div>'
+    +totHtml
     +'<i class="ti ti-user-circle" style="font-size:22px;color:#16267A;cursor:pointer;padding:2px" title="Ficha" onclick="vaFicha(\''+f.id+'\')"></i>'
     +'</div>';
   var linhas='';
   if(vs.length){
     vs.forEach(function(v){
+      var valHtml = ver ? ('<span style="font-size:13px;font-weight:600;white-space:nowrap">'+_precoBRL(_foNum(v.valor))+'</span>') : '';
       linhas+='<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid #EEE;border-radius:9px;margin-bottom:6px">'
         +'<span style="font-size:11.5px;color:#888780;width:42px;flex-shrink:0">'+_vaFmtData(v.data)+'</span>'
         +'<span style="flex:1;font-size:13px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(v.obs?_precoEsc(v.obs):'<span style="color:#B4B2A9">sem obs</span>')+'</span>'
-        +'<span style="font-size:13px;font-weight:600;white-space:nowrap">'+_precoBRL(_foNum(v.valor))+'</span>'
+        +valHtml
         +'<i class="ti ti-x" style="color:#cdaaaa;font-size:16px;cursor:pointer;padding:3px" onclick="vaDelVale(\''+v.id+'\')"></i></div>';
     });
   } else {
     linhas='<div class="row-sub" style="text-align:center;color:#B4B2A9;padding:6px 0">Nenhum vale neste mês</div>';
   }
+  var baixaBtn = ver ? ('<button onclick="vaToggleBaixa(\''+f.id+'\')" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;'+(desc?'background:#1FA85A;color:#fff':'background:#E5F4EC;color:#0F6E56')+'">'+(desc?'✓ Descontado':'Marcar descontado')+'</button>') : '';
   var acoes='<div style="display:flex;gap:8px;margin-top:6px">'
     +'<button onclick="vaLancar(\''+f.id+'\')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border:1px dashed #16267A;background:#FFF8E1;color:#16267A;font-size:12.5px;border-radius:9px;cursor:pointer"><i class="ti ti-plus" style="font-size:15px"></i> Lançar vale</button>'
-    +'<button onclick="vaToggleBaixa(\''+f.id+'\')" style="flex:1;padding:9px;border:none;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;'+(desc?'background:#1FA85A;color:#fff':'background:#E5F4EC;color:#0F6E56')+'">'+(desc?'✓ Descontado':'Marcar descontado')+'</button>'
+    +baixaBtn
     +'</div>';
   return '<div class="row-card va-fcard" style="flex-direction:column;align-items:stretch;margin-bottom:10px">'+head+linhas+acoes+'</div>';
 }
@@ -3929,14 +3964,17 @@ function vaRenderDia(d){
   var nomeDe={}; _vaFunc.forEach(function(f){ nomeDe[f.id]=f.nome; });
   var lista=info.slice().sort(function(a,b){ return String(nomeDe[a.funcId]||'').localeCompare(String(nomeDe[b.funcId]||'')); });
   var tot=0; var html='<div style="font-size:12.5px;color:#16267A;font-weight:600;margin-bottom:8px">Dia '+d+' · '+lista.length+' vale(s)</div>';
+  var verV=_vaVerValores();
   lista.forEach(function(v){ var n=_foNum(v.valor); tot+=n;
-    html+='<div class="row-card" style="margin-bottom:8px;align-items:center"><div style="flex:1;min-width:0"><div class="row-label" style="font-size:13px">'+_precoEsc(nomeDe[v.funcId]||'?')+'</div><div class="row-sub">'+(v.obs?_precoEsc(v.obs):'sem obs')+'</div></div><span style="font-size:13.5px;font-weight:600;color:#16267A;white-space:nowrap">'+_precoBRL(n)+'</span></div>';
+    var valHtml=verV?('<span style="font-size:13.5px;font-weight:600;color:#16267A;white-space:nowrap">'+_precoBRL(n)+'</span>'):'';
+    html+='<div class="row-card" style="margin-bottom:8px;align-items:center"><div style="flex:1;min-width:0"><div class="row-label" style="font-size:13px">'+_precoEsc(nomeDe[v.funcId]||'?')+'</div><div class="row-sub">'+(v.obs?_precoEsc(v.obs):'sem obs')+'</div></div>'+valHtml+'</div>';
   });
-  html+='<div style="text-align:right;font-size:13px;color:#5F5E5A;margin-top:2px">Total do dia: <b style="color:#16267A">'+_precoBRL(tot)+'</b></div>';
+  if(verV) html+='<div style="text-align:right;font-size:13px;color:#5F5E5A;margin-top:2px">Total do dia: <b style="color:#16267A">'+_precoBRL(tot)+'</b></div>';
   box.innerHTML=html;
 }
 function vaRenderResumoSetores(){
   var box=document.getElementById('va-cal-resumo'); if(!box) return;
+  if(!_vaVerValores()){ box.innerHTML=''; return; }
   if(!_vaFunc.length){ box.innerHTML=''; return; }
   var porSetor={}; _vaFunc.forEach(function(f){ var s=f.setor||'(sem setor)'; if(!porSetor[s])porSetor[s]={tot:0,n:0}; porSetor[s].tot+=_vaTotalDe(f.id); porSetor[s].n++; });
   var arr=[], totGeral=0; for(var s in porSetor){ arr.push({setor:s,tot:porSetor[s].tot,n:porSetor[s].n}); totGeral+=porSetor[s].tot; }
