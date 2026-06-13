@@ -6921,7 +6921,11 @@ function caixaNoPeriodo(raw){
 async function dreCarregarCaixa(){
   try {
     const rows = await fetchRange('Despesas_Caixa!A:H'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS [7]=LANCADO_POR
-    dadosCaixa = rows.slice(1).filter(r=>r[0]&&r[4]).map(r=>({
+    // A aba pode vir COM ou SEM linha de cabeçalho ("DATA","LOJA",...). Só pulamos a
+    // 1ª linha quando ela for MESMO o cabeçalho — senão a 1ª despesa some no reload.
+    const c0 = String((rows[0]||[])[0]==null ? '' : (rows[0]||[])[0]).trim().toUpperCase();
+    const corpo = (rows.length && c0==='DATA') ? rows.slice(1) : rows;
+    dadosCaixa = corpo.filter(r=>r[0]&&r[4]).map(r=>({
       data: r[0], loja: r[1]||'l2', categoria: r[2]||'Outros', valor: (dreParseValor(r[4])||0),
       desc: r[3]||'', resp: r[5]||'', ts: r[6]||'', lancadoPor: r[7]||''
     }));
