@@ -441,11 +441,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
       <div class="login2-welcome">Bem-vindo</div>
       <div class="login2-sub">Grupo Ideal</div>
       <label class="login2-lbl">Usuário</label>
-      <div class="login2-field"><i class="ti ti-user"></i><input type="text" id="login-user" placeholder="seu.usuario" autocomplete="username"></div>
+      <div class="login2-field"><i class="ti ti-user"></i><input type="text" id="login-user" placeholder="seu.usuario" autocomplete="username" autocapitalize="characters" style="text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pass').focus();}"></div>
       <label class="login2-lbl">Senha</label>
-      <div class="login2-field"><i class="ti ti-lock"></i><input type="password" id="login-pass" placeholder="••••••" autocomplete="current-password"><i class="ti ti-eye login2-eye" onclick="togglePass(this)"></i></div>
-      <label class="login2-lbl">Loja</label>
-      <div class="login2-field"><i class="ti ti-building-store"></i><select id="login-loja"><option value="">Selecione a loja...</option><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="bolos">Ideal Bolos — Restaurante</option><option value="all">Todas as lojas (gestor)</option></select></div>
+      <div class="login2-field"><i class="ti ti-lock"></i><input type="password" id="login-pass" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}"><i class="ti ti-eye login2-eye" onclick="togglePass(this)"></i></div>
       <button class="btn-login" onclick="fazerLogin()"><i class="ti ti-login" style="font-size:18px;vertical-align:-3px;margin-right:4px"></i>Entrar</button>
       <div class="login-error" id="login-err"><i class="ti ti-alert-circle"></i><span id="login-err-txt">Erro</span></div>
       <div class="login2-trust">
@@ -453,7 +451,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 5.7 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 1.0 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -880,7 +878,7 @@ function doPost(e) {
       </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v5.7 — Curva ABC (por faturamento e por lucro) com classes A/B/C</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v1.0 — versão inicial</div></div>
     </div>
   </div>
 </div>
@@ -5661,10 +5659,9 @@ function togglePass(el){
 async function fazerLogin() {
   const u   = document.getElementById('login-user').value.trim().toLowerCase();
   const p   = document.getElementById('login-pass').value;
-  const l   = document.getElementById('login-loja').value;
   const err = document.getElementById('login-err');
   const etx = document.getElementById('login-err-txt');
-  if (!u||!p||!l) { err.style.display='flex'; etx.textContent='Preencha todos os campos.'; return; }
+  if (!u||!p) { err.style.display='flex'; etx.textContent='Preencha usuário e senha.'; return; }
   const btn = document.querySelector('.btn-login');
   const btnHTML = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
@@ -5695,14 +5692,14 @@ async function fazerLogin() {
     err.style.display='flex'; etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; return;
   }
   if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-  if (usr.loja!=='all' && l!==usr.loja) { err.style.display='flex'; etx.textContent='Acesso não permitido para esta loja.'; return; }
+  const l = usr.loja || 'l2';   // loja vem do cadastro do usuário; 'all' = master => Consolidado
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
   document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
   dreLoja = lojaAtual;
-  const _lojaNome = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Todas as lojas';
+  const _lojaNome = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Consolidado';
   document.getElementById('h-user').textContent  = usr.nome+' · '+(usr.setor||'');
   document.getElementById('h-store').textContent = _lojaNome;
   await permsCarregarMenu();
@@ -5731,7 +5728,6 @@ function fazerLogout() {
   userAtual=null;
   vigiaTerminaisParar();
   ['login-user','login-pass'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('login-loja').value='';
   document.querySelectorAll('.nav-btn').forEach(b=>b.style.display='');
   show('s-login');
 }
