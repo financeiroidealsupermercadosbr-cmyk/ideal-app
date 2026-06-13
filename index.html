@@ -6920,12 +6920,13 @@ function caixaNoPeriodo(raw){
 }
 async function dreCarregarCaixa(){
   try {
-    const rows = await fetchRange('Despesas_Caixa!A:H'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS [7]=LANCADO_POR
+    const rows = await fetchRange('Despesas_Caixa!A:I'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS [7]=LANCADO_POR [8]=STATUS
     // A aba pode vir COM ou SEM linha de cabeçalho ("DATA","LOJA",...). Só pulamos a
     // 1ª linha quando ela for MESMO o cabeçalho — senão a 1ª despesa some no reload.
     const c0 = String((rows[0]||[])[0]==null ? '' : (rows[0]||[])[0]).trim().toUpperCase();
     const corpo = (rows.length && c0==='DATA') ? rows.slice(1) : rows;
-    dadosCaixa = corpo.filter(r=>r[0]&&r[4]).map(r=>({
+    // STATUS vazio = ativo (compatível com linhas antigas). 'REMOVIDO' = excluída, fora da DRE.
+    dadosCaixa = corpo.filter(r=> r[0]&&r[4] && String(r[8]||'').trim().toUpperCase()!=='REMOVIDO').map(r=>({
       data: r[0], loja: r[1]||'l2', categoria: r[2]||'Outros', valor: (dreParseValor(r[4])||0),
       desc: r[3]||'', resp: r[5]||'', ts: r[6]||'', lancadoPor: r[7]||''
     }));
@@ -6974,10 +6975,12 @@ function dreLancamentosPorGrupo(){
   if(temDados) (dadosCaixa||[]).forEach(x=>{
     if(!caixaNoPeriodo(x.data)) return;
     if(dreLoja!=='all' && x.loja!==dreLoja) return;
-    const cat = (x.categoria && String(x.categoria).trim()) ? x.categoria : 'Outros';
-    if(!grupos[cat]) grupos[cat] = {nome:cat, total:0, itens:[]};
-    grupos[cat].total += x.valor;
-    grupos[cat].itens.push(x);
+    const catLimpa = (x.categoria!=null ? String(x.categoria).trim() : '');
+    const nome = catLimpa || 'Outros';
+    const chave = nome.toLowerCase(); // junta "Combustível" e "combustível" no mesmo grupo
+    if(!grupos[chave]) grupos[chave] = {nome:nome, total:0, itens:[]};
+    grupos[chave].total += x.valor;
+    grupos[chave].itens.push(x);
   });
   const arr = Object.keys(grupos).map(k=>grupos[k]);
   arr.forEach(g=> g.itens.sort((a,b)=> dreDataOrd(b.data,b.ts) - dreDataOrd(a.data,a.ts)));
@@ -7116,7 +7119,9 @@ function renderDRE(){
               const obs = (it.desc&&String(it.desc).trim()) ? dreEsc(it.desc) : '(sem descrição)';
               const meta = [dreDataBR(it.data), dreHora(it.ts), (it.resp&&String(it.resp).trim())?dreEsc(it.resp):''].filter(Boolean).join(' · ');
               const lanc = (it.lancadoPor&&String(it.lancadoPor).trim()) ? `<div class="dli-meta" style="color:#185FA5"><i class="ti ti-user-check"></i>lançado por ${dreEsc(it.lancadoPor)}</div>` : '';
-              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div>${lanc}</div><div class="dli-val" style="color:#A32D2D">− ${brlC(it.valor)}</div></div>`;
+              const idx = dadosCaixa.indexOf(it);
+              const delBtn = G ? `<i class="ti ti-trash" style="color:#A32D2D;font-size:16px;cursor:pointer;padding:4px;margin-left:6px" title="Excluir lançamento" onclick="event.stopPropagation();excluirDespesa(${idx})"></i>` : '';
+              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div>${lanc}</div><div class="dli-val" style="color:#A32D2D;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap">− ${brlC(it.valor)}${delBtn}</div></div>`;
             }).join('')}
           </div>
         </div>`).join('')}
@@ -7492,6 +7497,33 @@ async function salvarDespesa() {
     console.error(e);
   }
   btn.disabled=false; btn.textContent='Registrar despesa';
+}
+
+// Exclui um lançamento do caixa (soft-delete): marca REMOVIDO no Sheets e tira da DRE.
+// O registro continua na planilha pra auditoria — não some de vez.
+async function excluirDespesa(idx){
+  const x = dadosCaixa[idx];
+  if(!x) return;
+  const resumo = (x.categoria||'Despesa') + ' — ' + brlC(x.valor) + (x.desc&&String(x.desc).trim()?('\n'+x.desc):'');
+  if(!confirm('Excluir esta despesa do caixa?\n\n'+resumo+'\n\nEla sai da DRE (fica guardada como removida).')) return;
+  try {
+    if(APPS_SCRIPT_URL){
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({acao:'despesa_del', data:x.data, categoria:x.categoria, desc:x.desc, valor:x.valor, resp:x.resp, ts:x.ts, sheetId:SHEET_ID})
+      });
+      if(!res.ok) throw new Error('Apps Script: HTTP '+res.status);
+      const out = await res.json().catch(()=>({}));
+      if(out && out.ok===false) throw new Error(out.erro||'falha ao excluir');
+    }
+    dadosCaixa.splice(idx,1); // tira da DRE na hora
+    renderDRE();
+    toast('✓ Despesa excluída');
+  } catch(e) {
+    toast('⚠ Não consegui excluir agora — tente de novo');
+    console.error(e);
+  }
 }
 
 // ══════════════════════════════════════════════════════
