@@ -183,6 +183,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .dre-bcol{display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
 .dre-bval{font-size:10.5px;color:#16267A;font-weight:500;margin-bottom:4px;white-space:nowrap}
 .dre-bar{width:46px;border-radius:5px 5px 0 0;background:#1B3A9E;min-height:4px;transition:height .7s cubic-bezier(.22,1,.36,1)}
+.dre-bsub{font-size:10px;color:#888780;margin-top:2px;text-align:center}
 .dre-bx{font-size:10.5px;color:#888780;margin-top:6px;text-align:center}
 /* navegador de mês */
 .dre-mesnav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -718,7 +719,7 @@ body:has(#s-login.active){padding:0}
         <div class="field-group" id="desp-novacat" style="display:none">
           <label>Nova categoria</label><input type="text" id="desp-novacat-txt" placeholder="Ex: Uso/Consumo Peixaria">
         </div>
-        <div class="field-group"><label>Descrição</label><input type="text" id="desp-desc" placeholder="Descreva a despesa..."></div>
+        <div class="field-group"><label>Descrição (opcional)</label><input type="text" id="desp-desc" placeholder="Descreva a despesa..."></div>
         <div class="field-group"><label>Valor (R$)</label><input type="number" id="desp-valor" placeholder="0,00" step="0.01"></div>
         <div class="field-group"><label>Responsável</label><input type="text" id="desp-resp" placeholder="Nome de quem retirou"></div>
         <button class="btn-primary" id="btn-desp" onclick="salvarDespesa()">Registrar despesa</button>
@@ -7015,10 +7016,13 @@ function dreCalcular(){
   const rec = dreSomaReceita();
   const ct  = dreSomaContas();
   const subCats = [['energia','Energia'],['agua','Água'],['aluguel','Aluguel'],['telefone','Telefone/internet'],['servico','Serviços/outras']];
-  const caixa = dreSomaCaixa();
   const sub = {}, subAj = {};
-  subCats.forEach(([k])=>{ const a=dreAjGet(k); subAj[k]=(a!=null); const auto=(ct[k]||0)+(caixa[k]||0); sub[k]=(a!=null)?a:auto; });
-  const despOp = subCats.reduce((s,[k])=> s + sub[k], 0);
+  // buckets = só CONTAS A PAGAR (o lápis ajusta só esta parte); o caixa conta sempre, separado
+  subCats.forEach(([k])=>{ const a=dreAjGet(k); subAj[k]=(a!=null); sub[k]=(a!=null)?a:(ct[k]||0); });
+  const despOpContas = subCats.reduce((s,[k])=> s + sub[k], 0);
+  const caixaGrupos  = dreLancamentosPorGrupo();
+  const caixaTotal   = caixaGrupos.reduce((s,g)=> s + (g.total||0), 0);
+  const despOp = despOpContas + caixaTotal;
   const aImp=dreAjGet('imposto'), aCmv=dreAjGet('cmv'), aDF=dreAjGet('despFin'), aRF=dreAjGet('recFin');
   const imposto = aImp!=null?aImp:ct.imposto;
   const cmv     = aCmv!=null?aCmv:ct.cmv;
@@ -7029,7 +7033,7 @@ function dreCalcular(){
   const grupos  = dreGruposVisiveis();
   const grpSoma = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
   const resultado = margem - despOp + recFin - despFin + grpSoma;
-  return {rec, ct, subCats, sub, subAj, despOp, imposto, cmv, despFin, recFin, recLiq, margem,
+  return {rec, ct, subCats, sub, subAj, despOp, despOpContas, caixaTotal, caixaGrupos, imposto, cmv, despFin, recFin, recLiq, margem,
           grupos, grpSoma, resultado, aj:{imposto:aImp!=null, cmv:aCmv!=null, despFin:aDF!=null, recFin:aRF!=null}};
 }
 
@@ -7046,26 +7050,27 @@ function renderDRE(){
 
   if(dreView==='grafico'){
     const D = dreCalcular();
+    const pctR = v => rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
     const recItems=[['Dinheiro',rec.dinheiro],['Cartão',rec.cartao],['PIX',rec.pix]];
     const maxR=Math.max(1, rec.dinheiro, rec.cartao, rec.pix);
     const barrasR=recItems.map(([nm,v])=>{
       const h=Math.max(4, Math.round((v/maxR)*120));
-      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0"></div><div class="dre-bx">${nm}</div></div>`;
+      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
     }).join('');
     const posit = D.resultado>=0;
     const despItems=[['CMV',D.cmv,'#A32D2D'],['Impostos',D.imposto,'#A32D2D'],['Despesas',D.despOp,'#A32D2D'],[posit?'Lucro':'Prejuízo',Math.abs(D.resultado),posit?'#0F6E56':'#A32D2D']];
     const maxD=Math.max(1, D.cmv, D.imposto, D.despOp, Math.abs(D.resultado));
     const barrasD=despItems.map(([nm,v,c])=>{
       const h=Math.max(4, Math.round((v/maxD)*120));
-      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0;background:${c}"></div><div class="dre-bx">${nm}</div></div>`;
+      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0;background:${c}"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
     }).join('');
     corpo.innerHTML = `${aviso}
       <div class="dre-row head"><div><div class="dr-lbl">(+) Receita bruta</div><div class="dr-sub">composição do recebimento</div></div><div class="dr-val">${brl(rec.bruta)}</div></div>
       <div class="dre-bars">${barrasR}</div>
-      <div class="dre-row head" style="margin-top:16px"><div><div class="dr-lbl">Para onde vai</div><div class="dr-sub">custos, impostos, despesas e resultado</div></div><div class="dr-val">${brlC(D.resultado)}</div></div>
+      <div class="dre-row head" style="margin-top:16px"><div><div class="dr-lbl">Para onde vai</div><div class="dr-sub">% sobre a receita bruta</div></div><div class="dr-val">${brlC(D.resultado)}</div></div>
       <div class="dre-bars">${barrasD}</div>`;
     requestAnimationFrame(function(){ setTimeout(function(){
-      corpo.querySelectorAll('.dre-bar').forEach(function(b){ b.style.height = b.getAttribute('data-h') + 'px'; });
+      corpo.querySelectorAll('.dre-bar').forEach(function(b,i){ b.style.transitionDelay=(i*0.07)+'s'; b.style.height = b.getAttribute('data-h') + 'px'; });
     }, 30); });
     return;
   }
@@ -7091,7 +7096,7 @@ function renderDRE(){
   const grpLanc = semFonte ? [] : dreLancamentosPorGrupo();
   const lancSec = grpLanc.length ? `
     <div class="dre-lanc-sec">
-      <div class="dre-lanc-hint"><i class="ti ti-list-details"></i>Lançamentos do caixa por grupo · toque pra abrir</div>
+      <div class="dre-lanc-hint"><i class="ti ti-wallet"></i>(−) Despesas do caixa, por categoria · toque pra abrir</div>
       ${grpLanc.map(g=>`
         <div class="dre-lanc-grp">
           <div class="dlg-head" onclick="dreToggleGrupo(this)">
@@ -7100,14 +7105,14 @@ function renderDRE(){
               <span class="dlg-nm">${dreEsc(g.nome)}</span>
               <span class="dlg-badge">${g.itens.length} ${g.itens.length===1?'lançamento':'lançamentos'}</span>
             </div>
-            <span class="dlg-val">${brlC(g.total)}</span>
+            <span class="dlg-val" style="color:#A32D2D">− ${brlC(g.total)}</span>
           </div>
           <div class="dlg-list">
             ${g.itens.map(it=>{
               const obs = (it.desc&&String(it.desc).trim()) ? dreEsc(it.desc) : '(sem descrição)';
               const meta = [dreDataBR(it.data), dreHora(it.ts), (it.resp&&String(it.resp).trim())?dreEsc(it.resp):''].filter(Boolean).join(' · ');
               const lanc = (it.lancadoPor&&String(it.lancadoPor).trim()) ? `<div class="dli-meta" style="color:#185FA5"><i class="ti ti-user-check"></i>lançado por ${dreEsc(it.lancadoPor)}</div>` : '';
-              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div>${lanc}</div><div class="dli-val">${brlC(it.valor)}</div></div>`;
+              return `<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">${obs}</div><div class="dli-meta"><i class="ti ti-calendar"></i>${meta||'sem data'}</div>${lanc}</div><div class="dli-val" style="color:#A32D2D">− ${brlC(it.valor)}</div></div>`;
             }).join('')}
           </div>
         </div>`).join('')}
@@ -7437,6 +7442,18 @@ async function salvarDespesaSheets(dados) {
 // ══════════════════════════════════════════════════════
 // DESPESA DE CAIXA
 // ══════════════════════════════════════════════════════
+// categorias de despesa personalizadas (cadastradas pelo usuário, ficam salvas)
+function despCatsCustom(){ try{ return JSON.parse(localStorage.getItem('desp_cats_custom')||'[]'); }catch(e){ return []; } }
+function despCatsRender(){
+  const sel = document.getElementById('desp-cat'); if(!sel) return;
+  const novaOpt = sel.querySelector('option[value="nova"]');
+  sel.querySelectorAll('option[data-custom="1"]').forEach(o=>o.remove());
+  despCatsCustom().forEach(function(c){
+    const o=document.createElement('option'); o.textContent=c; o.value=c; o.setAttribute('data-custom','1');
+    if(novaOpt) sel.insertBefore(o, novaOpt); else sel.appendChild(o);
+  });
+}
+
 async function salvarDespesa() {
   const cat   = document.getElementById('desp-cat').value;
   const catF  = cat==='nova'?document.getElementById('desp-novacat-txt').value.trim():cat;
@@ -7445,9 +7462,16 @@ async function salvarDespesa() {
   const resp  = document.getElementById('desp-resp').value.trim();
   const data  = document.getElementById('desp-data').value;
   if(!catF)          { toast('⚠ Informe a categoria'); return; }
-  if(!desc)          { toast('⚠ Informe a descrição'); return; }
   if(!valor||valor<=0){ toast('⚠ Informe um valor válido'); return; }
   if(!resp)          { toast('⚠ Informe o responsável'); return; }
+  if(cat==='nova' && catF){
+    const _cs = despCatsCustom();
+    if(_cs.indexOf(catF)===-1){ _cs.push(catF); localStorage.setItem('desp_cats_custom', JSON.stringify(_cs)); }
+    despCatsRender();
+    const _sel=document.getElementById('desp-cat'); if(_sel) _sel.value=catF;
+    document.getElementById('desp-novacat').style.display='none';
+    document.getElementById('desp-novacat-txt').value='';
+  }
   const btn = document.getElementById('btn-desp');
   btn.disabled=true; btn.textContent='Salvando...';
   const lancadoPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
@@ -7486,6 +7510,7 @@ const iv = setInterval(()=>{
   w+=2; prog.style.width=Math.min(w,100)+'%';
   if(w>=100){ clearInterval(iv); setTimeout(()=>show('s-login'),300); }
 },30);
+try{ despCatsRender(); }catch(e){}
 
 // Fechar modais clicando fora
 ['modal-baixa','modal-massa','modal-grupo'].forEach(id=>{
