@@ -179,7 +179,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .dre-foot{display:flex;gap:8px;margin-top:12px}
 .dre-fbtn{flex:1;text-align:center;font-size:11.5px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:9px;padding:9px 0;font-weight:500;cursor:pointer}
 .dre-fbtn i{font-size:13px;vertical-align:-2px;margin-right:3px}
-.dre-bars{display:flex;align-items:flex-end;gap:14px;height:150px;padding:10px 8px 0;justify-content:center}
+.dre-bars{display:flex;align-items:flex-end;gap:14px;height:190px;padding:12px 8px 0;justify-content:center;margin-top:6px}
 .dre-bcol{display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
 .dre-bval{font-size:10.5px;color:#16267A;font-weight:500;margin-bottom:4px;white-space:nowrap}
 .dre-bar{width:46px;border-radius:5px 5px 0 0;background:#1B3A9E;min-height:4px;transition:height .7s cubic-bezier(.22,1,.36,1)}
@@ -7061,14 +7061,14 @@ function renderDRE(){
     const recItems=[['Dinheiro',rec.dinheiro],['Cartão',rec.cartao],['PIX',rec.pix]];
     const maxR=Math.max(1, rec.dinheiro, rec.cartao, rec.pix);
     const barrasR=recItems.map(([nm,v])=>{
-      const h=Math.max(4, Math.round((v/maxR)*120));
+      const h=Math.max(4, Math.round((v/maxR)*115));
       return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
     }).join('');
     const posit = D.resultado>=0;
     const despItems=[['CMV',D.cmv,'#A32D2D'],['Impostos',D.imposto,'#A32D2D'],['Despesas',D.despOp,'#A32D2D'],[posit?'Lucro':'Prejuízo',Math.abs(D.resultado),posit?'#0F6E56':'#A32D2D']];
     const maxD=Math.max(1, D.cmv, D.imposto, D.despOp, Math.abs(D.resultado));
     const barrasD=despItems.map(([nm,v,c])=>{
-      const h=Math.max(4, Math.round((v/maxD)*120));
+      const h=Math.max(4, Math.round((v/maxD)*115));
       return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0;background:${c}"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
     }).join('');
     corpo.innerHTML = `${aviso}
@@ -7076,9 +7076,14 @@ function renderDRE(){
       <div class="dre-bars">${barrasR}</div>
       <div class="dre-row head" style="margin-top:16px"><div><div class="dr-lbl">Para onde vai</div><div class="dr-sub">% sobre a receita bruta</div></div><div class="dr-val">${brlC(D.resultado)}</div></div>
       <div class="dre-bars">${barrasD}</div>`;
-    requestAnimationFrame(function(){ setTimeout(function(){
-      corpo.querySelectorAll('.dre-bar').forEach(function(b,i){ b.style.transitionDelay=(i*0.07)+'s'; b.style.height = b.getAttribute('data-h') + 'px'; });
-    }, 30); });
+    requestAnimationFrame(function(){
+      var bars = corpo.querySelectorAll('.dre-bar');
+      bars.forEach(function(b){ b.style.height='0'; });
+      void corpo.offsetHeight; // força o reflow pra animação acontecer toda vez
+      requestAnimationFrame(function(){
+        bars.forEach(function(b,i){ b.style.transitionDelay=(i*0.09)+'s'; b.style.height = b.getAttribute('data-h') + 'px'; });
+      });
+    });
     return;
   }
 
