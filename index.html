@@ -629,29 +629,13 @@ body:has(#s-login.active){padding:0}
         <div class="metric"><div class="metric-label">Cupons (mês)</div><div class="metric-value" id="p-cupons">—</div></div>
       </div>
 
-      <!-- SALDO DO DIA -->
-      <div class="section-label" style="margin-top:16px"><i class="ti ti-scale"></i> Saldo do dia</div>
-      <div class="saldo-hero" id="saldo-hero">
-        <div class="saldo-hero-lbl"><i class="ti ti-scale"></i> Saldo projetado de hoje</div>
-        <div class="saldo-hero-val" id="p-saldo">—</div>
-        <div class="saldo-hero-verdict" id="p-saldo-verdict"></div>
-      </div>
-      <div class="grid2" style="margin-top:10px;margin-bottom:0">
-        <div class="chip"><div class="chip-lbl"><i class="ti ti-arrow-down-circle" style="color:#0F6E56"></i> Entra hoje</div><div class="chip-val green" id="p-entra">—</div></div>
-        <div class="chip"><div class="chip-lbl"><i class="ti ti-arrow-up-circle" style="color:#A32D2D"></i> Sai hoje</div><div class="chip-val red" id="p-sai">—</div></div>
-      </div>
-      <div id="alerta-vencido" class="alert-box" style="display:none;margin-top:12px">
+      <!-- Saldo do dia e Recebimentos esperados removidos (conciliação de cartões será tratada à parte) -->
+      <div id="alerta-vencido" class="alert-box" style="display:none;margin-top:16px">
         <i class="ti ti-alert-triangle"></i><span id="alerta-txt"></span>
       </div>
-      <div class="section-label"><i class="ti ti-arrow-down-circle"></i> Recebimentos esperados</div>
-      <div style="background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:12px 14px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:13px;color:#5F5E5A">Pix · débito · crédito</span>
-          <b id="p-receb-resumo" style="font-size:15px;color:#16267A">—</b>
-        </div>
-        <div class="verlink" onclick="abrirCartoes()" style="border-top:1px solid rgba(0,0,0,0.08);margin-top:9px;padding-top:9px;justify-content:flex-end"><span>Ver em Cartões e Recebimentos</span><i class="ti ti-arrow-right"></i></div>
-      </div>
       <div style="display:none">
+        <span id="saldo-hero"></span><span id="p-saldo"></span><span id="p-saldo-verdict"></span>
+        <span id="p-entra"></span><span id="p-sai"></span><span id="p-receb-resumo"></span>
         <span id="p-deb-src"></span><span id="p-deb"></span>
         <span id="p-cred-src"></span><span id="p-cred"></span>
         <span id="p-parc-src"></span><span id="p-parc"></span>
