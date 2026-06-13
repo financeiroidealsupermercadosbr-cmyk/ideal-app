@@ -5748,7 +5748,7 @@ async function carregarSheets() {
       fetchRange('Lancamento_Diario!A:P'),
       fetchRange('Contas_Pagar!A:N'),
       fetchRange('Metadados!A:B'),
-      fetchRange('Faturamento_Diario!A:C').catch(()=>[]),
+      fetchRange('Faturamento_Diario!A:F').catch(()=>[]),
     ]);
 
     // ── VENDAS — índices corretos conforme sincronizar_sheets.py ──
@@ -5767,6 +5767,8 @@ async function carregarSheets() {
       perdidos:  N(r[8]),
       parcelado: N(r[9]),
       clientes:  N(r[10]),
+      cartao:    0,
+      temQuebra: false,
     }));
 
     // ── FATURAMENTO PELA PONTE (banco) — sobrescreve total E clientes de cada dia ──
@@ -5781,18 +5783,25 @@ async function carregarSheets() {
         if(m){ br = ('0'+m[3]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[1]; }
         else { m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ br = ('0'+m[1]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[3]; } }
         if(!br) return;
-        mapaFat[br] = { total:N(r[1]), clientes:N(r[2]) };
+        // [1]=total [2]=clientes [3]=dinheiro [4]=cartao(+vale) [5]=pix (a quebra vem da VENDASV, todos os caixas)
+        mapaFat[br] = { total:N(r[1]), clientes:N(r[2]), din:N(r[3]), cart:N(r[4]), pix:N(r[5]) };
       });
       dadosVendas.forEach(function(r){
         if(mapaFat[r.data] !== undefined){
-          r.total = mapaFat[r.data].total;
-          if(mapaFat[r.data].clientes > 0) r.clientes = mapaFat[r.data].clientes;
+          const f = mapaFat[r.data];
+          r.total = f.total;
+          if(f.clientes > 0) r.clientes = f.clientes;
+          // só usa a quebra nova quando ela veio de fato (dia já reprocessado pela ponte)
+          if(f.din>0 || f.cart>0 || f.pix>0){
+            r.dinheiro = f.din; r.cartao = f.cart; r.pix = f.pix; r.temQuebra = true;
+          }
         }
       });
-      // dias que o banco tem e o antigo não: adiciona (com clientes do banco)
+      // dias que o banco tem e o antigo não: adiciona (com clientes e quebra do banco)
       Object.keys(mapaFat).forEach(function(br){
         if(!dadosVendas.some(function(x){ return x.data===br; })){
-          dadosVendas.push({data:br, total:mapaFat[br].total, dinheiro:0, debito:0, credito:0, pix:0, aliment:0, perdidos:0, parcelado:0, clientes:mapaFat[br].clientes});
+          const f = mapaFat[br];
+          dadosVendas.push({data:br, total:f.total, dinheiro:f.din, debito:0, credito:0, pix:f.pix, aliment:0, perdidos:0, parcelado:0, clientes:f.clientes, cartao:f.cart, temQuebra:(f.din>0||f.cart>0||f.pix>0)});
         }
       });
     })();
@@ -6856,11 +6865,21 @@ function dreSomaReceita(){
   if(temDados) (dadosVendas||[]).forEach(r=>{
     if(!dreNoPeriodo(r.data)) return;
     bruta    += r.total;
-    dinheiro += r.dinheiro;
-    cartao   += (r.debito + r.credito + r.parcelado + r.aliment);
-    pix      += r.pix;
+    if(r.temQuebra){
+      // fonte nova (VENDASV, todos os caixas): cartao já vem com o vale embutido
+      dinheiro += r.dinheiro;
+      cartao   += r.cartao;
+      pix      += r.pix;
+    } else {
+      // fonte antiga (Lancamento_Diario): monta o cartão pelas colunas separadas
+      dinheiro += r.dinheiro;
+      cartao   += (r.debito + r.credito + r.parcelado + r.aliment);
+      pix      += r.pix;
+    }
   });
-  return {bruta, dinheiro, cartao, pix};
+  // Outros = o que sobra pra fechar com o total (cheque, a prazo, convênio, etc.)
+  const outros = Math.max(0, bruta - dinheiro - cartao - pix);
+  return {bruta, dinheiro, cartao, pix, outros};
 }
 
 // Classifica uma conta a pagar pela "cara" do nome do fornecedor.
@@ -7059,7 +7078,8 @@ function renderDRE(){
     const D = dreCalcular();
     const pctR = v => rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
     const recItems=[['Dinheiro',rec.dinheiro],['Cartão',rec.cartao],['PIX',rec.pix]];
-    const maxR=Math.max(1, rec.dinheiro, rec.cartao, rec.pix);
+    if(rec.outros>0.005) recItems.push(['Outros',rec.outros]);
+    const maxR=Math.max(1, rec.dinheiro, rec.cartao, rec.pix, rec.outros);
     const barrasR=recItems.map(([nm,v])=>{
       const h=Math.max(4, Math.round((v/maxR)*115));
       return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
@@ -7140,8 +7160,9 @@ function renderDRE(){
       <div class="dr-val">${brlC(rec.bruta)}<div class="dr-sub">100%</div></div>
     </div>
     <div class="dre-row sub"><div class="dr-lbl">Dinheiro (à vista)</div><div class="dr-val">${brlC(rec.dinheiro)}</div></div>
-    <div class="dre-row sub"><div class="dr-lbl">Cartão (déb + créd + parc)</div><div class="dr-val">${brlC(rec.cartao)}</div></div>
+    <div class="dre-row sub"><div class="dr-lbl">Cartão (déb + créd + vale)</div><div class="dr-val">${brlC(rec.cartao)}</div></div>
     <div class="dre-row sub"><div class="dr-lbl">PIX</div><div class="dr-val">${brlC(rec.pix)}</div></div>
+    ${rec.outros>0.005?`<div class="dre-row sub"><div class="dr-lbl">Outros (cheque, a prazo, convênio)</div><div class="dr-val">${brlC(rec.outros)}</div></div>`:''}
 
     <div class="dre-row"><div class="dr-lbl">(−) Deduções e impostos${tagA(D.aj.imposto)}</div><div class="dr-val">${impostos>0?'− '+brlC(impostos):'R$ 0,00'}${lap('imposto','Deduções e impostos')}<div class="dr-sub">${impostos>0?pct(impostos):'sem imposto no período'}</div></div></div>
     ${impExp}
@@ -7244,8 +7265,9 @@ tr.grp td{color:#16267A;font-size:12px}
     <table>
       <tr class="head"><td>(+) Receita bruta</td><td class="v">${brlC(rec.bruta)} · 100%</td></tr>
       <tr class="sub"><td>Dinheiro (à vista)</td><td class="v">${brlC(rec.dinheiro)}</td></tr>
-      <tr class="sub"><td>Cartão (déb + créd + parc)</td><td class="v">${brlC(rec.cartao)}</td></tr>
+      <tr class="sub"><td>Cartão (déb + créd + vale)</td><td class="v">${brlC(rec.cartao)}</td></tr>
       <tr class="sub"><td>PIX</td><td class="v">${brlC(rec.pix)}</td></tr>
+      ${rec.outros>0.005?`<tr class="sub"><td>Outros (cheque, a prazo, convênio)</td><td class="v">${brlC(rec.outros)}</td></tr>`:''}
       <tr><td>(−) Deduções e impostos</td><td class="v">${impostos>0?'− '+brlC(impostos)+' · '+pct(impostos):'R$ 0,00'}</td></tr>
       <tr class="total"><td>(=) Receita líquida</td><td class="v">${brlC(recLiq)}</td></tr>
       <tr><td>(−) Custo das mercadorias (CMV)</td><td class="v">${cmv>0?'− '+brlC(cmv)+' · '+pct(cmv):'R$ 0,00'}</td></tr>
