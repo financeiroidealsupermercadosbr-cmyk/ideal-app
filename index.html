@@ -404,6 +404,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 #s-login.active .login2-card{flex:1;display:flex;flex-direction:column;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
 #s-login.active .login2-trust{margin-top:auto}
 body:has(#s-login.active){padding:0}
+#login-user::placeholder{text-transform:none;color:#b3b3b3}
 .saldo-hero{background:#E1F5EE;border-radius:14px;padding:16px;margin-bottom:12px}
 .saldo-hero.red{background:#FCEBEB}
 .saldo-hero-lbl{font-size:12px;color:#085041;margin-bottom:4px;display:flex;align-items:center;gap:6px}
@@ -446,7 +447,7 @@ body:has(#s-login.active){padding:0}
       <div class="login2-welcome">Bem-vindo</div>
       <div class="login2-sub">Grupo Ideal</div>
       <label class="login2-lbl">Usuário</label>
-      <div class="login2-field"><i class="ti ti-user"></i><input type="text" id="login-user" placeholder="seu.usuario" autocomplete="username" autocapitalize="characters" style="text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pass').focus();}"></div>
+      <div class="login2-field"><i class="ti ti-user"></i><input type="text" id="login-user" placeholder="usuário" autocomplete="username" autocapitalize="characters" style="text-transform:uppercase" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-pass').focus();}"></div>
       <label class="login2-lbl">Senha</label>
       <div class="login2-field"><i class="ti ti-lock"></i><input type="password" id="login-pass" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}"><i class="ti ti-eye login2-eye" onclick="togglePass(this)"></i></div>
       <button class="btn-login" onclick="fazerLogin()"><i class="ti ti-login" style="font-size:18px;vertical-align:-3px;margin-right:4px"></i>Entrar</button>
