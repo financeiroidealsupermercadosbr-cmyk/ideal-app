@@ -185,6 +185,13 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .dre-bar{width:46px;border-radius:5px 5px 0 0;background:#1B3A9E;min-height:4px;transition:height .7s cubic-bezier(.22,1,.36,1)}
 .dre-bsub{font-size:10px;color:#888780;margin-top:2px;text-align:center}
 .dre-bx{font-size:10.5px;color:#888780;margin-top:6px;text-align:center}
+.dre-hbars{display:flex;flex-direction:column;gap:10px;padding:12px 2px 4px;margin-top:6px}
+.dre-hrow{display:grid;grid-template-columns:70px 1fr 76px;align-items:center;gap:8px}
+.dre-hlbl{font-size:11px;color:#555;text-align:right;line-height:1.12;word-break:break-word}
+.dre-htrack{background:#EDEEF3;border-radius:7px;height:22px;overflow:hidden;min-width:0}
+.dre-hfill{height:100%;background:#1B3A9E;border-radius:7px;width:0;min-width:3px;transition:width .7s cubic-bezier(.22,1,.36,1)}
+.dre-htxt{font-size:10.5px;color:#16267A;font-weight:500;text-align:right;line-height:1.25;white-space:nowrap}
+.dre-hpct{font-size:9.5px;color:#888780;font-weight:400}
 /* navegador de mês */
 .dre-mesnav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .dre-seta{width:40px;height:40px;flex:0 0 auto;border:1px solid rgba(22,38,122,0.2);background:#fff;border-radius:10px;color:#1B3A9E;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -7094,27 +7101,27 @@ function renderDRE(){
     if(rec.outros>0.005) recItems.push(['Outros',rec.outros]);
     const maxR=Math.max(1, ...recItems.map(it=>it[1]));
     const barrasR=recItems.map(([nm,v])=>{
-      const h=Math.max(4, Math.round((v/maxR)*115));
-      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
+      const w=Math.max(2, Math.round((v/maxR)*100));
+      return `<div class="dre-hrow"><div class="dre-hlbl">${nm}</div><div class="dre-htrack"><div class="dre-hfill" data-w="${w}" style="width:0"></div></div><div class="dre-htxt">${brl(v)}<br><span class="dre-hpct">${pctR(v)}</span></div></div>`;
     }).join('');
     const posit = D.resultado>=0;
     const despItems=[['CMV',D.cmv,'#A32D2D'],['Impostos',D.imposto,'#A32D2D'],['Despesas',D.despOp,'#A32D2D'],[posit?'Lucro':'Prejuízo',Math.abs(D.resultado),posit?'#0F6E56':'#A32D2D']];
     const maxD=Math.max(1, D.cmv, D.imposto, D.despOp, Math.abs(D.resultado));
     const barrasD=despItems.map(([nm,v,c])=>{
-      const h=Math.max(4, Math.round((v/maxD)*115));
-      return `<div class="dre-bcol"><div class="dre-bval">${brl(v)}</div><div class="dre-bar" data-h="${h}" style="height:0;background:${c}"></div><div class="dre-bx">${nm}</div><div class="dre-bsub">${pctR(v)}</div></div>`;
+      const w=Math.max(2, Math.round((v/maxD)*100));
+      return `<div class="dre-hrow"><div class="dre-hlbl">${nm}</div><div class="dre-htrack"><div class="dre-hfill" data-w="${w}" style="width:0;background:${c}"></div></div><div class="dre-htxt">${brl(v)}<br><span class="dre-hpct">${pctR(v)}</span></div></div>`;
     }).join('');
     corpo.innerHTML = `${aviso}
       <div class="dre-row head"><div><div class="dr-lbl">(+) Receita bruta</div><div class="dr-sub">composição do recebimento</div></div><div class="dr-val">${brl(rec.bruta)}</div></div>
-      <div class="dre-bars">${barrasR}</div>
+      <div class="dre-hbars">${barrasR}</div>
       <div class="dre-row head" style="margin-top:16px"><div><div class="dr-lbl">Para onde vai</div><div class="dr-sub">% sobre a receita bruta</div></div><div class="dr-val">${brlC(D.resultado)}</div></div>
-      <div class="dre-bars">${barrasD}</div>`;
+      <div class="dre-hbars">${barrasD}</div>`;
     requestAnimationFrame(function(){
-      var bars = corpo.querySelectorAll('.dre-bar');
-      bars.forEach(function(b){ b.style.height='0'; });
+      var bars = corpo.querySelectorAll('.dre-hfill');
+      bars.forEach(function(b){ b.style.width='0'; });
       void corpo.offsetHeight; // força o reflow pra animação acontecer toda vez
       requestAnimationFrame(function(){
-        bars.forEach(function(b,i){ b.style.transitionDelay=(i*0.09)+'s'; b.style.height = b.getAttribute('data-h') + 'px'; });
+        bars.forEach(function(b,i){ b.style.transitionDelay=(i*0.07)+'s'; b.style.width = b.getAttribute('data-w') + '%'; });
       });
     });
     return;
@@ -7180,7 +7187,6 @@ function renderDRE(){
     ${rec.refeicao>0.005?`<div class="dre-row sub"><div class="dr-lbl">Refeição</div><div class="dr-val">${brlC(rec.refeicao)}</div></div>`:''}
     ${rec.valefunc>0.005?`<div class="dre-row sub"><div class="dr-lbl">Vale funcionários</div><div class="dr-val">${brlC(rec.valefunc)}</div></div>`:''}
     ${rec.outros>0.005?`<div class="dre-row sub"><div class="dr-lbl">Outros</div><div class="dr-val">${brlC(rec.outros)}</div></div>`:''}
-    ${rec.vermelho>0.005?`<div class="dre-row sub"><div class="dr-lbl" style="color:#A32D2D">⬤ Vermelho (perdas internas)<div class="dr-sub">não entra na soma das formas</div></div><div class="dr-val" style="color:#A32D2D">${brlC(rec.vermelho)}</div></div>`:''}
 
     <div class="dre-row"><div class="dr-lbl">(−) Deduções e impostos${tagA(D.aj.imposto)}</div><div class="dr-val">${impostos>0?'− '+brlC(impostos):'R$ 0,00'}${lap('imposto','Deduções e impostos')}<div class="dr-sub">${impostos>0?pct(impostos):'sem imposto no período'}</div></div></div>
     ${impExp}
@@ -7290,7 +7296,6 @@ tr.grp td{color:#16267A;font-size:12px}
       ${rec.refeicao>0.005?`<tr class="sub"><td>Refeição</td><td class="v">${brlC(rec.refeicao)}</td></tr>`:''}
       ${rec.valefunc>0.005?`<tr class="sub"><td>Vale funcionários</td><td class="v">${brlC(rec.valefunc)}</td></tr>`:''}
       ${rec.outros>0.005?`<tr class="sub"><td>Outros</td><td class="v">${brlC(rec.outros)}</td></tr>`:''}
-      ${rec.vermelho>0.005?`<tr class="sub"><td style="color:#A32D2D">Vermelho (perdas internas) — fora da soma</td><td class="v" style="color:#A32D2D">${brlC(rec.vermelho)}</td></tr>`:''}
       <tr><td>(−) Deduções e impostos</td><td class="v">${impostos>0?'− '+brlC(impostos)+' · '+pct(impostos):'R$ 0,00'}</td></tr>
       <tr class="total"><td>(=) Receita líquida</td><td class="v">${brlC(recLiq)}</td></tr>
       <tr><td>(−) Custo das mercadorias (CMV)</td><td class="v">${cmv>0?'− '+brlC(cmv)+' · '+pct(cmv):'R$ 0,00'}</td></tr>
