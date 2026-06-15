@@ -685,12 +685,12 @@ body:has(#s-login.active){padding:0}
       <div id="sub-despesa">
         <div class="section-label"><i class="ti ti-wallet"></i> Despesa do caixa físico</div>
         <div class="field-group"><label>Data</label><input type="date" id="desp-data"></div>
-        <div class="field-group"><label>Categoria</label>
+        <div class="field-group">
+          <label style="display:flex;align-items:center;justify-content:space-between">Categoria
+            <span onclick="despCatsGerenciar()" style="font-size:11px;color:#16267A;font-weight:600;cursor:pointer"><i class="ti ti-settings" style="font-size:13px;vertical-align:-2px;margin-right:2px"></i>Gerenciar</span>
+          </label>
           <select id="desp-cat" onchange="document.getElementById(&#39;desp-novacat&#39;).style.display=this.value===&#39;nova&#39;?&#39;block&#39;:&#39;none&#39;">
-            <option>Combustível</option><option>Manutenção</option><option>Água / Luz</option>
-            <option>Internet</option><option>Uso/Consumo Padaria</option><option>Uso/Consumo Restaurante</option>
-            <option>Uso/Consumo Açougue</option><option>Folhagem</option><option>Cartão corporativo</option>
-            <option>Outros</option><option value="nova">+ Nova categoria...</option>
+            <option value="nova">+ Nova categoria...</option>
           </select>
         </div>
         <div class="field-group" id="desp-novacat" style="display:none">
@@ -4907,6 +4907,8 @@ function cpEditar(id){
 // Usa forn_list / forn_save / forn_del (Codigo.gs tok-v4).
 // ══════════════════════════════════════════════════════
 var FORNEC = [];
+// D7 · "senha ainda não definida" = PIN vazio OU 1234 (o fornecedor cria a dele no 1º acesso)
+function _pinIndef(p){ p=String(p==null?'':p).trim(); return p==='' || p==='1234'; }
 function abrirFornecedores(){ show('s-fornec'); window.scrollTo(0,0); fnCarregar(); }
 async function fnCarregar(){
   var sub=document.getElementById('fn-sub'); var box=document.getElementById('fn-lista');
@@ -4931,7 +4933,7 @@ function fnRender(){
     h+='<div class="row-card" style="display:flex;align-items:center;gap:10px;margin-bottom:7px;cursor:pointer" onclick="fnEditar(\''+_precoEsc(f.id)+'\')">'
       +'<i class="ti ti-building-store" style="color:#BA7517;font-size:18px"></i>'
       +'<div style="flex:1"><div class="row-label">'+_precoEsc(f.nome)+'</div>'
-      +'<div class="row-sub">'+(f.contato?(_precoEsc(f.contato)+' · '):'')+'PIN '+_precoEsc(f.pin||'—')+'</div></div>'
+      +'<div class="row-sub">'+(f.contato?(_precoEsc(f.contato)+' · '):'')+(_pinIndef(f.pin)?'<span style="color:#C9A23A">senha a definir</span>':('senha '+_precoEsc(f.pin)))+'</div></div>'
       +'<i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
   }
   box.innerHTML=h;
@@ -4948,9 +4950,13 @@ function fnEditar(id){
     +'<input id="fn-nome" value="'+_precoEsc(f.nome)+'" placeholder="ex.: Distribuidora Souza" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
     +'<label style="font-size:11px;color:#888780">Contato (WhatsApp/telefone)</label>'
     +'<input id="fn-contato" value="'+_precoEsc(f.contato)+'" placeholder="ex.: (62) 9 9999-9999" inputmode="tel" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
-    +'<label style="font-size:11px;color:#888780">PIN de acesso (você escolhe)</label>'
-    +'<input id="fn-pin" value="'+_precoEsc(f.pin)+'" placeholder="ex.: 1234" inputmode="numeric" maxlength="8" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 4px">'
-    +'<div style="font-size:11px;color:#9a988f;margin-bottom:12px">O fornecedor usa esse PIN pra entrar e preencher a cotação.</div>'
+    +'<label style="font-size:11px;color:#888780">Senha do fornecedor</label>'
+    +( (!novo && !_pinIndef(f.pin))
+        ? ('<div style="display:flex;align-items:center;gap:8px;margin:4px 0 4px">'
+            +'<div style="flex:1;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;background:#f7f7f4;color:#1a1a1a">'+_precoEsc(f.pin)+'</div>'
+            +'<button id="fn-reset" type="button" style="padding:10px 12px;border:1px solid #C9A23A;background:#fff;color:#9a7b16;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">Resetar</button></div>'
+            +'<div style="font-size:11px;color:#9a988f;margin-bottom:12px">Resetar faz o fornecedor criar uma senha nova no próximo acesso ao link.</div>')
+        : ('<div style="font-size:11px;color:#9a988f;margin:4px 0 12px"><i class="ti ti-info-circle" style="vertical-align:-2px;margin-right:3px"></i>O fornecedor cria a própria senha no 1º acesso ao link. Você não precisa preencher nada aqui — e pode consultar/resetar a senha por aqui depois.</div>') )
     +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
     +(novo?'':'<button id="fn-del" style="padding:11px 14px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Excluir</button>')
     +'<button id="fn-cancel" style="flex:1;min-width:90px;padding:11px;border:1px solid #ccc;background:#fff;color:#555;border-radius:10px;font-size:14px;cursor:pointer">Cancelar</button>'
@@ -4963,14 +4969,16 @@ function fnEditar(id){
   card.querySelector('#fn-save').onclick=async function(){
     var nome=card.querySelector('#fn-nome').value.trim(); if(!nome){ toast('Digite o nome'); return; }
     var contato=card.querySelector('#fn-contato').value.trim();
-    var pin=card.querySelector('#fn-pin').value.trim(); if(!pin){ toast('Defina um PIN pro fornecedor'); return; }
     var btn=card.querySelector('#fn-save'); btn.disabled=true; btn.textContent='Salvando…';
     try{
-      var j=await _estPost({acao:'forn_save', id:f.id, nome:nome, contato:contato, pin:pin});
+      // pin:f.pin -> mantém a senha atual intacta ao editar nome/contato (não zera)
+      var j=await _estPost({acao:'forn_save', id:f.id, nome:nome, contato:contato, pin:f.pin||''});
       if(!j.ok) throw new Error(j.erro||'falha');
       toast('✓ Fornecedor salvo'); close(); fnCarregar();
     }catch(e){ console.error('fnSave',e); toast('⚠ Não consegui salvar'); btn.disabled=false; btn.textContent='Salvar'; }
   };
+  var rst=card.querySelector('#fn-reset');
+  if(rst){ rst.onclick=function(){ close(); appConfirm('Resetar a senha de "'+f.nome+'"?\nEle vai criar uma senha nova no próximo acesso ao link.', async function(){ try{ var j=await _estPost({acao:'forn_reset_pin', id:f.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Senha resetada'); fnCarregar(); }catch(e){ toast('⚠ Não consegui resetar'); } }, {okText:'Resetar'}); }; }
   var del=card.querySelector('#fn-del');
   if(del){ del.onclick=function(){ close(); appConfirm('Excluir o fornecedor "'+f.nome+'"?\nEle some das próximas cotações.', async function(){ try{ var j=await _estPost({acao:'forn_del', id:f.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Fornecedor excluído'); fnCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
 }
@@ -5201,7 +5209,7 @@ function cwRenderPainel(){
       +'<div style="display:flex;align-items:center;gap:10px">'
       +'<i class="ti '+(fo.respondeu?'ti-circle-check-filled':'ti-clock')+'" style="color:'+cor+';font-size:19px"></i>'
       +'<div style="flex:1"><div class="row-label">'+_precoEsc(fo.nome)+'</div>'
-      +'<div class="row-sub">'+(fo.respondeu?('respondeu · '+_precoEsc(fo.em)):('aguardando · PIN '+_precoEsc(fo.pin)))+'</div></div></div>'
+      +'<div class="row-sub">'+(fo.respondeu?('respondeu · '+_precoEsc(fo.em)):('aguardando · '+(_pinIndef(fo.pin)?'senha a definir':('senha '+_precoEsc(fo.pin)))))+'</div></div></div>'
       +'<div style="display:flex;gap:8px;margin-top:9px">'
       +'<button class="btn-primary" style="flex:1;margin-top:0;background:#1FA85A" onclick="cwWhats(\''+fid+'\')"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>'
       +'<button style="flex:0 0 auto;padding:0 14px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" onclick="cwCopiarMsg(\''+fid+'\')"><i class="ti ti-copy"></i> Msg</button>'
@@ -5219,7 +5227,9 @@ function cwCopiar(){ if(_cwAtual) _cwCopiarTxt(_cwLink(_cwAtual.id)); }
 function _cwForn(fid){ var c=_cwAtual; if(!c) return null; for(var i=0;i<c.fornecedores.length;i++){ if(String(c.fornecedores[i].id)===String(fid)) return c.fornecedores[i]; } return null; }
 function _cwMsgFor(fid){
   var c=_cwAtual; var fo=_cwForn(fid); if(!c||!fo) return '';
-  return 'Olá, '+fo.nome+'! Segue a cotação "'+(c.titulo||'')+'" da Ideal Supermercados: '+_cwLink(c.id)+' — Entre com o nome da sua empresa e o PIN '+fo.pin+'. Qualquer dúvida, estamos à disposição!';
+  var base='Olá, '+fo.nome+'! Segue a cotação "'+(c.titulo||'')+'" da Ideal Supermercados: '+_cwLink(c.id);
+  if(_pinIndef(fo.pin)) return base+' — Entre com o nome da sua empresa e, no primeiro acesso, crie a sua senha. Qualquer dúvida, estamos à disposição!';
+  return base+' — Entre com o nome da sua empresa e a senha que você cadastrou. Qualquer dúvida, estamos à disposição!';
 }
 function _cwWaNum(contato){ var d=String(contato||'').replace(/\D/g,''); if(!d) return ''; if(d.length<=11 && d.indexOf('55')!==0) d='55'+d; return d; }
 function cwWhats(fid){
@@ -5477,7 +5487,7 @@ function cwMostrarLink(cotId){
   var card=document.createElement('div');
   card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
   card.innerHTML='<div style="font-size:15px;font-weight:600;color:#0F6E56;margin-bottom:6px"><i class="ti ti-circle-check-filled"></i> Cotação criada!</div>'
-    +'<div style="font-size:12.5px;color:#5F5E5A;margin-bottom:10px">Mande este <b>link único</b> no WhatsApp dos fornecedores. Cada um entra com o nome dele + o PIN.</div>'
+    +'<div style="font-size:12.5px;color:#5F5E5A;margin-bottom:10px">Mande este <b>link único</b> no WhatsApp dos fornecedores. Cada um entra com o nome dele e cria a própria senha no 1º acesso.</div>'
     +'<div style="font-size:11.5px;color:#16267A;word-break:break-all;background:#F4F8FF;border:1px solid #D5E2F7;border-radius:8px;padding:9px;margin-bottom:12px">'+_precoEsc(link)+'</div>'
     +'<div style="display:flex;gap:8px">'
     +'<button id="cwl-copy" class="btn-primary" style="flex:1;margin-top:0;background:#0F6E56"><i class="ti ti-copy"></i> Copiar link</button>'
@@ -5703,6 +5713,7 @@ async function fazerLogin() {
   dreCarregarGrupos();
   dreCarregarAjustes();
   carregarSheets();
+  categoriasCarregar();
   if(window.sincronizarInicio) sincronizarInicio();
   if (usr.nivel==='gestor') carregarUsuarios();
   vigiaTerminaisIniciar();
@@ -7597,16 +7608,70 @@ async function salvarDespesaSheets(dados) {
 // ══════════════════════════════════════════════════════
 // DESPESA DE CAIXA
 // ══════════════════════════════════════════════════════
-// categorias de despesa personalizadas (cadastradas pelo usuário, ficam salvas)
-function despCatsCustom(){ try{ return JSON.parse(localStorage.getItem('desp_cats_custom')||'[]'); }catch(e){ return []; } }
+// D4 · categorias de despesa PERSISTENTES (ficam salvas na aba "Categorias" via Apps Script).
+// Antes ficavam só no localStorage do aparelho; agora vêm do backend e dá pra excluir.
+var DESP_CATS = [];
+async function categoriasCarregar(){
+  try{
+    var j = await _estPost({acao:'categoria_list'});
+    if(j && j.ok) DESP_CATS = j.categorias || [];
+  }catch(e){ /* sem conexão: mantém o que já tinha */ }
+  despCatsRender();
+}
 function despCatsRender(){
   const sel = document.getElementById('desp-cat'); if(!sel) return;
+  const atual = sel.value;
   const novaOpt = sel.querySelector('option[value="nova"]');
-  sel.querySelectorAll('option[data-custom="1"]').forEach(o=>o.remove());
-  despCatsCustom().forEach(function(c){
-    const o=document.createElement('option'); o.textContent=c; o.value=c; o.setAttribute('data-custom','1');
+  sel.querySelectorAll('option[data-cat="1"]').forEach(o=>o.remove());
+  DESP_CATS.forEach(function(c){
+    const o=document.createElement('option'); o.textContent=c.nome; o.value=c.nome; o.setAttribute('data-cat','1');
     if(novaOpt) sel.insertBefore(o, novaOpt); else sel.appendChild(o);
   });
+  // mantém a seleção se ainda existir; senão cai na 1ª categoria
+  if(atual && atual!=='nova' && DESP_CATS.some(function(c){return c.nome===atual;})) sel.value=atual;
+  else if(DESP_CATS.length) sel.value=DESP_CATS[0].nome;
+}
+// painel simples pra adicionar / excluir categorias (D4)
+function despCatsGerenciar(){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  function pinta(){
+    var lista = DESP_CATS.map(function(c){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #eee">'
+        +'<span style="font-size:13.5px;color:#1a1a1a">'+_precoEsc(c.nome)+'</span>'
+        +'<i class="ti ti-trash" data-del="'+_precoEsc(c.id)+'" style="color:#A32D2D;font-size:17px;cursor:pointer;padding:4px"></i></div>';
+    }).join('') || '<div style="font-size:12.5px;color:#888780;padding:8px 0">Nenhuma categoria ainda.</div>';
+    card.innerHTML='<div style="font-size:15px;color:#16267A;font-weight:600;margin-bottom:12px">Categorias de despesa</div>'
+      +'<div style="display:flex;gap:6px;margin-bottom:12px">'
+      +'<input id="_catnova" type="text" placeholder="Nova categoria" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:13.5px;box-sizing:border-box">'
+      +'<button id="_catadd" style="padding:9px 14px;border:none;border-radius:9px;background:#16267A;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Add</button></div>'
+      +'<div style="max-height:46vh;overflow:auto">'+lista+'</div>'
+      +'<button id="_catclose" style="width:100%;margin-top:14px;padding:11px;border:1px solid #ccc;background:#fff;color:#555;border-radius:10px;font-size:14px;cursor:pointer">Fechar</button>';
+    card.querySelector('#_catclose').onclick=close;
+    card.querySelector('#_catadd').onclick=async function(){
+      var nome=card.querySelector('#_catnova').value.trim(); if(!nome){ toast('Digite o nome'); return; }
+      var b=card.querySelector('#_catadd'); b.disabled=true; b.textContent='…';
+      try{ var j=await _estPost({acao:'categoria_save', nome:nome}); if(!j.ok) throw new Error(j.erro||'falha');
+        await categoriasCarregar(); pinta();
+      }catch(e){ toast('⚠ Não consegui salvar'); b.disabled=false; b.textContent='Add'; }
+    };
+    Array.prototype.forEach.call(card.querySelectorAll('[data-del]'), function(el){
+      el.onclick=function(){
+        var id=el.getAttribute('data-del');
+        appConfirm('Excluir esta categoria?\nNovas despesas não vão mais usá-la (as antigas continuam na DRE).', async function(){
+          try{ var j=await _estPost({acao:'categoria_del', id:id}); if(!j.ok) throw new Error(j.erro||'falha');
+            await categoriasCarregar(); pinta(); toast('Categoria excluída');
+          }catch(e){ toast('⚠ Não consegui excluir'); }
+        }, {okText:'Excluir', danger:true});
+      };
+    });
+  }
+  pinta();
 }
 
 async function salvarDespesa() {
@@ -7620,9 +7685,8 @@ async function salvarDespesa() {
   if(!valor||valor<=0){ toast('⚠ Informe um valor válido'); return; }
   if(!resp)          { toast('⚠ Informe o responsável'); return; }
   if(cat==='nova' && catF){
-    const _cs = despCatsCustom();
-    if(_cs.indexOf(catF)===-1){ _cs.push(catF); localStorage.setItem('desp_cats_custom', JSON.stringify(_cs)); }
-    despCatsRender();
+    try{ await _estPost({acao:'categoria_save', nome:catF}); }catch(e){ /* segue mesmo offline */ }
+    await categoriasCarregar();
     const _sel=document.getElementById('desp-cat'); if(_sel) _sel.value=catF;
     document.getElementById('desp-novacat').style.display='none';
     document.getElementById('desp-novacat-txt').value='';
@@ -7692,7 +7756,7 @@ const iv = setInterval(()=>{
   w+=2; prog.style.width=Math.min(w,100)+'%';
   if(w>=100){ clearInterval(iv); setTimeout(()=>show('s-login'),300); }
 },30);
-try{ despCatsRender(); }catch(e){}
+try{ categoriasCarregar(); }catch(e){}
 
 // Fechar modais clicando fora
 ['modal-baixa','modal-massa','modal-grupo'].forEach(id=>{
