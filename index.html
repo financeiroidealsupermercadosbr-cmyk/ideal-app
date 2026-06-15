@@ -771,15 +771,22 @@ body:has(#s-login.active){padding:0}
         <span style="font-size:11px;color:#666">Até</span>
         <input type="date" id="filtro-data-ate" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:10px">
-        <input type="number" id="filtro-valor-min" placeholder="Valor mín" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
-        <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
-        <button onclick="limparFiltros()" style="padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer;white-space:nowrap">Limpar</button>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="number" id="filtro-valor-min" placeholder="Valor mín" onchange="filtrar()" style="flex:1;min-width:0;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+        <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;min-width:0;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
       </div>
-      <div id="contas-resumo-filtro" style="display:flex;align-items:center;gap:8px;background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px;margin-bottom:10px">
-        <span style="font-size:12px;color:#16267A;font-weight:600"><span id="cf-qtd">0</span> boleto(s)</span>
-        <span style="flex:1;font-size:13px;color:#16267A;font-weight:700;text-align:right">Total <span id="cf-total">R$ 0,00</span></span>
-        <button onclick="exportarContasExcel()" style="padding:7px 11px;border:none;border-radius:9px;background:#1B7A4B;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px"><i class="ti ti-file-spreadsheet" style="font-size:15px"></i>Excel</button>
+      <div style="text-align:right;margin-bottom:10px">
+        <button onclick="limparFiltros()" style="padding:6px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer"><i class="ti ti-eraser" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Limpar filtros</button>
+      </div>
+      <div id="contas-resumo-filtro" style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:10px 12px;margin-bottom:10px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#16267A;font-weight:600"><span id="cf-rotulo">Contas a pagar hoje</span> · <span id="cf-qtd">0</span> boleto(s)</span>
+          <span style="font-size:14px;color:#16267A;font-weight:700">Total <span id="cf-total">R$ 0,00</span></span>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:9px">
+          <button onclick="exportarContasExcel()" style="padding:7px 12px;border:none;border-radius:9px;background:#1B7A4B;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-spreadsheet" style="font-size:15px"></i>Excel</button>
+          <button onclick="exportarContasPDF()" style="padding:7px 12px;border:none;border-radius:9px;background:#B23C3C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" style="font-size:15px"></i>PDF</button>
+        </div>
       </div>
       <div id="lista-boletos"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
     </div>
@@ -5603,6 +5610,7 @@ function showTab(name, btn) {
 function abrirFuncao(name){
   showTab(name, null);
   var m=document.getElementById('nav-menu'); if(m) m.classList.add('active');
+  if(name==='contas'){ var st=document.getElementById('filtro-status'); if(st) st.value='hoje'; filtrar(); }
 }
 function setSubTab(el, id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -6192,6 +6200,52 @@ function exportarContasExcel(){
   setTimeout(function(){ URL.revokeObjectURL(url); },1500);
   toast('Exportado: '+rows.length+' boleto(s).');
 }
+function exportarContasPDF(){
+  var rows = contasFiltradas||[];
+  if(!rows.length){ toast('Nada para exportar — ajuste os filtros.'); return; }
+  var rotulo=(document.getElementById('cf-rotulo')||{textContent:''}).textContent||'Contas a pagar';
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var total=rows.reduce(function(s,b){return s+(b.valor||0);},0);
+  var tbody='';
+  rows.forEach(function(b){
+    var st=statusB(b);
+    var stTxt = st==='pago'?'Pago':st==='vencido'?'Vencido':st==='hoje'?'Vence hoje':'Pendente';
+    tbody+='<tr><td>'+_precoEsc(b.forn||'')+'</td><td>'+_precoEsc(b.doc||'')+'</td><td class="c">'+_precoEsc(b.venc||'')+'</td><td class="r">'+brlC(b.valor||0)+'</td><td class="c">'+stTxt+'</td></tr>';
+  });
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Contas a Pagar — Ideal</title>'
+    + '<style>'
+    + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
+    + '.sheet{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}'
+    + '.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}'
+    + '.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}'
+    + '.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 10px;border-bottom:1px solid #eee;line-height:1.7}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px}'
+    + 'th{font-size:10px;text-transform:uppercase;color:#1B3A9E;text-align:left;padding:6px;border:1px solid #C9D6EC;background:#EAF0FB}'
+    + 'td{padding:6px;font-size:11px;border:1px solid #e6e6e6;color:#1a1a1a}'
+    + 'td.r,th.r{text-align:right}td.c,th.c{text-align:center}'
+    + 'tfoot td{font-weight:bold;background:#F5F8FD}'
+    + '@media print{@page{size:A4 portrait;margin:10mm}}'
+    + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
+    + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
+    + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
+    + '</style></head><body><div class="sheet">'
+    + '<div class="hd"><h1>Contas a Pagar</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(rotulo)+'</div></div><div class="stripe"></div>'
+    + '<div class="body">'
+    + '<div class="meta"><b>'+_precoEsc(rotulo)+'</b> &middot; '+rows.length+' boleto(s) &middot; Gerado em '+agora+'</div>'
+    + '<table><thead><tr><th>Fornecedor</th><th>Documento</th><th class="c">Vencimento</th><th class="r">Valor</th><th class="c">Status</th></tr></thead>'
+    + '<tbody>'+tbody+'</tbody>'
+    + '<tfoot><tr><td colspan="3">TOTAL</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot>'
+    + '</table>'
+    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
+    + '</div></div>'
+    + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
+    + '</body></html>';
+  var win=window.open('','_blank');
+  if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
+  win.document.open(); win.document.write(html); win.document.close();
+}
 function limparFiltros() {
   ['busca','filtro-data-de','filtro-data-ate','filtro-valor-max','filtro-valor-min'].forEach(id=>{
     const e=document.getElementById(id); if(e) e.value='';
@@ -6237,6 +6291,13 @@ function filtrar() {
   var _cfTot = items.reduce(function(s,b){return s+(b.valor||0);},0);
   var _cfq=document.getElementById('cf-qtd'); if(_cfq) _cfq.textContent=items.length;
   var _cft=document.getElementById('cf-total'); if(_cft) _cft.textContent=brlC(_cfTot);
+  var _rot='Todas as contas';
+  if(sel==='hoje') _rot='Contas a pagar hoje';
+  else if(dtDe||dtAte){ var _br=function(d){ if(!d) return '…'; var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }; _rot='Período '+_br(dtDe)+' a '+_br(dtAte); }
+  else if(sel==='vencido') _rot='Vencidos';
+  else if(sel==='pendente') _rot='Pendentes';
+  else if(sel==='pago') _rot='Pagos';
+  var _cfr=document.getElementById('cf-rotulo'); if(_cfr) _cfr.textContent=_rot;
 
   if(!items.length){
     lista.innerHTML=_vazio({ico:'ti-file-invoice',tit:'Nenhum boleto encontrado',sub:'Ajuste os filtros acima — ou aguarde a próxima atualização da ponte.'});
