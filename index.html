@@ -682,39 +682,7 @@ body:has(#s-login.active){padding:0}
 
     <!-- LANÇAR -->
     <div id="tab-lancar" class="content" style="display:none">
-      <div class="tab-row">
-        <div class="tab active" onclick="setSubTab(this,&#39;sub-importar&#39;)">Importar</div>
-        <div class="tab" onclick="setSubTab(this,&#39;sub-manual&#39;)">Manual</div>
-        <div class="tab" onclick="setSubTab(this,&#39;sub-despesa&#39;)">Despesa caixa</div>
-      </div>
-      <div id="sub-importar">
-        <div class="section-label"><i class="ti ti-upload"></i> Como importar dados</div>
-        <div style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:12px;color:#444;line-height:1.8">
-          <strong>1.</strong> Exporte os relatórios no ADIPRON<br>
-          <strong>2.</strong> Salve em <code style="background:#fff;padding:1px 5px;border-radius:4px">C:\Ideal\relatorios\</code><br>
-          <strong>3.</strong> Execute <code style="background:#fff;padding:1px 5px;border-radius:4px">rodar.bat</code> no PC da loja<br>
-          <strong>4.</strong> Clique em "Atualizar" no topo do app
-        </div>
-        <button class="btn-primary" style="margin-top:12px" onclick="carregarSheets()">↻ Atualizar dados agora</button>
-      </div>
-      <div id="sub-manual" style="display:none">
-        <div class="section-label"><i class="ti ti-edit"></i> Lançar recebimento manual</div>
-        <div class="field-group"><label>Data</label><input type="date" id="man-data"></div>
-        <div class="field-group"><label>Modalidade</label>
-          <select id="man-modal">
-            <option>Débito (D+1)</option><option>Crédito à vista (D+2)</option>
-            <option>Crédito parcelado (D+2)</option><option>PIX (D+0)</option>
-            <option>Dinheiro</option><option>Alimentação/Vale</option>
-          </select>
-        </div>
-        <div class="field-group"><label>Valor (R$)</label><input type="number" id="man-valor" placeholder="0,00" step="0.01"></div>
-        <div class="field-group"><label>Banco</label>
-          <select id="man-banco"><option>Tribanco</option><option>Bradesco</option><option>Itaú</option></select>
-        </div>
-        <div class="field-group"><label>Observação</label><input type="text" id="man-obs" placeholder="Opcional"></div>
-        <button class="btn-primary" onclick="salvarManual()">Salvar recebimento</button>
-      </div>
-      <div id="sub-despesa" style="display:none">
+      <div id="sub-despesa">
         <div class="section-label"><i class="ti ti-wallet"></i> Despesa do caixa físico</div>
         <div class="field-group"><label>Data</label><input type="date" id="desp-data"></div>
         <div class="field-group"><label>Categoria</label>
@@ -771,12 +739,10 @@ body:has(#s-login.active){padding:0}
         <span style="font-size:11px;color:#666">Até</span>
         <input type="date" id="filtro-data-ate" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:8px">
-        <input type="number" id="filtro-valor-min" placeholder="Valor mín" onchange="filtrar()" style="flex:1;min-width:0;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
-        <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;min-width:0;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
-      </div>
-      <div style="text-align:right;margin-bottom:10px">
-        <button onclick="limparFiltros()" style="padding:6px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer"><i class="ti ti-eraser" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Limpar filtros</button>
+      <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+        <input type="number" id="filtro-valor-min" placeholder="Valor mín" onchange="filtrar()" style="flex:1;min-width:0;padding:8px 8px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+        <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;min-width:0;padding:8px 8px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
+        <button onclick="limparFiltros()" style="flex:0 0 auto;white-space:nowrap;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer"><i class="ti ti-eraser" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>Limpar</button>
       </div>
       <div id="contas-resumo-filtro" style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:10px 12px;margin-bottom:10px">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -784,7 +750,6 @@ body:has(#s-login.active){padding:0}
           <span style="font-size:14px;color:#16267A;font-weight:700">Total <span id="cf-total">R$ 0,00</span></span>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:9px">
-          <button onclick="exportarContasExcel()" style="padding:7px 12px;border:none;border-radius:9px;background:#1B7A4B;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-spreadsheet" style="font-size:15px"></i>Excel</button>
           <button onclick="exportarContasPDF()" style="padding:7px 12px;border:none;border-radius:9px;background:#B23C3C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" style="font-size:15px"></i>PDF</button>
         </div>
       </div>
@@ -5851,6 +5816,9 @@ async function carregarSheets() {
         pago:  pagoSheet || baixasLocais.has(chave),
         banco: r[11]||'',
         baixaPor: r[13]||'',  // quem deu baixa (coluna N = índice 13) — Fase 5
+        // D2: identificação da loja do boleto. Hoje só a Loja 2 tem ponte, então o padrão é 'l2'.
+        // Quando Loja 1/Bolos tiverem fonte, a ponte preenche a coluna O (índice 14) e isto passa a refletir.
+        loja:  (function(v){ v=(v==null?'':String(v)).toLowerCase().trim(); if(v==='l1'||v.indexOf('areal')>=0) return 'l1'; if(v==='bolos'||v.indexOf('bolo')>=0) return 'bolos'; if(v==='l2'||v.indexOf('melhor')>=0) return 'l2'; return 'l2'; })(r[14]),
         chave: chave,
         cat:   categoriaConta(r[4]||''),  // CMV / imposto / despesa, pelo nome do fornecedor
       };
@@ -6206,12 +6174,29 @@ function exportarContasPDF(){
   var rotulo=(document.getElementById('cf-rotulo')||{textContent:''}).textContent||'Contas a pagar';
   var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
   var total=rows.reduce(function(s,b){return s+(b.valor||0);},0);
-  var tbody='';
-  rows.forEach(function(b){
-    var st=statusB(b);
-    var stTxt = st==='pago'?'Pago':st==='vencido'?'Vencido':st==='hoje'?'Vence hoje':'Pendente';
-    tbody+='<tr><td>'+_precoEsc(b.forn||'')+'</td><td>'+_precoEsc(b.doc||'')+'</td><td class="c">'+_precoEsc(b.venc||'')+'</td><td class="r">'+brlC(b.valor||0)+'</td><td class="c">'+stTxt+'</td></tr>';
-  });
+  var _stTxt=function(b){ var st=statusB(b); return st==='pago'?'Pago':st==='vencido'?'Vencido':st==='hoje'?'Vence hoje':'Pendente'; };
+  var _linha=function(b){ return '<tr><td>'+_precoEsc(b.forn||'')+'</td><td>'+_precoEsc(b.doc||'')+'</td><td class="c">'+_precoEsc(b.venc||'')+'</td><td class="r">'+brlC(b.valor||0)+'</td><td class="c">'+_stTxt(b)+'</td></tr>'; };
+  var _cab='<thead><tr><th>Fornecedor</th><th>Documento</th><th class="c">Vencimento</th><th class="r">Valor</th><th class="c">Status</th></tr></thead>';
+  var _nomeLojaPDF=function(c){ return c==='l1'?'Loja 1 — Areal QS11':c==='l2'?'Loja 2 — Melhor QS8':c==='bolos'?'Ideal Bolos — Restaurante':'Sem loja'; };
+  var tabelaHtml='';
+  if(lojaAtual==='all'){
+    // D2: no Consolidado, agrupa os boletos por loja — subtotal de cada loja + total geral.
+    var grupos={}, ordem=[];
+    rows.forEach(function(b){ var k=b.loja||'l2'; if(!grupos[k]){ grupos[k]=[]; ordem.push(k); } grupos[k].push(b); });
+    var prio={l2:0,l1:1,bolos:2}; ordem.sort(function(a,b){ return (prio[a]==null?9:prio[a])-(prio[b]==null?9:prio[b]); });
+    ordem.forEach(function(k){
+      var g=grupos[k]; var sub=g.reduce(function(s,b){return s+(b.valor||0);},0);
+      var corpo=''; g.forEach(function(b){ corpo+=_linha(b); });
+      tabelaHtml+='<div class="grp"><div class="grp-tit">'+_precoEsc(_nomeLojaPDF(k))+' &middot; '+g.length+' boleto(s)</div>'
+        + '<table>'+_cab+'<tbody>'+corpo+'</tbody>'
+        + '<tfoot><tr><td colspan="3">Subtotal &middot; '+_precoEsc(_nomeLojaPDF(k))+'</td><td class="r">'+brlC(sub)+'</td><td></td></tr></tfoot></table></div>';
+    });
+    tabelaHtml+='<table class="geral"><tfoot><tr><td colspan="3">TOTAL GERAL</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot></table>';
+  } else {
+    var corpoU=''; rows.forEach(function(b){ corpoU+=_linha(b); });
+    tabelaHtml='<table>'+_cab+'<tbody>'+corpoU+'</tbody>'
+      + '<tfoot><tr><td colspan="3">TOTAL</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot></table>';
+  }
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Contas a Pagar — Ideal</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -6225,6 +6210,8 @@ function exportarContasPDF(){
     + 'td{padding:6px;font-size:11px;border:1px solid #e6e6e6;color:#1a1a1a}'
     + 'td.r,th.r{text-align:right}td.c,th.c{text-align:center}'
     + 'tfoot td{font-weight:bold;background:#F5F8FD}'
+    + '.grp{margin-top:14px}.grp-tit{font-size:12px;font-weight:bold;color:#1B3A9E;background:#EAF0FB;border:1px solid #C9D6EC;border-bottom:none;padding:7px 9px;border-radius:7px 7px 0 0}.grp table{margin-top:0}'
+    + '.geral{margin-top:12px}.geral tfoot td{background:#1B3A9E;color:#fff;font-size:12px}'
     + '@media print{@page{size:A4 portrait;margin:10mm}}'
     + '.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}'
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
@@ -6233,10 +6220,7 @@ function exportarContasPDF(){
     + '<div class="hd"><h1>Contas a Pagar</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(rotulo)+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>'+_precoEsc(rotulo)+'</b> &middot; '+rows.length+' boleto(s) &middot; Gerado em '+agora+'</div>'
-    + '<table><thead><tr><th>Fornecedor</th><th>Documento</th><th class="c">Vencimento</th><th class="r">Valor</th><th class="c">Status</th></tr></thead>'
-    + '<tbody>'+tbody+'</tbody>'
-    + '<tfoot><tr><td colspan="3">TOTAL</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot>'
-    + '</table>'
+    + tabelaHtml
     + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
