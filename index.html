@@ -8079,6 +8079,32 @@ function _gruposOpts(setor){
   const arr=_estGruposAll(setor);
   return arr.map(function(g){ return '<option value="'+_estEsc(g)+'">'; }).join('');
 }
+// Grupo agora é um <select> de verdade (datalist não abre no mobile). Monta as opções do setor,
+// pré-seleciona o grupo atual e oferece "Outro (digitar)" pra criar um grupo novo.
+function _gruposOptsSel(setor, atual){
+  var arr=_estGruposAll(setor);
+  var cur=String(atual==null?'':atual).trim(); var curUp=cur.toUpperCase();
+  var isPlaceholder=(cur==='' || curUp==='(GRUPO A DEFINIR)' || curUp==='A DEFINIR' || curUp==='(A DEFINIR)');
+  var inList=false;
+  var o='<option value="">— sem grupo —</option>';
+  arr.forEach(function(g){ var s=(g.toUpperCase()===curUp); if(s) inList=true; o+='<option value="'+_estEsc(g)+'"'+(s?' selected':'')+'>'+_estEsc(g)+'</option>'; });
+  if(!inList && !isPlaceholder){ o+='<option value="'+_estEsc(cur)+'" selected>'+_estEsc(cur)+'</option>'; }
+  o+='<option value="__novo__">✏️ Outro grupo (digitar)…</option>';
+  return o;
+}
+// troca o setor -> reconstrói as opções de grupo (zera a seleção) e esconde o campo de "grupo novo"
+function gruposFillSel(selId, setor){
+  var el=document.getElementById(selId); if(!el) return;
+  el.innerHTML=_gruposOptsSel(setor, '');
+  var inp=document.getElementById(selId.replace('grpsel-','grp-')); if(inp){ inp.value=''; inp.style.display='none'; }
+}
+// mostra/esconde o campo de texto quando o usuário escolhe "Outro (digitar)"
+function grupoModo(selId){
+  var el=document.getElementById(selId); if(!el) return;
+  var inp=document.getElementById(selId.replace('grpsel-','grp-')); if(!inp) return;
+  if(el.value==='__novo__'){ inp.style.display='block'; try{ inp.focus(); }catch(e){} }
+  else { inp.style.display='none'; }
+}
 // ── Catálogo de setores/grupos criados pelo usuário (aba Mercadologia) ──
 let MERC_SETORES = [];   // [{id,nome}]
 let MERC_GRUPOS  = {};   // { 'SETOR': [{id,nome}] }
@@ -8149,10 +8175,10 @@ function estRenderItens(itens, target){
       + '<i class="ti ti-dots-vertical" style="color:#888780"></i></div>'
       + '<div id="estedit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
       + '<label style="font-size:11px;color:#888780">Setor</label>'
-      + '<select id="estsel-'+cod+'" onchange="gruposFill(\'estgrpdl-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(selSetor)+'</select>'
+      + '<select id="estsel-'+cod+'" onchange="gruposFillSel(\'estgrpsel-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(selSetor)+'</select>'
       + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
-      + '<input id="estgrp-'+cod+'" list="estgrpdl-'+cod+'" type="text" value="'+grp+'" placeholder="escolha ou digite o grupo" style="'+inEst+'">'
-      + '<datalist id="estgrpdl-'+cod+'">'+_gruposOpts(selSetor)+'</datalist>'
+      + '<select id="estgrpsel-'+cod+'" onchange="grupoModo(\'estgrpsel-'+cod+'\')" style="'+inEst+'">'+_gruposOptsSel(selSetor, it.grupo||'')+'</select>'
+      + '<input id="estgrp-'+cod+'" type="text" value="" placeholder="nome do grupo novo" style="'+inEst+';margin-top:6px;display:none">'
       + '<button class="btn-primary" style="margin-top:10px" id="estbtn-'+cod+'" onclick="estSalvar(\''+cod+'\')">Salvar mudança</button>'
       + '</div></div>';
   });
@@ -8181,9 +8207,11 @@ function estToggle(cod){
 }
 
 async function estSalvar(cod){
-  const sel=document.getElementById('estsel-'+cod), grp=document.getElementById('estgrp-'+cod), btn=document.getElementById('estbtn-'+cod);
+  const sel=document.getElementById('estsel-'+cod), grpSel=document.getElementById('estgrpsel-'+cod), grp=document.getElementById('estgrp-'+cod), btn=document.getElementById('estbtn-'+cod);
   if(!sel) return;
-  const novoSetor=sel.value, novoGrupo=grp?grp.value.trim():'';
+  const novoSetor=sel.value;
+  let novoGrupo = grpSel ? grpSel.value : '';
+  if(novoGrupo==='__novo__') novoGrupo = grp ? grp.value.trim() : '';
   const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando…';
   try{
     const d = await _estPost({acao:'estrutura_save', codigo:cod, setor:novoSetor, grupo:novoGrupo, usuario:(userAtual&&userAtual.usuario)||''});
@@ -8384,10 +8412,10 @@ function relRenderItens(itens){
       + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>'
       + '<div id="reledit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
       + '<label style="font-size:11px;color:#888780">Setor</label>'
-      + '<select id="relsel-'+cod+'" onchange="gruposFill(\'relgrpdl-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(relSel)+'</select>'
+      + '<select id="relsel-'+cod+'" onchange="gruposFillSel(\'relgrpsel-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(relSel)+'</select>'
       + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
-      + '<input id="relgrp-'+cod+'" list="relgrpdl-'+cod+'" type="text" value="'+grp+'" placeholder="escolha ou digite o grupo" style="'+inEst+'">'
-      + '<datalist id="relgrpdl-'+cod+'">'+_gruposOpts(relSel)+'</datalist>'
+      + '<select id="relgrpsel-'+cod+'" onchange="grupoModo(\'relgrpsel-'+cod+'\')" style="'+inEst+'">'+_gruposOptsSel(relSel, x.grupo||'')+'</select>'
+      + '<input id="relgrp-'+cod+'" type="text" value="" placeholder="nome do grupo novo" style="'+inEst+';margin-top:6px;display:none">'
       + '<button class="btn-primary" style="margin-top:10px" id="relbtn-'+cod+'" onclick="relSalvar(\''+cod+'\')">Salvar mudança</button>'
       + '</div></div>';
   });
@@ -8398,9 +8426,11 @@ function relToggle(cod){
   if(el) el.style.display=(el.style.display==='none')?'block':'none';
 }
 async function relSalvar(cod){
-  const sel=document.getElementById('relsel-'+cod), grp=document.getElementById('relgrp-'+cod), btn=document.getElementById('relbtn-'+cod);
+  const sel=document.getElementById('relsel-'+cod), grpSel=document.getElementById('relgrpsel-'+cod), grp=document.getElementById('relgrp-'+cod), btn=document.getElementById('relbtn-'+cod);
   if(!sel) return;
-  const novoSetor=sel.value, novoGrupo=grp?grp.value.trim():'';
+  const novoSetor=sel.value;
+  let novoGrupo = grpSel ? grpSel.value : '';
+  if(novoGrupo==='__novo__') novoGrupo = grp ? grp.value.trim() : '';
   const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando…';
   try{
     const d=await _estPost({acao:'estrutura_save', codigo:cod, setor:novoSetor, grupo:novoGrupo, usuario:(userAtual&&userAtual.usuario)||''});
