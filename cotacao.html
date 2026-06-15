@@ -23,6 +23,7 @@
   .btn-ghost{background:#fff;color:#16267A;border:1px solid #c9d3e6}
   .btn:disabled{opacity:.6;cursor:default}
   .erro{background:#FDECEC;border:1px solid #F3B5B5;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none}
+  .info{background:#E6EEFB;border:1px solid #BDD0F2;color:#1B3A9E;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;margin-top:10px}
   .item{border:1px solid #e6e9f0;border-radius:12px;padding:12px;margin-bottom:10px}
   .item .nome{font-size:14.5px;font-weight:600;color:#1a1a1a;line-height:1.3}
   .item .meta{font-size:11.5px;color:#9a988f;margin-top:2px}
@@ -92,8 +93,9 @@ async function init(){
   }
 }
 
+function _fornById(id){ for(var i=0;i<ESTADO.fornecedores.length;i++){ if(String(ESTADO.fornecedores[i].id)===String(id)) return ESTADO.fornecedores[i]; } return null; }
+
 function renderLogin(){
-  var fech = String(ESTADO.status).toUpperCase()!=='ABERTA';
   var opts='<option value="">— escolha seu nome —</option>';
   for(var i=0;i<ESTADO.fornecedores.length;i++){ var f=ESTADO.fornecedores[i]; opts+='<option value="'+esc(f.id)+'">'+esc(f.nome)+'</option>'; }
   el().innerHTML=''
@@ -102,33 +104,83 @@ function renderLogin(){
     +'<div class="muted" style="margin-top:4px">'+_loginStatusHtml()+'</div>'
     +'<label>Seu nome (fornecedor)</label>'
     +'<select id="lg-forn">'+opts+'</select>'
-    +'<label>PIN de acesso</label>'
-    +'<input id="lg-pin" type="tel" inputmode="numeric" maxlength="8" placeholder="ex.: 1234" autocomplete="off">'
-    +'<button class="btn btn-prim" id="lg-btn">Entrar</button>'
+    +'<div id="cred-area"></div>'
     +'<div class="erro" id="lg-erro"></div>'
     +'</div>'
     +'<div class="muted center">Cada fornecedor enxerga apenas a própria cotação.</div>';
-  document.getElementById('lg-btn').onclick=entrar;
+  document.getElementById('lg-forn').onchange=onSelForn;
+  onSelForn();
+}
+
+// Mostra "criar senha" (1º acesso) ou "entrar" conforme o fornecedor escolhido.
+function onSelForn(){
+  var fornId=document.getElementById('lg-forn').value;
+  var area=document.getElementById('cred-area');
+  var err=document.getElementById('lg-erro'); if(err) err.style.display='none';
+  if(!fornId){ area.innerHTML=''; return; }
+  var f=_fornById(fornId);
+  if(f && f.precisaDefinir){
+    area.innerHTML=''
+      +'<div class="info">É o seu <b>primeiro acesso</b>. Crie uma senha sua — você vai usá-la nas próximas cotações.</div>'
+      +'<label>Crie sua senha (mín. 3 caracteres)</label>'
+      +'<input id="lg-nova" type="text" maxlength="20" placeholder="nova senha" autocomplete="off">'
+      +'<label>Confirme a senha</label>'
+      +'<input id="lg-nova2" type="text" maxlength="20" placeholder="repita a senha" autocomplete="off">'
+      +'<button class="btn btn-prim" id="lg-btn">Criar senha e entrar</button>';
+    document.getElementById('lg-btn').onclick=criarSenha;
+  } else {
+    area.innerHTML=''
+      +'<label>Sua senha de acesso</label>'
+      +'<input id="lg-pin" type="text" maxlength="20" placeholder="sua senha" autocomplete="off">'
+      +'<button class="btn btn-prim" id="lg-btn">Entrar</button>';
+    document.getElementById('lg-btn').onclick=entrar;
+  }
+}
+
+// Login compartilhado: usado tanto pelo "Entrar" quanto após criar a senha.
+async function _fazerLogin(fornId, pin){
+  var j=await api({acao:'cotweb_login', fornId:fornId, pin:pin});
+  if(!j.ok) throw new Error(j.erro||'falha');
+  ESTADO.fornId=fornId; ESTADO.nome=j.nome||''; ESTADO.pin=pin; ESTADO.titulo=j.titulo||ESTADO.titulo; ESTADO.status=j.status||ESTADO.status;
+  if(j.inicioEp!=null) ESTADO.inicioEp=j.inicioEp; if(j.fimEp!=null) ESTADO.fimEp=j.fimEp;
+  ESTADO.itens=j.itens||[]; ESTADO.respostas=j.respostas||[];
+  renderFill();
 }
 
 async function entrar(){
   var fornId=document.getElementById('lg-forn').value;
   var pin=(document.getElementById('lg-pin').value||'').trim();
-  var err=document.getElementById('lg-erro');
-  err.style.display='none';
+  var err=document.getElementById('lg-erro'); err.style.display='none';
   if(!fornId){ err.textContent='Escolha seu nome na lista.'; err.style.display='block'; return; }
-  if(!pin){ err.textContent='Digite o PIN.'; err.style.display='block'; return; }
+  if(!pin){ err.textContent='Digite sua senha.'; err.style.display='block'; return; }
   var btn=document.getElementById('lg-btn'); btn.disabled=true; btn.textContent='Entrando…';
   try{
-    var j=await api({acao:'cotweb_login', fornId:fornId, pin:pin});
-    if(!j.ok) throw new Error(j.erro||'falha');
-    ESTADO.fornId=fornId; ESTADO.nome=j.nome||''; ESTADO.pin=pin; ESTADO.titulo=j.titulo||ESTADO.titulo; ESTADO.status=j.status||ESTADO.status;
-    if(j.inicioEp!=null) ESTADO.inicioEp=j.inicioEp; if(j.fimEp!=null) ESTADO.fimEp=j.fimEp;
-    ESTADO.itens=j.itens||[]; ESTADO.respostas=j.respostas||[];
-    renderFill();
+    await _fazerLogin(fornId, pin);
   }catch(e){
-    err.textContent=(e.message==='PIN incorreto')?'PIN incorreto. Confira com o supermercado.':(e.message||'Não consegui entrar.');
+    err.textContent=(e.message==='PIN incorreto')?'Senha incorreta. Confira ou peça ao supermercado para resetar sua senha.':(e.message||'Não consegui entrar.');
     err.style.display='block'; btn.disabled=false; btn.textContent='Entrar';
+  }
+}
+
+// D7 — cria a senha no 1º acesso e já entra.
+async function criarSenha(){
+  var fornId=document.getElementById('lg-forn').value;
+  var nova=(document.getElementById('lg-nova').value||'').trim();
+  var nova2=(document.getElementById('lg-nova2').value||'').trim();
+  var err=document.getElementById('lg-erro'); err.style.display='none';
+  if(!fornId){ err.textContent='Escolha seu nome na lista.'; err.style.display='block'; return; }
+  if(nova.length<3){ err.textContent='A senha precisa ter pelo menos 3 caracteres.'; err.style.display='block'; return; }
+  if(nova==='1234'){ err.textContent='Escolha uma senha diferente de 1234.'; err.style.display='block'; return; }
+  if(nova!==nova2){ err.textContent='As duas senhas não são iguais.'; err.style.display='block'; return; }
+  var btn=document.getElementById('lg-btn'); btn.disabled=true; btn.textContent='Criando…';
+  try{
+    var j=await api({acao:'cotweb_definir_pin', fornId:fornId, novoPin:nova});
+    if(!j.ok) throw new Error(j.erro||'falha');
+    btn.textContent='Entrando…';
+    await _fazerLogin(fornId, nova);   // já entra com a senha recém-criada
+  }catch(e){
+    err.textContent=e.message||'Não consegui criar a senha.';
+    err.style.display='block'; btn.disabled=false; btn.textContent='Criar senha e entrar';
   }
 }
 
