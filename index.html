@@ -5696,10 +5696,12 @@ async function fazerLogin() {
   if(!savedUrl){ localStorage.setItem('apps_script_url', URL_PADRAO_APPS); } // grava o padrao p/ nunca mais ficar vazio
   // Pré-preencher datas
   const hj = new Date().toISOString().split('T')[0];
-  document.getElementById('desp-data').value = hj;
-  document.getElementById('man-data').value  = hj;
-  document.getElementById('modal-data-pag').value = hj;
-  document.getElementById('massa-data-pag').value = hj;
+  // blindado: se algum campo nao existir mais (ex.: aba Manual removida na D3),
+  // nao quebra o login. Antes, 'man-data' inexistente travava o show('s-app').
+  ['desp-data','modal-data-pag','massa-data-pag'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = hj;
+  });
   show('s-app');
   dreCarregarGrupos();
   dreCarregarAjustes();
