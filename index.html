@@ -792,10 +792,6 @@ body:has(#s-login.active){padding:0}
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">A configurar</div></div><span class="badge warn">Config</span></div>
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
       <div class="divider"></div>
-      <div class="section-label"><i class="ti ti-refresh"></i> Sincronização</div>
-      <div class="row-card"><div><div class="row-label">Última atualização</div><div class="row-sub" id="cfg-ultima">—</div></div><i class="ti ti-circle-check" style="color:#0F6E56;font-size:18px"></i></div>
-      <button class="btn-primary" style="margin-top:12px" onclick="carregarSheets()">Sincronizar agora</button>
-      <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
       <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v15</div></div>
     </div>
@@ -5801,7 +5797,7 @@ async function carregarSheets() {
     const mm={};
     (meta||[]).forEach(r=>{if(r[0]&&r[1])mm[r[0]]=r[1];});
     const ult = mm['ultima_atualizacao']||'—';
-    document.getElementById('cfg-ultima').textContent = ult;
+    const _cu = document.getElementById('cfg-ultima'); if(_cu) _cu.textContent = ult;
     const dataBanco = ultimaDataBanco(fatBanco);
     const carimboBanco = mm['ultima_atualizacao_banco'] || '';
     const mHora = carimboBanco.match(/(\d{1,2}:\d{2})/);
@@ -6655,7 +6651,7 @@ async function carregarUsuarios(){
     renderUsuarios(data.usuarios);
   }catch(e){
     console.error('carregarUsuarios:', e);
-    box.innerHTML = '<div class="row-sub" style="padding:6px 2px;color:#A32D2D">Não consegui carregar a lista agora. Toque em “Sincronizar agora” e abra a Config de novo.</div>';
+    box.innerHTML = '<div class="row-sub" style="padding:6px 2px;color:#A32D2D">Não consegui carregar a lista agora. Toque no atualizar (↻) no topo e abra a Config de novo.</div>';
   }
 }
 
