@@ -466,7 +466,7 @@ body:has(#s-login.active){padding:0}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 1.0 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 15 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -796,61 +796,8 @@ body:has(#s-login.active){padding:0}
       <div class="row-card"><div><div class="row-label">Última atualização</div><div class="row-sub" id="cfg-ultima">—</div></div><i class="ti ti-circle-check" style="color:#0F6E56;font-size:18px"></i></div>
       <button class="btn-primary" style="margin-top:12px" onclick="carregarSheets()">Sincronizar agora</button>
       <div class="divider"></div>
-
-      <!-- AVANÇADO · SÓ GESTOR (esconde o Apps Script) -->
-      <div class="section-label" style="justify-content:space-between;cursor:pointer" onclick="toggleAvancado()">
-        <span><i class="ti ti-settings"></i> Avançado · só gestor</span>
-        <i class="ti ti-chevron-down" id="cfg-avancado-chev"></i>
-      </div>
-      <div id="cfg-avancado" style="display:none">
-      <div class="section-label" style="justify-content:space-between;margin-top:8px">
-        <span><i class="ti ti-brand-google"></i> Apps Script</span>
-        <button onclick="document.getElementById(&#39;cfg-script-det&#39;).style.display=document.getElementById(&#39;cfg-script-det&#39;).style.display===&#39;none&#39;?&#39;block&#39;:&#39;none&#39;" style="font-size:10px;padding:2px 8px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#666">Ver instruções</button>
-      </div>
-      <div id="cfg-script-det" style="display:none;background:#f8f8f8;border-radius:10px;padding:14px;font-size:12px;color:#444;line-height:1.8;margin-bottom:10px">
-        Para salvar baixas e despesas no Google Sheets, siga:<br><br>
-        <strong>1.</strong> Abra a planilha do Google Sheets<br>
-        <strong>2.</strong> Menu: <strong>Extensões → Apps Script</strong><br>
-        <strong>3.</strong> Apague o código existente e cole o código abaixo<br>
-        <strong>4.</strong> Clique em <strong>Implantar → Nova implantação</strong><br>
-        <strong>5.</strong> Tipo: <strong>App da Web</strong>, acesso: <strong>Qualquer pessoa</strong><br>
-        <strong>6.</strong> Copie a URL gerada e cole no campo abaixo
-      </div>
-      <div class="field-group" style="margin-top:10px">
-        <label>URL do Apps Script (cole aqui após configurar)</label>
-        <input type="text" id="cfg-script-url" placeholder="https://script.google.com/macros/s/..." oninput="salvarScriptUrl()">
-      </div>
-      <div style="background:#1a1a1a;border-radius:10px;padding:12px;margin-top:4px;font-size:10px;color:#a8ff78;font-family:monospace;line-height:1.6;overflow-x:auto;white-space:pre">
-function doPost(e) {
-  var d = JSON.parse(e.postData.contents);
-  var ss = SpreadsheetApp.openById(
-    '1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4');
-  var out = ContentService
-    .createTextOutput(JSON.stringify({ok:true}))
-    .setMimeType(ContentService.MimeType.JSON);
-
-  if (d.acao === 'baixa') {
-    var ws = ss.getSheetByName('Contas_Pagar');
-    var row = parseInt(d.linha);
-    ws.getRange(row, 4).setValue(d.dataPag);
-    ws.getRange(row, 11).setValue('PAGO');
-    ws.getRange(row, 12).setValue(d.banco);
-  }
-
-  if (d.acao === 'despesa') {
-    var ws2 = ss.getSheetByName('Despesas_Caixa');
-    if (!ws2) ws2 = ss.insertSheet('Despesas_Caixa');
-    ws2.appendRow([d.data, d.loja, d.categoria,
-      d.desc, d.valor, d.resp,
-      new Date().toLocaleString('pt-BR')]);
-  }
-
-  return out;
-}</div>
-      </div>
-      <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v1.0 — versão inicial</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v15</div></div>
     </div>
   </div>
 </div>
@@ -933,7 +880,7 @@ function doPost(e) {
     <div id="usr-senha-hint" style="display:none;font-size:11px;color:#888780;margin:-8px 0 12px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Deixe em branco para manter a senha atual.</div>
     <div class="field-group"><label>Nome completo</label><input type="text" id="usr-nome" placeholder="ex.: João da Silva"></div>
     <div class="field-group"><label>Setor</label>
-      <select id="usr-setor"><option>Gerentes</option><option>Fiscal de caixa</option><option>Financeiro</option><option>Dono/Proprietário</option><option>Gestor/Master</option></select>
+      <select id="usr-setor"><option>Gerentes</option><option>Fiscal de caixa</option><option>Financeiro</option><option>Cadastro</option><option>Dono/Proprietário</option><option>Gestor/Master</option></select>
     </div>
     <div class="field-group"><label>Loja</label>
       <select id="usr-loja"><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="bolos">Ideal Bolos</option><option value="all">Todas as lojas</option></select>
@@ -943,7 +890,7 @@ function doPost(e) {
     <div class="field-group"><label>Status</label>
       <select id="usr-status"><option>Ativo</option><option>Inativo</option></select>
     </div>
-    <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:2px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Setores diferentes de Gestor/Master entram com acesso restrito por enquanto (a regra fina vem na Fase 3).</div>
+    <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:2px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Quem não for Gestor/Master entra com acesso restrito. Ajuste o que cada setor enxerga em “Permissões do Menu”.</div>
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="fecharModalUsuario()">Cancelar</button>
       <button class="btn-confirmar" id="usr-btn-salvar" onclick="salvarUsuario()">✓ Salvar usuário</button>
@@ -5644,8 +5591,8 @@ function fmtSync(ult) {
   return m ? (m[1] + '/' + m[2] + ' ' + m[3] + ':' + m[4]) : String(ult);
 }
 function salvarScriptUrl() {
-  APPS_SCRIPT_URL = document.getElementById('cfg-script-url').value.trim();
-  localStorage.setItem('apps_script_url', APPS_SCRIPT_URL);
+  // (removido) — o painel "Avançado" foi retirado da Config.
+  // A URL do Apps Script segue vindo do localStorage / fallback em APPS_SCRIPT_URL.
 }
 
 // ══════════════════════════════════════════════════════
@@ -5707,7 +5654,6 @@ async function fazerLogin() {
   // Restaurar URL do Apps Script
   const savedUrl = localStorage.getItem('apps_script_url')||'';
   const URL_PADRAO_APPS = 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
-  document.getElementById('cfg-script-url').value = savedUrl || URL_PADRAO_APPS;
   APPS_SCRIPT_URL = savedUrl || URL_PADRAO_APPS;
   if(!savedUrl){ localStorage.setItem('apps_script_url', URL_PADRAO_APPS); } // grava o padrao p/ nunca mais ficar vazio
   // Pré-preencher datas
@@ -6466,10 +6412,11 @@ let permsEdit = {};                  // estado temporário enquanto o gestor edi
 let permsSetorSel = 'gerente';
 
 const PERMS_SETORES = [
-  {key:'dono',    nome:'Dono/Proprietário'},
-  {key:'financ',  nome:'Financeiro'},
-  {key:'gerente', nome:'Gerentes'},
-  {key:'fiscal',  nome:'Fiscal de caixa'}
+  {key:'dono',     nome:'Dono/Proprietário'},
+  {key:'financ',   nome:'Financeiro'},
+  {key:'cadastro', nome:'Cadastro'},
+  {key:'gerente',  nome:'Gerentes'},
+  {key:'fiscal',   nome:'Fiscal de caixa'}
 ];
 const MENU_ITENS = [
   {k:'contas',     ic:'ti-file-invoice',     nm:'Contas a pagar'},
@@ -6492,6 +6439,7 @@ function _setorKey(s){
   if(s.indexOf('gestor')>=0 || s.indexOf('master')>=0) return 'gestor';
   if(s.indexOf('dono')>=0   || s.indexOf('propriet')>=0) return 'dono';
   if(s.indexOf('financ')>=0) return 'financ';
+  if(s.indexOf('cadastro')>=0) return 'cadastro';
   if(s.indexOf('fiscal')>=0) return 'fiscal';
   return 'gerente';
 }
@@ -6680,14 +6628,7 @@ async function salvarMeuPerfil(){
 // ══════════════════════════════════════════════════════
 function _urlApps(){ return APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec'; }
 
-function toggleAvancado(){
-  const c = document.getElementById('cfg-avancado');
-  const ch = document.getElementById('cfg-avancado-chev');
-  if(!c) return;
-  const aberto = c.style.display!=='none';
-  c.style.display = aberto ? 'none' : 'block';
-  if(ch) ch.className = aberto ? 'ti ti-chevron-down' : 'ti ti-chevron-up';
-}
+// (removido) toggleAvancado — o painel "Avançado · só gestor" saiu da Config.
 
 let usuariosCache = [];
 let usrEditando = null;
@@ -6744,6 +6685,7 @@ function _matchSetor(s){
   if(s.indexOf('gestor')>=0||s.indexOf('master')>=0) return 'Gestor/Master';
   if(s.indexOf('dono')>=0||s.indexOf('propriet')>=0) return 'Dono/Proprietário';
   if(s.indexOf('financ')>=0) return 'Financeiro';
+  if(s.indexOf('cadastro')>=0) return 'Cadastro';
   if(s.indexOf('fiscal')>=0) return 'Fiscal de caixa';
   return 'Gerentes';
 }
