@@ -541,7 +541,7 @@ body:has(#s-login.active){padding:0}
         <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
       </div>
 
-      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>8</em></div>
+      <div class="qsec qsec-pv"><span class="qbar"></span><b>Preços &amp; Vendas</b><em>9</em></div>
       <div class="qgrid">
         <div class="qcard qc-pv" data-menu="preco" onclick="abrirPreco()"><i class="ti ti-barcode"></i><span class="qnm">Busca de preço</span></div>
         <div class="qcard qc-pv" data-menu="calc" onclick="abrirCalc()"><i class="ti ti-calculator"></i><span class="qnm">Calculadora</span></div>
@@ -551,6 +551,7 @@ body:has(#s-login.active){padding:0}
         <div class="qcard qc-pv" data-menu="abc" onclick="abrirABC()"><i class="ti ti-chart-bar"></i><span class="qnm">Curva ABC</span></div>
         <div class="qcard qc-pv" data-menu="maisvendidos" onclick="abrirMaisVendidos()"><i class="ti ti-trophy"></i><span class="qnm">Mais vendidos</span></div>
         <div class="qcard qc-pv" data-menu="compras" onclick="abrirCompras()"><i class="ti ti-truck-delivery"></i><span class="qnm">Compras</span></div>
+        <div class="qcard qc-pv" data-menu="estrutura" onclick="abrirEstrutura()"><i class="ti ti-category"></i><span class="qnm">Organizar produtos</span></div>
       </div>
 
       <div class="qsec qsec-op"><span class="qbar"></span><b>Operação da loja</b><em>4</em></div>
@@ -809,9 +810,6 @@ body:has(#s-login.active){padding:0}
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-lock-access"></i> Permissões</div>
       <div class="row-card" style="cursor:pointer" onclick="abrirPermsMenu()"><div><div class="row-label">Permissões do Menu</div><div class="row-sub">Escolher, por setor, o que cada um pode abrir no Menu</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
-      <div class="divider"></div>
-      <div class="section-label"><i class="ti ti-category-2"></i> Estrutura mercadológica</div>
-      <div class="row-card" style="cursor:pointer" onclick="abrirEstrutura()"><div><div class="row-label">Organizar produtos por setor</div><div class="row-sub">Ver, classificar e corrigir o setor/grupo dos produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
@@ -6372,7 +6370,8 @@ const MENU_ITENS = [
   {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
   {k:'ck_temp',    ic:'ti-temperature-snow', nm:'Checklist temperatura freezers', soon:1},
   {k:'ck_contas',  ic:'ti-calendar-dollar',  nm:'Checklist contas mensais'},
-  {k:'folha',      ic:'ti-report-money',     nm:'Folha de pagamento', soon:1}
+  {k:'folha',      ic:'ti-report-money',     nm:'Folha de pagamento', soon:1},
+  {k:'estrutura',  ic:'ti-category',         nm:'Organizar produtos'}
 ];
 
 // transforma o nome do setor (como está na planilha) numa chave estável
@@ -7733,7 +7732,6 @@ async function _estPost(payload){
 }
 
 async function abrirEstrutura(){
-  if(!ehGestor()){ toast('Só o gestor pode organizar a estrutura'); return; }
   show('s-estrutura');
   var bi=document.getElementById('est-busca'); if(bi) bi.value='';
   var br=document.getElementById('est-busca-res'); if(br) br.innerHTML='';
