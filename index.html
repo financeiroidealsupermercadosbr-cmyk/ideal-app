@@ -772,8 +772,14 @@ body:has(#s-login.active){padding:0}
         <input type="date" id="filtro-data-ate" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
       </div>
       <div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="number" id="filtro-valor-min" placeholder="Valor mín" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
         <input type="number" id="filtro-valor-max" placeholder="Valor máx" onchange="filtrar()" style="flex:1;padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:12px;font-family:Arial,sans-serif">
         <button onclick="limparFiltros()" style="padding:8px 10px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#666;font-size:11px;cursor:pointer;white-space:nowrap">Limpar</button>
+      </div>
+      <div id="contas-resumo-filtro" style="display:flex;align-items:center;gap:8px;background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px;margin-bottom:10px">
+        <span style="font-size:12px;color:#16267A;font-weight:600"><span id="cf-qtd">0</span> boleto(s)</span>
+        <span style="flex:1;font-size:13px;color:#16267A;font-weight:700;text-align:right">Total <span id="cf-total">R$ 0,00</span></span>
+        <button onclick="exportarContasExcel()" style="padding:7px 11px;border:none;border-radius:9px;background:#1B7A4B;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px"><i class="ti ti-file-spreadsheet" style="font-size:15px"></i>Excel</button>
       </div>
       <div id="lista-boletos"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
     </div>
@@ -6160,8 +6166,34 @@ function renderizarPainel() {
 // ══════════════════════════════════════════════════════
 // CONTAS — LISTAR
 // ══════════════════════════════════════════════════════
+let contasFiltradas = [];
+function exportarContasExcel(){
+  var rows = contasFiltradas||[];
+  if(!rows.length){ toast('Nada para exportar — ajuste os filtros.'); return; }
+  var sep=';';
+  function c(x){ x=String(x==null?'':x); if(x.indexOf(sep)>=0||x.indexOf('"')>=0||x.indexOf('\n')>=0){ x='"'+x.replace(/"/g,'""')+'"'; } return x; }
+  var cab=['Fornecedor','Documento','Vencimento','Valor','Status','Categoria','Baixa por'].join(sep);
+  var linhas = rows.map(function(b){
+    var st=statusB(b);
+    var stTxt = st==='pago'?'Pago':st==='vencido'?'Vencido':st==='hoje'?'Vence hoje':'Pendente';
+    var val=(b.valor||0).toFixed(2).replace('.',',');
+    return [c(b.forn),c(b.doc),c(b.venc),c(val),c(stTxt),c(b.cat||''),c(b.baixaPor||'')].join(sep);
+  });
+  var total=rows.reduce(function(s,b){return s+(b.valor||0);},0);
+  linhas.push('');
+  linhas.push([c('TOTAL'),'','',c(total.toFixed(2).replace('.',',')),'','',''].join(sep));
+  var csv='\ufeff'+cab+'\n'+linhas.join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  var hoje=new Date().toISOString().split('T')[0];
+  a.href=url; a.download='contas_a_pagar_'+hoje+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); },1500);
+  toast('Exportado: '+rows.length+' boleto(s).');
+}
 function limparFiltros() {
-  ['busca','filtro-data-de','filtro-data-ate','filtro-valor-max'].forEach(id=>{
+  ['busca','filtro-data-de','filtro-data-ate','filtro-valor-max','filtro-valor-min'].forEach(id=>{
     const e=document.getElementById(id); if(e) e.value='';
   });
   const ss=document.getElementById('filtro-status'); if(ss) ss.value='';
@@ -6174,6 +6206,7 @@ function filtrar() {
   const dtDe  = (document.getElementById('filtro-data-de')||{value:''}).value;  // YYYY-MM-DD
   const dtAte = (document.getElementById('filtro-data-ate')||{value:''}).value; // YYYY-MM-DD
   const vlMax = parseFloat((document.getElementById('filtro-valor-max')||{value:''}).value)||Infinity;
+  const vlMin = parseFloat((document.getElementById('filtro-valor-min')||{value:''}).value)||0;
   const lista = document.getElementById('lista-boletos');
   if(!lista) return;
 
@@ -6189,6 +6222,7 @@ function filtrar() {
     if(sel==='hoje'){ if(_vencISO(b)!==_hojeISO) return false; }
     else if(sel&&st!==sel) return false;
     if(b.valor>vlMax) return false;
+    if(b.valor<vlMin) return false;
     // intervalo de vencimento De … Até (qualquer um pode estar vazio)
     if(dtDe || dtAte){
       const vISO = _vencISO(b);
@@ -6198,6 +6232,11 @@ function filtrar() {
     }
     return true;
   });
+
+  contasFiltradas = items;
+  var _cfTot = items.reduce(function(s,b){return s+(b.valor||0);},0);
+  var _cfq=document.getElementById('cf-qtd'); if(_cfq) _cfq.textContent=items.length;
+  var _cft=document.getElementById('cf-total'); if(_cft) _cft.textContent=brlC(_cfTot);
 
   if(!items.length){
     lista.innerHTML=_vazio({ico:'ti-file-invoice',tit:'Nenhum boleto encontrado',sub:'Ajuste os filtros acima — ou aguarde a próxima atualização da ponte.'});
