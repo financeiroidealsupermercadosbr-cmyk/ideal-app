@@ -1113,18 +1113,19 @@ function doPost(e) {
     <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:#16267A">Preço de custo</div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:15px;color:#888780">R$</span>
-      <input id="calc-custo" type="number" inputmode="decimal" placeholder="0,00" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
+      <input id="calc-custo" type="text" inputmode="decimal" placeholder="0,00" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
     </div>
 
     <div style="margin:16px 0 6px;font-size:12px;font-weight:600;color:#16267A">Margem desejada (sobre o custo)</div>
     <div id="calc-chips" style="display:flex;gap:8px;margin-bottom:8px">
+      <div class="dre-chip" data-m="25" onclick="calcChip(25)" style="flex:1;text-align:center">25%</div>
       <div class="dre-chip" data-m="50" onclick="calcChip(50)" style="flex:1;text-align:center">50%</div>
       <div class="dre-chip" data-m="70" onclick="calcChip(70)" style="flex:1;text-align:center">70%</div>
       <div class="dre-chip" data-m="100" onclick="calcChip(100)" style="flex:1;text-align:center">100%</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:12.5px;color:#888780">Outra:</span>
-      <input id="calc-margem" type="number" inputmode="decimal" placeholder="ex.: 65" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
+      <input id="calc-margem" type="text" inputmode="decimal" placeholder="ex.: 65" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
       <span style="font-size:15px;color:#888780">%</span>
     </div>
 
@@ -2917,8 +2918,7 @@ function coRenderTotal(){
 function coRenderLista(){
   var box=document.getElementById('co-lista');
   if(!_coContas.length){
-    box.innerHTML='<div class="row-sub" style="padding:10px 2px;margin-bottom:10px">Nenhuma conta cadastrada nesta loja.</div>'
-      + (ehGestor()?'<button class="btn-primary" style="margin-top:0;background:#fff;color:#0F6E56;border:1px solid #0F6E56" onclick="coImportar()"><i class="ti ti-download"></i> Importar lista inicial (Lindsey)</button>':'');
+    box.innerHTML='<div class="row-sub" style="padding:10px 2px;margin-bottom:10px">Nenhuma conta cadastrada nesta loja.</div>';
     return;
   }
   var arr=_coContas.slice().sort(function(a,b){ return (a.dia-b.dia) || String(a.nome).localeCompare(String(b.nome)); });
@@ -3057,7 +3057,6 @@ function coConfigMenu(){
   var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:320px;width:100%;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
   card.innerHTML='<div style="font-size:14.5px;color:#16267A;margin-bottom:14px;font-weight:500">Configurar contas · '+_precoEsc(_coNomeLoja())+'</div>'
     +'<button id="_coc_novo" style="width:100%;background:#16267A;color:#fff;border:none;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer"><i class="ti ti-plus"></i> Nova conta</button>'
-    +'<button id="_coc_imp" style="width:100%;background:#fff;color:#0F6E56;border:1px solid #0F6E56;border-radius:9px;height:44px;font-size:14px;margin-bottom:8px;cursor:pointer"><i class="ti ti-download"></i> Importar lista inicial (Lindsey)</button>'
     +'<div style="font-size:11.5px;color:#888780;margin:2px 2px 10px;line-height:1.4">Editar ou excluir cada conta: use os ícones de lápis e lixeira na aba Lista.</div>'
     +'<button id="_coc_cancel" style="width:100%;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:9px;height:42px;font-size:14px;cursor:pointer">Fechar</button>';
   ov.appendChild(card); document.body.appendChild(ov);
@@ -3065,7 +3064,6 @@ function coConfigMenu(){
   ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
   card.querySelector('#_coc_cancel').onclick=close;
   card.querySelector('#_coc_novo').onclick=function(){ close(); coNova(); };
-  card.querySelector('#_coc_imp').onclick=function(){ close(); coImportar(); };
 }
 
 // ══════════════════════════════════════════════════════
@@ -5500,9 +5498,19 @@ function calcChip(m){
   if(inp) inp.value=m;
   calcRecalc();
 }
+// Parse robusto: aceita vírgula OU ponto como separador decimal.
+// "10,12" → 10.12 · "1.234,56" → 1234.56 · "10.12" → 10.12
+function calcNum(v){
+  v=String(v==null?'':v).trim();
+  if(!v) return 0;
+  v=v.replace(/[^\d.,-]/g,'');
+  if(v.indexOf(',')>-1){ v=v.replace(/\./g,'').replace(',','.'); }
+  var n=parseFloat(v);
+  return isNaN(n)?0:n;
+}
 function calcRecalc(){
-  var c=N(document.getElementById('calc-custo').value);
-  var m=N(document.getElementById('calc-margem').value);
+  var c=calcNum(document.getElementById('calc-custo').value);
+  var m=calcNum(document.getElementById('calc-margem').value);
   var pv=c*(1+m/100);
   var lucro=pv-c;
   var msv=pv>0 ? (lucro/pv*100) : 0;
@@ -8994,6 +9002,11 @@ function _abcCompute(de,ate,metric){
   for(var k=0;k<itens.length;k++){ cum+=itens[k].val; var pct=total>0?cum/total*100:0; itens[k].cum=pct;
     var cl=pct<=80?'A':(pct<=95?'B':'C'); itens[k].classe=cl; classes[cl].n++; classes[cl].val+=itens[k].val;
   }
+  // Curva A+ : os 5% dos itens mais vendidos (subconjunto do topo, dentro da Curva A)
+  var aplusN=itens.length?Math.max(1,Math.ceil(itens.length*0.05)):0;
+  var aplus={n:0,val:0};
+  for(var p=0;p<aplusN && p<itens.length;p++){ itens[p].aplus=true; aplus.n++; aplus.val+=itens[p].val; }
+  classes.Aplus=aplus;
   return {ok:true, metric:metric, itens:itens, total:total, totalItens:itens.length, classes:classes, faturamentoTotal:faturamentoTotal, cobertura:(faturamentoTotal>0?(faturamentoTotal-semCusto)/faturamentoTotal*100:0)};
 }
 function abcCarregar(){
@@ -9020,6 +9033,7 @@ function abcRender(d){
   var cob=document.getElementById('abc-cob');
   if(cob){ if(d.metric==='lucro'){ cob.style.display='block'; cob.textContent='Ranking pelo lucro dos produtos com custo cadastrado ('+Math.round(d.cobertura)+'% do faturamento).'; } else { cob.style.display='none'; } }
   var html='';
+  if(d.classes.Aplus && d.classes.Aplus.n) html+=_abcCardHtml('A+','Top 5% — os mais vendidos','#BA7517',d.classes.Aplus,d.total,d.totalItens);
   html+=_abcCardHtml('A','Campeões — puxam a maior fatia','#16267A',d.classes.A,d.total,d.totalItens);
   html+=_abcCardHtml('B','Intermediários','#185FA5',d.classes.B,d.total,d.totalItens);
   html+=_abcCardHtml('C','Cauda longa — giram pouco','#888780',d.classes.C,d.total,d.totalItens);
@@ -9029,10 +9043,12 @@ function abcRender(d){
 function abcAbrirClasse(letra){
   document.getElementById('abc-geral-view').style.display='none';
   document.getElementById('abc-classe-view').style.display='block';
-  var nomes={A:'Classe A — Campeões',B:'Classe B — Intermediários',C:'Classe C — Cauda longa'};
+  var nomes={'A+':'Curva A+ — Top 5% dos produtos',A:'Classe A — Campeões',B:'Classe B — Intermediários',C:'Classe C — Cauda longa'};
   document.getElementById('abc-classe-nome').textContent=nomes[letra]||('Classe '+letra);
   var key=abcMetric+'|'+abcDe+'|'+abcAte; var d=_abcCache[key]||_abcCompute(abcDe,abcAte,abcMetric);
-  var lista=d.itens.filter(function(x){ return x.classe===letra; });
+  var lista=(letra==='A+')
+    ? d.itens.filter(function(x){ return x.aplus; })
+    : d.itens.filter(function(x){ return x.classe===letra; });
   var tot=0; lista.forEach(function(x){ tot+=x.val; });
   document.getElementById('abc-classe-sub').textContent=lista.length.toLocaleString('pt-BR')+' produtos · '+(d.metric==='lucro'?'lucro ':'fat. ')+_relMoney(tot)+' · '+_abcLabel();
   var html='';
