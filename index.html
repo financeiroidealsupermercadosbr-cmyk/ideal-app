@@ -1042,7 +1042,7 @@ function doPost(e) {
 
   <!-- VISÃO 2: dentro de um setor -->
   <div id="est-setor-view" style="display:none;padding:0 14px 90px">
-    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estResumoVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
     <div id="est-itens"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 </div>
@@ -7717,12 +7717,14 @@ async function estAtualizar(){
   estCacheResumo = null; estCacheSetor = {};
   toast('Atualizando…');
   try{ await estSync(true); }catch(e){}
+  try{ await mercLoad(true); }catch(e){}
   if(document.getElementById('est-setor-view').style.display!=='none' && estSetorAtual){ estAbrirSetor(estSetorAtual); }
   else { estResumo(); }
 }
 
 function _estCap(s){ return String(s||'').toLowerCase().replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); }); }
 function _estEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function _jsq(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
 async function _estPost(payload){
   const res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID}, payload)) });
@@ -7730,13 +7732,14 @@ async function _estPost(payload){
   return await res.json();
 }
 
-function abrirEstrutura(){
+async function abrirEstrutura(){
   if(!ehGestor()){ toast('Só o gestor pode organizar a estrutura'); return; }
   show('s-estrutura');
   var bi=document.getElementById('est-busca'); if(bi) bi.value='';
   var br=document.getElementById('est-busca-res'); if(br) br.innerHTML='';
   document.getElementById('est-resumo-view').style.display='block';
   document.getElementById('est-setor-view').style.display='none';
+  try{ await mercLoad(false); }catch(e){}
   estResumo();
 }
 
@@ -7756,10 +7759,10 @@ function estRenderResumo(r){
   let total=0; for(const k in r) total+=r[k];
   document.getElementById('est-naoclass-num').textContent = (r['A REVISAR']||0).toLocaleString('pt-BR');
   document.getElementById('est-sub').textContent = total.toLocaleString('pt-BR')+' produtos · base central';
-  let html='';
-  EST_SETORES.forEach(function(s){
+  let html='<div class="row-card" style="cursor:pointer;margin-bottom:8px;border:1px dashed #16267A;background:#F3F5FB" onclick="estNovoSetor()"><i class="ti ti-plus" style="color:#16267A;font-size:18px;margin-right:8px"></i><div style="flex:1"><div class="row-label" style="color:#16267A">Novo setor</div><div class="row-sub">Criar um setor novo na estrutura</div></div></div>';
+  _estSetoresAll().forEach(function(s){
     const n = r[s]||0;
-    html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirSetor(\''+s+'\')"><div><div class="row-label">'+_estCap(s)+'</div><div class="row-sub">'+n.toLocaleString('pt-BR')+' produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
+    html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirSetor(\''+_estEsc(s).replace(/'/g,"\\'")+'\')"><div><div class="row-label">'+_estCap(s)+'</div><div class="row-sub">'+n.toLocaleString('pt-BR')+' produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
   });
   document.getElementById('est-setores').innerHTML = html;
 }
@@ -7769,32 +7772,120 @@ function estResumoVoltar(){
   document.getElementById('est-resumo-view').style.display='block';
   estResumo();
 }
+function estVoltar(){
+  if(estGrupoAtual!==null && estSetorAtual && estSetorAtual!=='A REVISAR'){
+    estGrupoAtual=null; estAbrirSetor(estSetorAtual); return;
+  }
+  estResumoVoltar();
+}
+function _estModalInput(titulo, placeholder, onOk){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px';
+  ov.innerHTML='<div style="background:#fff;border-radius:14px;padding:18px;width:100%;max-width:340px">'
+    +'<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:10px">'+_estEsc(titulo)+'</div>'
+    +'<input id="_estmodal-in" type="text" placeholder="'+_estEsc(placeholder)+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box">'
+    +'<div style="display:flex;gap:8px;margin-top:14px">'
+    +'<button id="_estmodal-cancel" style="flex:1;padding:10px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;font-size:14px;cursor:pointer">Cancelar</button>'
+    +'<button id="_estmodal-ok" class="btn-primary" style="flex:1;padding:10px">Criar</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  var inp=ov.querySelector('#_estmodal-in'); setTimeout(function(){ try{inp.focus();}catch(e){} },50);
+  function close(){ try{ document.body.removeChild(ov); }catch(e){} }
+  function ok(){ var v=inp.value.trim(); if(!v){ inp.focus(); return; } close(); onOk(v); }
+  ov.querySelector('#_estmodal-cancel').onclick=close;
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  ov.querySelector('#_estmodal-ok').onclick=ok;
+  inp.addEventListener('keydown',function(e){ if(e.key==='Enter') ok(); });
+}
+async function estNovoSetor(){
+  _estModalInput('Novo setor', 'Nome do setor (ex.: Açougue)', async function(nome){
+    try{
+      var d = await _estPost({acao:'merc_save', tipo:'setor', nome:nome});
+      if(!d.ok) throw new Error(d.erro||'falha');
+      toast(d.jaExiste ? 'Esse setor já existe' : '✓ Setor criado');
+      await mercLoad(true);
+      estCacheResumo = estCacheResumo || {};
+      if(estCacheResumo[nome.toUpperCase()]==null) estCacheResumo[nome.toUpperCase()]=0;
+      estRenderResumo(estCacheResumo);
+    }catch(e){ console.error('estNovoSetor',e); toast('⚠ Não consegui criar. Verifique a internet.'); }
+  });
+}
+async function estNovoGrupo(){
+  if(!estSetorAtual || estSetorAtual==='A REVISAR'){ toast('Abra um setor primeiro'); return; }
+  _estModalInput('Novo grupo em '+_estCap(estSetorAtual), 'Nome do grupo (ex.: Bovina)', async function(nome){
+    try{
+      var d = await _estPost({acao:'merc_save', tipo:'grupo', nome:nome, setorPai:estSetorAtual});
+      if(!d.ok) throw new Error(d.erro||'falha');
+      toast(d.jaExiste ? 'Esse grupo já existe' : '✓ Grupo criado');
+      await mercLoad(true);
+      estAbrirSetor(estSetorAtual);
+    }catch(e){ console.error('estNovoGrupo',e); toast('⚠ Não consegui criar. Verifique a internet.'); }
+  });
+}
 
 async function estAbrirSetor(setor){
-  estSetorAtual = setor;
+  estSetorAtual = setor; estGrupoAtual = null;
   document.getElementById('est-resumo-view').style.display='none';
   document.getElementById('est-setor-view').style.display='block';
   document.getElementById('est-setor-nome').textContent = (setor==='A REVISAR') ? 'Não classificados' : _estCap(setor);
-  if(estCacheSetor[setor]){
-    document.getElementById('est-setor-cont').textContent = estCacheSetor[setor].length.toLocaleString('pt-BR')+' produtos · toque para mudar';
-    estRenderItens(estCacheSetor[setor]); return;
+  if(setor==='A REVISAR'){ return estVerTodos(setor); }   // não classificados: produtos direto
+  await _estReady();
+  document.getElementById('est-setor-cont').textContent = 'Grupos do setor · toque para abrir';
+  var info = _estGruposComContagem(setor);
+  var totalSetor = (estCacheResumo && estCacheResumo[setor]) || 0;
+  var sj = _jsq(setor);
+  var html = '';
+  html += '<div class="row-card" style="cursor:pointer;margin-bottom:8px;border:1px dashed #16267A;background:#F3F5FB" onclick="estNovoGrupo()"><i class="ti ti-plus" style="color:#16267A;font-size:18px;margin-right:8px"></i><div style="flex:1"><div class="row-label" style="color:#16267A">Novo grupo</div><div class="row-sub">Criar um grupo dentro de '+_estEsc(_estCap(setor))+'</div></div></div>';
+  html += '<div class="row-card" style="cursor:pointer;margin-bottom:8px" onclick="estVerTodos(\''+sj+'\')"><i class="ti ti-list" style="color:#16267A;font-size:17px;margin-right:8px"></i><div style="flex:1"><div class="row-label">Ver todos os produtos</div><div class="row-sub">'+totalSetor.toLocaleString('pt-BR')+' produtos no setor</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
+  html += '<div class="section-label"><i class="ti ti-category-2"></i> Grupos</div>';
+  info.grupos.forEach(function(g){
+    html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirGrupo(\''+sj+'\',\''+_jsq(g.nome)+'\')"><div><div class="row-label">'+_estEsc(g.nome)+'</div><div class="row-sub">'+g.n.toLocaleString('pt-BR')+' produtos</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
+  });
+  if(info.semGrupo>0){
+    html += '<div class="row-card" style="cursor:pointer;margin-bottom:6px" onclick="estAbrirGrupo(\''+sj+'\',\'\')"><div><div class="row-label" style="color:#9A6B00">(sem grupo)</div><div class="row-sub">'+info.semGrupo.toLocaleString('pt-BR')+' produtos sem grupo</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>';
   }
+  if(!info.grupos.length && !info.semGrupo){ html += '<div class="row-sub" style="padding:6px 2px">Nenhum produto neste setor ainda. Crie um grupo ou classifique produtos aqui.</div>'; }
+  document.getElementById('est-itens').innerHTML = html;
+}
+
+// lista TODOS os produtos do setor (visão antiga)
+async function estVerTodos(setor){
+  estGrupoAtual = null;
   document.getElementById('est-setor-cont').textContent = 'Carregando…';
   document.getElementById('est-itens').innerHTML='<div class="loadrow"><span class="spin"></span> Carregando produtos…</div>';
   try{
     const acao = (setor==='A REVISAR') ? 'estrutura_revisar' : 'estrutura_setor';
-    const d = await _estLocal({acao:acao, setor:setor, limite:300});
+    const d = await _estLocal({acao:acao, setor:setor, limite:1000});
     if(!d.ok) throw new Error(d.erro||'falha');
     const itens = d.itens||[];
     estCacheSetor[setor] = itens;
     document.getElementById('est-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos · toque para mudar';
     estRenderItens(itens);
-  }catch(e){ console.error('estAbrirSetor:',e); document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻) ou verifique a internet.</div>'; }
+  }catch(e){ console.error('estVerTodos:',e); document.getElementById('est-itens').innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em atualizar (↻).</div>'; }
+}
+
+// lista os produtos de UM grupo dentro do setor
+async function estAbrirGrupo(setor, grupo){
+  estGrupoAtual = grupo;
+  await _estReady();
+  var su=String(setor||'').toUpperCase(), gu=String(grupo||'').trim().toUpperCase();
+  var itens=[];
+  (EST_BASE||[]).forEach(function(p){
+    if(p.setor!==su) return;
+    var pg=String(p.grupo||'').trim();
+    if(gu==='' ? pg==='' : pg.toUpperCase()===gu){
+      itens.push({codigo:p.codigo, cod:p.cod, descricao:p.descricao, grupo:p.grupo});
+    }
+  });
+  itens.sort(function(a,b){ return String(a.descricao).localeCompare(String(b.descricao)); });
+  document.getElementById('est-setor-nome').textContent = _estCap(setor)+' › '+(grupo||'(sem grupo)');
+  document.getElementById('est-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos · toque para mudar';
+  estRenderItens(itens);
 }
 
 function estOpcoesSetor(atual){
   let o='';
-  EST_SETORES.forEach(function(s){ o += '<option value="'+_estEsc(s)+'"'+(s===atual?' selected':'')+'>'+_estCap(s)+'</option>'; });
+  _estSetoresAll().forEach(function(s){ o += '<option value="'+_estEsc(s)+'"'+(s===atual?' selected':'')+'>'+_estCap(s)+'</option>'; });
   return o;
 }
 
@@ -7815,8 +7906,57 @@ const EST_GRUPOS = {
   'PET':['Pet diversos']
 };
 function _gruposOpts(setor){
-  const arr=EST_GRUPOS[setor]||[];
+  const arr=_estGruposAll(setor);
   return arr.map(function(g){ return '<option value="'+_estEsc(g)+'">'; }).join('');
+}
+// ── Catálogo de setores/grupos criados pelo usuário (aba Mercadologia) ──
+let MERC_SETORES = [];   // [{id,nome}]
+let MERC_GRUPOS  = {};   // { 'SETOR': [{id,nome}] }
+let estGrupoAtual = null;
+async function mercLoad(force){
+  if(!force){
+    try{ var c = await _precoGet('merc_cat'); if(c){ MERC_SETORES=c.setores||[]; MERC_GRUPOS=c.grupos||{}; } }catch(e){}
+  }
+  try{
+    var d = await _estPost({acao:'merc_list'});
+    if(d && d.ok){
+      MERC_SETORES = (d.setores||[]).map(function(s){ return {id:s.id, nome:String(s.nome||'').toUpperCase()}; });
+      MERC_GRUPOS = {};
+      (d.grupos||[]).forEach(function(g){ var s=String(g.setor||'').toUpperCase(); if(!MERC_GRUPOS[s]) MERC_GRUPOS[s]=[]; MERC_GRUPOS[s].push({id:g.id, nome:String(g.nome||'')}); });
+      await _precoSet('merc_cat', {setores:MERC_SETORES, grupos:MERC_GRUPOS}).catch(function(){});
+    }
+  }catch(e){ console.error('mercLoad', e); }
+}
+// lista de setores = base fixa + catálogo + os que já têm produto (do resumo)
+function _estSetoresAll(){
+  var set={}; EST_SETORES.forEach(function(s){ set[s]=1; });
+  MERC_SETORES.forEach(function(s){ if(s.nome) set[s.nome]=1; });
+  if(estCacheResumo){ for(var k in estCacheResumo){ if(k && k!=='A REVISAR') set[k]=1; } }
+  return Object.keys(set).sort();
+}
+// grupos do setor = base fixa + catálogo + os que já existem nos produtos do setor
+function _estGruposAll(setor){
+  var su=String(setor||'').toUpperCase(); var seen={}, ord=[];
+  function add(g){ if(!g) return; var k=g.toUpperCase(); if(!seen[k]){ seen[k]=1; ord.push(g); } }
+  (EST_GRUPOS[su]||[]).forEach(add);
+  (MERC_GRUPOS[su]||[]).forEach(function(g){ add(g.nome); });
+  (EST_BASE||[]).forEach(function(p){ if(p.setor===su && p.grupo) add(p.grupo); });
+  return ord;
+}
+// grupos do setor COM contagem de produtos (para a tela)
+function _estGruposComContagem(setor){
+  var su=String(setor||'').toUpperCase(); var cont={}, semGrupo=0;
+  (EST_BASE||[]).forEach(function(p){
+    if(p.setor!==su) return;
+    var g=String(p.grupo||'').trim();
+    if(!g){ semGrupo++; return; }
+    cont[g]=(cont[g]||0)+1;
+  });
+  // garante os grupos do catálogo mesmo com 0 produtos
+  _estGruposAll(su).forEach(function(g){ if(cont[g]==null) cont[g]=cont[g]||0; });
+  var ls=[]; for(var k in cont) ls.push({nome:k, n:cont[k]});
+  ls.sort(function(a,b){ return b.n-a.n || a.nome.localeCompare(b.nome); });
+  return {grupos:ls, semGrupo:semGrupo};
 }
 function gruposFill(dlId, setor){
   const dl=document.getElementById(dlId); if(dl) dl.innerHTML=_gruposOpts(setor);
