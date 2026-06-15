@@ -8067,6 +8067,7 @@ function _relPeriodoLabel(){
 function relRenderChips(){
   var el=document.getElementById('rel-chips'); if(!el) return;
   var h=''; for(var i=0;i<REL_PRESETS.length;i++){ var p=REL_PRESETS[i], on=(p[0]===relPeriodo);
+    if(p[0]==='30d') continue;
     h+='<button onclick="relSetPeriodo(\''+p[0]+'\')" style="flex:0 0 auto;border:1px solid '+(on?'#16267A':'#D3D1C7')+';background:'+(on?'#16267A':'#fff')+';color:'+(on?'#fff':'#16267A')+';border-radius:999px;height:32px;padding:0 14px;font-size:12.5px;font-weight:500;white-space:nowrap">'+p[1]+'</button>';
   }
   el.innerHTML=h;
