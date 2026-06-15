@@ -8051,6 +8051,13 @@ function estOpcoesSetor(atual){
   _estSetoresAll().forEach(function(s){ o += '<option value="'+_estEsc(s)+'"'+(s===atual?' selected':'')+'>'+_estCap(s)+'</option>'; });
   return o;
 }
+// setor que o <select> de fato mostra: se o pedido não é uma opção válida (vazio/"A REVISAR"),
+// o navegador cai na 1ª opção — então o datalist de grupos precisa casar com essa, não com o cru.
+function _estSetorEfetivo(setor, all){
+  all = all || _estSetoresAll();
+  var up = String(setor||'').toUpperCase();
+  return (all.indexOf(up) >= 0) ? up : (all[0] || '');
+}
 
 // Grupos conhecidos por setor (sugestões do campo Grupo)
 const EST_GRUPOS = {
@@ -8130,10 +8137,11 @@ function estRenderItens(itens, target){
   const el = document.getElementById(target);
   if(!itens.length){ el.innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhum produto aqui.</div>'; return; }
   const inEst = 'width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;margin-top:4px;font-size:13px;box-sizing:border-box';
+  const _setoresAll = _estSetoresAll();
   let html='';
   itens.forEach(function(it){
     const cod=_estEsc(it.codigo), vis=_estEsc(it.cod||it.codigo), desc=_estEsc(it.descricao), grp=_estEsc(it.grupo||'');
-    const selSetor = it.setor || estSetorAtual;
+    const selSetor = _estSetorEfetivo(it.setor || estSetorAtual, _setoresAll);
     html += '<div class="row-card" id="estrow-'+cod+'" style="display:block;margin-bottom:6px">'
       + '<div style="display:flex;align-items:center;gap:9px;cursor:pointer" onclick="estToggle(\''+cod+'\')">'
       + '<span style="font-size:11px;color:#888780;font-family:monospace;min-width:50px">'+vis+'</span>'
@@ -8365,6 +8373,7 @@ function relRenderItens(itens){
   document.getElementById('rel-setor-cont').textContent = itens.length.toLocaleString('pt-BR')+' produtos vendidos · '+_relMoney(tot);
   if(!itens.length){ document.getElementById('rel-itens').innerHTML='<div class="row-sub" style="padding:6px 2px">Nenhuma venda neste setor.</div>'; return; }
   const inEst='width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:8px;margin-top:4px;font-size:13px;box-sizing:border-box';
+  const relSel=_estSetorEfetivo(relSetorAtual);
   let html='';
   itens.forEach(function(x){
     const cod=_estEsc(x.codigo), vis=_estEsc(x.codbarras||x.codigo), desc=_estEsc(x.desc), grp=_estEsc(x.grupo||'');
@@ -8375,10 +8384,10 @@ function relRenderItens(itens){
       + '<span style="font-size:13px;font-weight:600;color:#16267A;white-space:nowrap">'+_relMoney(x.fat)+'</span></div>'
       + '<div id="reledit-'+cod+'" style="display:none;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:10px">'
       + '<label style="font-size:11px;color:#888780">Setor</label>'
-      + '<select id="relsel-'+cod+'" onchange="gruposFill(\'relgrpdl-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(relSetorAtual)+'</select>'
+      + '<select id="relsel-'+cod+'" onchange="gruposFill(\'relgrpdl-'+cod+'\', this.value)" style="'+inEst+'">'+estOpcoesSetor(relSel)+'</select>'
       + '<label style="font-size:11px;color:#888780;margin-top:8px;display:block">Grupo (opcional)</label>'
       + '<input id="relgrp-'+cod+'" list="relgrpdl-'+cod+'" type="text" value="'+grp+'" placeholder="escolha ou digite o grupo" style="'+inEst+'">'
-      + '<datalist id="relgrpdl-'+cod+'">'+_gruposOpts(relSetorAtual)+'</datalist>'
+      + '<datalist id="relgrpdl-'+cod+'">'+_gruposOpts(relSel)+'</datalist>'
       + '<button class="btn-primary" style="margin-top:10px" id="relbtn-'+cod+'" onclick="relSalvar(\''+cod+'\')">Salvar mudança</button>'
       + '</div></div>';
   });
