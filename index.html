@@ -8139,6 +8139,13 @@ async function relAtualizar(){
 async function relCarregarPeriodo(){
   document.getElementById('rel-lista-view').style.display='block';
   document.getElementById('rel-setor-view').style.display='none';
+  if(!lojaTemDados()){
+    var _ll=document.getElementById('rel-total-lbl'); if(_ll) _ll.textContent='Faturamento total · '+_relPeriodoLabel();
+    document.getElementById('rel-total').textContent='—';
+    document.getElementById('rel-sub').textContent='';
+    document.getElementById('rel-setores').innerHTML='<div class="row-sub" style="padding:14px 4px;color:#888780;text-align:center">Esta loja ainda não tem fonte de dados.<br>O Vendas por setor está disponível para a Loja 2 (e Consolidado).</div>';
+    return;
+  }
   var key='S|'+relDe+'|'+relAte;
   var lbl=document.getElementById('rel-total-lbl'); if(lbl) lbl.textContent='Faturamento total · '+_relPeriodoLabel();
   if(relCacheSetores[key]){ relRenderSetores(relCacheSetores[key]); return; }
