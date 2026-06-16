@@ -494,7 +494,7 @@ body:has(#s-login.active) .app{max-width:none}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 25 · @ideal_atacadista<br><a href="https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
+      <div class="login2-foot"><span id="ver-foot">Versão …</span> · @ideal_atacadista<br><a href="https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
     </div>
   </div>
 </div>
@@ -646,7 +646,7 @@ body:has(#s-login.active) .app{max-width:none}
       <div class="section-label"><i class="ti ti-building-store"></i> Faturamento por empresa · mês</div>
       <div class="v-card">
         <div class="e-chart" id="p-emp" role="img" aria-label="Faturamento do mês por empresa"></div>
-        <div class="ec-note"><i class="ti ti-info-circle"></i><span id="p-emp-note">Loja 1 e Bolos: sem fonte de dados ainda</span></div>
+        <div class="ec-note"><i class="ti ti-info-circle"></i><span id="p-emp-note">Loja 1 e Bolos: em implantação</span></div>
       </div>
 
       <!-- VENDAS / DASHBOARD -->
@@ -817,11 +817,11 @@ body:has(#s-login.active) .app{max-width:none}
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
-      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">A configurar</div></div><span class="badge warn">Config</span></div>
-      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
+      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">Em implantação</div></div><span class="badge warn">Em breve</span></div>
+      <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · em implantação</div></div><span class="badge warn">Em breve</span></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v25</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub" id="ver-config">v…</div></div>
     </div>
   </div>
 </div>
@@ -1896,6 +1896,16 @@ const BASE_URL  = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/val
 
 // URL do Apps Script — salva no localStorage entre sessões
 let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url') || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+const APP_VERSAO = '1.0';   // <<< versão do app — alterar SÓ aqui. Login e Config leem deste valor.
+// Injeta a versão (única) no rodapé do login e na Config.
+(function _aplicarVersao_(){
+  function set(){
+    var f=document.getElementById('ver-foot'); if(f) f.textContent='Versão '+APP_VERSAO;
+    var c=document.getElementById('ver-config'); if(c) c.textContent='v'+APP_VERSAO;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', set);
+  else set();
+})();
 
 // ══════════════════════════════════════════════════════
 // CAMADA 2 — TOKEN DE ACESSO (segurança das escritas)
@@ -7706,7 +7716,7 @@ async function salvarDespesa() {
     await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp, lancadoPor});
     dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor, desc, resp, lancadoPor, ts:new Date().toLocaleString('pt-BR')}); // reflete na DRE na hora
     renderDRE();
-    toast('✓ Despesa registrada'+(APPS_SCRIPT_URL?' no Sheets!':' localmente!'));
+    toast(APPS_SCRIPT_URL?'✓ Despesa lançada':'✓ Despesa salva localmente');
     (document.getElementById('desp-desc')||{}).value='';
     (document.getElementById('desp-valor')||{}).value='';
     (document.getElementById('desp-resp')||{}).value='';
