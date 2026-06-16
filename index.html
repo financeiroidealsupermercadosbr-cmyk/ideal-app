@@ -427,7 +427,8 @@ body:has(#s-login.active){padding:0}
 .chip-val{font-size:18px;font-weight:500;margin-top:3px}
 .chip-val.green{color:#0F6E56}.chip-val.red{color:#A32D2D}
 .spin{width:16px;height:16px;border:2px solid rgba(22,38,122,0.2);border-top-color:#16267A;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle}
-.loadrow{display:flex;align-items:center;gap:10px;padding:16px 2px;color:#888780;font-size:13px}
+.spin-sm{width:12px;height:12px;border-width:2px;border-color:rgba(136,135,128,0.3);border-top-color:#888780}
+.loadrow{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 2px;color:#888780;font-size:13px}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -466,7 +467,7 @@ body:has(#s-login.active){padding:0}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 16 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 17 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -793,7 +794,7 @@ body:has(#s-login.active){padding:0}
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v16</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v17</div></div>
     </div>
   </div>
 </div>
@@ -932,7 +933,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-category" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Estrutura mercadológica</div>
-      <div style="font-size:11.5px;color:#888780" id="est-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="est-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="estAtualizar()" title="Atualizar"></i>
   </div>
@@ -971,7 +972,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-chart-pie" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Vendas por setor</div>
-      <div style="font-size:11.5px;color:#888780" id="rel-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="rel-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="relAtualizar()" title="Atualizar"></i>
   </div>
@@ -1009,7 +1010,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-barcode" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Busca de preço</div>
-      <div style="font-size:11.5px;color:#888780" id="preco-sub">Carregando produtos…</div>
+      <div style="font-size:11.5px;color:#888780" id="preco-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="precoAtualizar()" title="Atualizar preços"></i>
   </div>
@@ -1099,7 +1100,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-coin" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Lucratividade</div>
-      <div style="font-size:11.5px;color:#888780" id="luc-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="luc-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="lucAtualizar()" title="Atualizar"></i>
   </div>
@@ -1162,7 +1163,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-trophy" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Mais vendidos</div>
-      <div style="font-size:11.5px;color:#888780" id="mv-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="mv-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="mvAtualizar()" title="Atualizar"></i>
   </div>
@@ -1201,7 +1202,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-chart-bar" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Curva ABC</div>
-      <div style="font-size:11.5px;color:#888780" id="abc-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="abc-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="abcAtualizar()" title="Atualizar"></i>
   </div>
@@ -1282,7 +1283,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-bookmark" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Coletas salvas</div>
-      <div style="font-size:11.5px;color:#888780" id="col-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="col-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="colAtualizar()" title="Atualizar"></i>
   </div>
@@ -1313,7 +1314,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-truck-delivery" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Compras</div>
-      <div style="font-size:11.5px;color:#888780" id="cp-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="cp-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cpCarregar()" title="Atualizar"></i>
   </div>
@@ -1337,7 +1338,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-world" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Cotações Web</div>
-      <div style="font-size:11.5px;color:#888780" id="cw-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="cw-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cwCarregar()" title="Atualizar"></i>
   </div>
@@ -1389,7 +1390,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-building-store" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Fornecedores</div>
-      <div style="font-size:11.5px;color:#888780" id="fn-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="fn-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fnCarregar()" title="Atualizar"></i>
   </div>
@@ -1406,7 +1407,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-alert-triangle" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Controle de avarias</div>
-      <div style="font-size:11.5px;color:#888780" id="av-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="av-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="avCarregar()" title="Atualizar"></i>
     <i class="ti ti-dots-vertical" id="av-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="avConfigMenu()" title="Motivos"></i>
@@ -1507,7 +1508,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-calendar-dollar" style="font-size:20px;color:#0F6E56;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Contas mensais fixas</div>
-      <div style="font-size:11.5px;color:#888780" id="co-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="co-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="coCarregar()" title="Atualizar"></i>
     <i class="ti ti-dots-vertical" id="co-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="coConfigMenu()" title="Configurar"></i>
@@ -1564,7 +1565,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-report-money" style="font-size:20px;color:#534AB7;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Folha de pagamento</div>
-      <div style="font-size:11.5px;color:#888780" id="fo-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="fo-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="foCarregar()" title="Atualizar"></i>
     <i class="ti ti-dots-vertical" id="fo-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="foConfigMenu()" title="Configurar"></i>
@@ -1620,7 +1621,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-receipt" style="font-size:20px;color:#534AB7;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Vale / Convênio</div>
-      <div style="font-size:11.5px;color:#888780" id="va-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="va-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="vaCarregar()" title="Atualizar"></i>
   </div>
@@ -1670,7 +1671,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-cash" style="font-size:20px;color:#0F6E56;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Sangrias / Cofre</div>
-      <div style="font-size:11.5px;color:#888780" id="sa-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="sa-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="saCarregar()" title="Atualizar"></i>
   </div>
@@ -1733,7 +1734,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-clipboard-check" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Checklist dos gerentes</div>
-      <div style="font-size:11.5px;color:#888780" id="ck-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="ck-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="ckCarregar()" title="Atualizar"></i>
     <i class="ti ti-dots-vertical" id="ck-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="ckConfigMenu()" title="Configurar"></i>
@@ -1784,7 +1785,7 @@ body:has(#s-login.active){padding:0}
     <i class="ti ti-temperature-snow" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
       <div style="font-size:16px;font-weight:600;color:#16267A">Temperatura dos freezers</div>
-      <div style="font-size:11.5px;color:#888780" id="fz-sub">Carregando…</div>
+      <div style="font-size:11.5px;color:#888780" id="fz-sub"><span class="spin spin-sm"></span></div>
     </div>
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fzCarregar()" title="Atualizar"></i>
     <i class="ti ti-dots-vertical" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px" onclick="fzConfigMenu()" title="Configurar"></i>
@@ -5555,10 +5556,11 @@ function setSubTab(el, id) {
 function toast(msg, dur=2800) {
   const t = document.getElementById('toast');
   if (!t) { try{ console.warn('toast sem #toast:', msg); }catch(_){} return; }
+  if (typeof msg === 'string' && msg.charAt(0) === '✓') { try{ hapt(12); }catch(_){} } // D-Polimento P1.3: toque leve no sucesso
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
 }
-/* === Helpers de robustez (D-Polimento v16) ===
+/* === Helpers de robustez (D-Polimento v17) ===
    $/setTxt/setHTML/setVal: acesso ao DOM com guarda de null (não estoura se a tela/elemento não estiver montado).
    falhou: padroniza tratamento de erro (loga + toast). hapt: feedback tátil com feature-detection. */
 function $(id){ return document.getElementById(id); }
@@ -6473,6 +6475,8 @@ async function permsCarregarMenu(){
 
 // === KIT 1.4: skeleton de carregamento + tela vazia amigável (reutilizável) ===
 function _skel(n,av){ n=n||4; var dot=av?'<div class="skel skel-dot"></div>':''; var h=''; for(var i=0;i<n;i++){ h+='<div class="skel-card">'+dot+'<div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div>'; } return h; }
+// Linha de carregamento padrão (spinner sutil + texto). Reutilizável nas esperas de POST. (D-Polimento P1.4)
+function _carregHTML(txt){ return '<div class="loadrow"><span class="spin"></span>'+(txt?(' '+txt):' Carregando…')+'</div>'; }
 function _vazio(o){ o=o||{}; var b=o.btnTxt?('<button onclick="'+(o.btnAcao||'')+'">'+o.btnTxt+'</button>'):''; return '<div class="vazio"><i class="ti '+(o.ico||'ti-inbox')+'"></i><div class="vt">'+(o.tit||'Nada por aqui ainda')+'</div>'+(o.sub?('<div class="vs">'+o.sub+'</div>'):'')+b+'</div>'; }
 
 // === Busca do Menu (filtra os cards por nome, ignora acentos) ===
@@ -7861,7 +7865,7 @@ async function abrirEstrutura(){
 
 async function estResumo(){
   if(estCacheResumo){ estRenderResumo(estCacheResumo); return; }
-  (document.getElementById('est-sub')||{}).textContent='Carregando…';
+  (document.getElementById('est-sub')||{}).innerHTML='<span class="spin spin-sm"></span>';
   (document.getElementById('est-setores')||{}).innerHTML='<div class="loadrow"><span class="spin"></span> Carregando setores…</div>';
   try{
     const d = await _estLocal({acao:'estrutura_resumo'});
@@ -9385,7 +9389,7 @@ async function abrirColetas(){
   document.getElementById('col-detalhe-view').style.display='none';
   var _czv=document.getElementById('col-cruza-view'); if(_czv) _czv.style.display='none';
   (document.getElementById('col-lista')||{}).innerHTML='<div class="loadrow"><span class="spin"></span> Carregando coletas…</div>';
-  (document.getElementById('col-sub')||{}).textContent='Carregando…';
+  (document.getElementById('col-sub')||{}).innerHTML='<span class="spin spin-sm"></span>';
   try{ await _colCarregar(); colRenderLista(); }
   catch(e){ console.error('abrirColetas',e); (document.getElementById('col-lista')||{}).innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em ↻ ou verifique a internet.</div>'; }
 }
