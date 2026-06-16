@@ -4,6 +4,13 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Ideal Supermercados</title>
+<!-- D11-P1: PWA (instalável + base p/ Play Store via TWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16267A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ideal">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -485,7 +492,7 @@ body:has(#s-login.active){padding:0}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 20 · @ideal_atacadista<br><a href="https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
+      <div class="login2-foot">Versão 22 · @ideal_atacadista<br><a href="https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
     </div>
   </div>
 </div>
@@ -812,7 +819,7 @@ body:has(#s-login.active){padding:0}
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v20</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v22</div></div>
     </div>
   </div>
 </div>
@@ -1869,18 +1876,11 @@ body:has(#s-login.active){padding:0}
 
 <!-- Tela "Sincronizando dados" (offline-first) -->
 <div id="sync-splash" style="display:none;position:fixed;inset:0;background:#16267A;z-index:90;flex-direction:column;align-items:center;justify-content:center;color:#fff">
-  <!-- D-Polimento P2.4: marca do app. SVG isolado em #brand-mark → reaproveitável como ícone do PWA na D11 (manifest.json). -->
+  <!-- Marca oficial do app. logo-splash.png = logo redonda com cantos transparentes (flutua no fundo navy). -->
   <div id="brand-mark" class="brand-mark">
-    <svg width="80" height="80" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ideal">
-      <rect x="4" y="4" width="88" height="88" rx="24" fill="#FFFFFF"/>
-      <rect x="26" y="72" width="44" height="7" rx="3.5" fill="#FFC400"/>
-      <g transform="skewX(-8)">
-        <rect x="49" y="38" width="12" height="30" rx="6" fill="#16267A"/>
-        <circle cx="55" cy="27" r="7.5" fill="#FFC400"/>
-      </g>
-    </svg>
+    <img src="logo-splash.png" width="100" height="100" alt="Ideal" style="display:block">
   </div>
-  <div class="brand-word">Ideal<span>Supermercados</span></div>
+  <div class="brand-word"><span>Supermercados</span></div>
   <span class="spin" style="width:34px;height:34px;border-width:3px;border-color:rgba(255,255,255,0.35);border-top-color:#fff"></span>
   <div style="font-size:16px;font-weight:500;margin-top:18px">Sincronizando dados…</div>
   <div id="sync-splash-sub" style="font-size:12.5px;color:#C9D3F0;margin-top:6px;min-height:16px">Preparando o app</div>
@@ -9775,6 +9775,13 @@ function _colGerarPDFCruza(d){
   document.addEventListener('touchend', fim, {passive:true});
   document.addEventListener('touchcancel', fim, {passive:true});
 })();
+
+/* D11-P1 — registro do Service Worker (PWA). Falha em silêncio onde não há suporte. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){ try{ console.warn('SW falhou', e); }catch(_){} });
+  });
+}
 </script>
 
 
