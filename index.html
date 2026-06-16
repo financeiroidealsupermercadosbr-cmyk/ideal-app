@@ -137,8 +137,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .skel-dot{width:34px;height:34px;border-radius:50%;flex-shrink:0}
 .skel-l1{height:12px;width:58%;margin-bottom:8px}
 .skel-l2{height:10px;width:38%}
-.vazio{text-align:center;padding:36px 18px}
-.vazio>i{font-size:36px;color:#C3C8D6;display:block;margin-bottom:10px}
+.vazio{text-align:center;padding:40px 18px;animation:qrise .42s ease both}
+/* D-Polimento P2.3: ilustração simples nos estados vazios — halo + badge atrás do ícone (vale p/ todos os usos do _vazio) */
+.vazio>i{font-size:34px;color:#16267A;width:84px;height:84px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 14px;background:radial-gradient(circle at 50% 38%,#EEF1FB,#E2E7F5);box-shadow:inset 0 0 0 1px rgba(22,38,122,.07),0 0 0 8px rgba(22,38,122,.035),0 8px 18px rgba(22,38,122,.08)}
 .vazio .vt{font-size:14px;font-weight:600;color:#16267A;margin-bottom:4px}
 .vazio .vs{font-size:12px;color:#888780;line-height:1.5;margin-bottom:13px}
 .vazio button{background:#16267A;color:#fff;border:none;border-radius:9px;padding:9px 17px;font-size:12.5px;font-weight:600;cursor:pointer}
@@ -430,6 +431,23 @@ body:has(#s-login.active){padding:0}
 .spin-sm{width:12px;height:12px;border-width:2px;border-color:rgba(136,135,128,0.3);border-top-color:#888780}
 .loadrow{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 2px;color:#888780;font-size:13px}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* === D-Polimento P2 (v18) === */
+/* P2.1 — transição suave ao trocar de aba */
+.tab-anim{animation:tabIn .26s ease both}
+@keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* P2.2 — indicador do pull-to-refresh (criado on-demand pelo JS) */
+#ptr-ind{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-46px);z-index:70;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 3px 12px rgba(22,38,122,.18);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+#ptr-ind .ptr-ic{width:18px;height:18px;border:2px solid rgba(22,38,122,0.2);border-top-color:#16267A;border-radius:50%}
+#ptr-ind.ptr-ready{box-shadow:0 4px 16px rgba(22,38,122,.32)}
+#ptr-ind.ptr-spin .ptr-ic{animation:spin .7s linear infinite}
+/* P2.4 — marca/splash (asset reaproveitável no PWA da D11) */
+.brand-mark{line-height:0;margin-bottom:15px;filter:drop-shadow(0 8px 22px rgba(0,0,0,.28));animation:qrise .5s ease both}
+.brand-word{font-size:19px;font-weight:600;letter-spacing:.2px;color:#fff;text-align:center;margin-bottom:24px;animation:qrise .5s ease .06s both}
+.brand-word span{display:block;margin-top:3px;font-weight:400;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#C9D3F0}
+@media (prefers-reduced-motion: reduce){
+  .tab-anim,.vazio,.brand-mark,.brand-word,.qcard{animation:none!important}
+  #ptr-ind.ptr-spin .ptr-ic{animation-duration:1.3s}
+}
 </style>
 </head>
 <body>
@@ -467,7 +485,7 @@ body:has(#s-login.active){padding:0}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 17 · @ideal_atacadista</div>
+      <div class="login2-foot">Versão 18 · @ideal_atacadista</div>
     </div>
   </div>
 </div>
@@ -794,7 +812,7 @@ body:has(#s-login.active){padding:0}
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v17</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v18</div></div>
     </div>
   </div>
 </div>
@@ -1851,6 +1869,18 @@ body:has(#s-login.active){padding:0}
 
 <!-- Tela "Sincronizando dados" (offline-first) -->
 <div id="sync-splash" style="display:none;position:fixed;inset:0;background:#16267A;z-index:90;flex-direction:column;align-items:center;justify-content:center;color:#fff">
+  <!-- D-Polimento P2.4: marca do app. SVG isolado em #brand-mark → reaproveitável como ícone do PWA na D11 (manifest.json). -->
+  <div id="brand-mark" class="brand-mark">
+    <svg width="80" height="80" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ideal">
+      <rect x="4" y="4" width="88" height="88" rx="24" fill="#FFFFFF"/>
+      <rect x="26" y="72" width="44" height="7" rx="3.5" fill="#FFC400"/>
+      <g transform="skewX(-8)">
+        <rect x="49" y="38" width="12" height="30" rx="6" fill="#16267A"/>
+        <circle cx="55" cy="27" r="7.5" fill="#FFC400"/>
+      </g>
+    </svg>
+  </div>
+  <div class="brand-word">Ideal<span>Supermercados</span></div>
   <span class="spin" style="width:34px;height:34px;border-width:3px;border-color:rgba(255,255,255,0.35);border-top-color:#fff"></span>
   <div style="font-size:16px;font-weight:500;margin-top:18px">Sincronizando dados…</div>
   <div id="sync-splash-sub" style="font-size:12.5px;color:#C9D3F0;margin-top:6px;min-height:16px">Preparando o app</div>
@@ -5534,7 +5564,12 @@ function renderCartoes() {
 }
 function showTab(name, btn) {
   document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display='none');
-  var alvo = document.getElementById('tab-'+name); if(alvo) alvo.style.display='block';
+  var alvo = document.getElementById('tab-'+name);
+  if(alvo){
+    alvo.style.display='block';
+    // D-Polimento P2.1: transição suave (re-dispara a animação via reflow). prefers-reduced-motion é tratado no CSS.
+    try{ alvo.classList.remove('tab-anim'); void alvo.offsetWidth; alvo.classList.add('tab-anim'); }catch(_){}
+  }
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(name==='dre') renderDRE();
@@ -9645,6 +9680,96 @@ function _colGerarPDFCruza(d){
   if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
   win.document.open(); win.document.write(html); win.document.close();
 }
+
+/* ══════════════════════════════════════════════════════
+   D-Polimento P2.2 — Pull-to-refresh
+   Gesto de puxar-para-baixo no topo da tela principal (#s-app) que
+   dispara carregarSheets() — o mesmo reload do ↻ do topo. Só toque,
+   só com a rolagem no topo, nunca com modal aberto ou no login/sub-telas.
+   Indicador criado on-demand; respeita prefers-reduced-motion (CSS).
+   ══════════════════════════════════════════════════════ */
+(function(){
+  if(!('ontouchstart' in window)) return;            // só dispositivos de toque
+  var startY=0, pulling=false, dist=0, ready=false, busy=false, ind=null;
+  var THRESH=70, MAX=110;
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  function getInd(){
+    if(ind) return ind;
+    ind=document.createElement('div');
+    ind.id='ptr-ind';
+    ind.innerHTML='<span class="ptr-ic"></span>';
+    document.body.appendChild(ind);
+    return ind;
+  }
+  function appAtivo(){
+    var a=document.getElementById('s-app');
+    return !!(a && a.classList.contains('active'));
+  }
+  function bloqueado(){
+    // não armar com modal aberto ou splash de sync visível
+    if(document.querySelector('.modal-bg.open')) return true;
+    var sp=document.getElementById('sync-splash');
+    if(sp && sp.style.display && sp.style.display!=='none') return true;
+    return false;
+  }
+  function topo(){
+    return (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
+  }
+  function posiciona(px){
+    var el=getInd();
+    el.style.transition='none';
+    el.style.transform='translateX(-50%) translateY('+(px-46)+'px)';
+    el.style.opacity=Math.min(1, px/THRESH);
+  }
+  function reset(){
+    if(!ind) return;
+    ind.style.transition='transform .25s ease, opacity .25s ease';
+    ind.style.transform='translateX(-50%) translateY(-46px)';
+    ind.style.opacity='0';
+    ind.classList.remove('ptr-ready','ptr-spin');
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if(busy || !appAtivo() || bloqueado() || !topo() || e.touches.length!==1){ pulling=false; return; }
+    startY=e.touches[0].clientY; pulling=true; dist=0; ready=false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!pulling) return;
+    dist=e.touches[0].clientY-startY;
+    if(dist<=0 || !topo()){ pulling = dist>0 && topo(); if(!pulling) reset(); return; }
+    var pull=Math.min(dist*0.5, MAX);
+    if(reduce) pull=Math.min(pull, 46);
+    posiciona(pull);
+    ready=pull>=THRESH;
+    getInd().classList.toggle('ptr-ready', ready);
+  }, {passive:true});
+
+  function fim(){
+    if(!pulling) return;
+    pulling=false;
+    if(ready && !busy){
+      busy=true; ready=false;
+      var el=getInd();
+      el.style.transition='transform .2s ease';
+      el.style.transform='translateX(-50%) translateY(10px)';
+      el.style.opacity='1';
+      el.classList.add('ptr-spin'); el.classList.remove('ptr-ready');
+      try{ hapt(12); }catch(_){}
+      var done=function(){ busy=false; reset(); };
+      try{
+        var p = carregarSheets();
+        if(p && typeof p.then==='function') p.then(done, done);
+        else setTimeout(done, 900);
+      }catch(_){ done(); }
+    } else {
+      reset();
+    }
+  }
+  document.addEventListener('touchend', fim, {passive:true});
+  document.addEventListener('touchcancel', fim, {passive:true});
+})();
 </script>
 
 
