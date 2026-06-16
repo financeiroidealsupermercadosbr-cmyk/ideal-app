@@ -4,8 +4,8 @@
    - HTML = network-first → sempre pega a versão nova quando online; cai no cache offline.
    - Estáticos (ícones, etc.) = cache-first.
    Para forçar atualização do cache no futuro, suba o número da versão em CACHE. */
-const CACHE = 'ideal-v5';
-const SHELL = ['./', './index.html', './icon-192.png', './icon-512.png', './manifest.json'];
+const CACHE = 'ideal-v7';
+const SHELL = ['./', './index.html', './icon-192-3.png', './icon-512-3.png', './manifest.json'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
