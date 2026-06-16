@@ -485,7 +485,7 @@ body:has(#s-login.active){padding:0}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
-      <div class="login2-foot">Versão 19 · @ideal_atacadista<br><a href="https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
+      <div class="login2-foot">Versão 20 · @ideal_atacadista<br><a href="https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
     </div>
   </div>
 </div>
@@ -812,7 +812,7 @@ body:has(#s-login.active){padding:0}
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · aba individual em breve</div></div><span class="badge warn">Config</span></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
-      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v19</div></div>
+      <div class="row-card"><div class="row-label">App versão</div><div class="row-sub">v20</div></div>
     </div>
   </div>
 </div>
@@ -1913,9 +1913,14 @@ const APP_TOKEN = 'idealapp_2026_x7Kq9Rv3LpZ8nW';
       const ehApps = alvo.indexOf('script.google.com/macros/') !== -1;
       if (ehPost && ehApps && typeof opts.body === 'string') {
         const corpo = JSON.parse(opts.body);
-        if (corpo && typeof corpo === 'object' && corpo.tok === undefined) {
-          corpo.tok = APP_TOKEN;
-          opts = Object.assign({}, opts, { body: JSON.stringify(corpo) });
+        if (corpo && typeof corpo === 'object') {
+          let _mexeu = false;
+          if (corpo.tok === undefined) { corpo.tok = APP_TOKEN; _mexeu = true; }
+          // D11-P0.2: carimba quem está logado; o backend revalida na aba Usuarios.
+          if (corpo.executor === undefined && userAtual && userAtual.usuario) {
+            corpo.executor = userAtual.usuario; _mexeu = true;
+          }
+          if (_mexeu) opts = Object.assign({}, opts, { body: JSON.stringify(corpo) });
         }
       }
     }catch(e){ /* se o corpo não for JSON, deixa passar como estava */ }
