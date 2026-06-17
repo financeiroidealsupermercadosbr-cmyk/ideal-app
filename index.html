@@ -5808,6 +5808,7 @@ function trocarLoja(btn,nome,id) {
   (document.getElementById('h-store')||{}).textContent=nome;
   dreLoja = id;            // o seletor de cima agora comanda a DRE também
   renderizarPainel(); filtrar(); renderDRE();
+  if(typeof _lancSaidasAtivo==='function' && _lancSaidasAtivo() && typeof renderSaidasAtivo==='function') renderSaidasAtivo();
 }
 
 // ══════════════════════════════════════════════════════
@@ -6517,8 +6518,9 @@ function aplicarPermissoes(usr, l){
   let alvo = ['menu','nav-menu'];
   for(let i=0;i<ordem.length;i++){ if(p[ordem[i][0]]){ alvo = ordem[i]; break; } }
   showTab(alvo[0], document.getElementById(alvo[1]));
-  // seletor de loja só pra quem vê Painel ou DRE e tem acesso a todas as lojas
-  const mostrarSel = (p.painel || p.dre) && usr.loja==='all';
+  // seletor de loja: aparece pra qualquer usuário com acesso a todas as lojas (mesmo quem só vê o Menu),
+  // pra poder trocar de loja e lançar em qualquer uma. Antes exigia Painel/DRE — agora não.
+  const mostrarSel = usr.loja==='all';
   const sel = document.getElementById('loja-sel');
   if(sel) sel.style.display = mostrarSel ? 'flex' : 'none';
   aplicarPermsMenu();
