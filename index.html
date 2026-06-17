@@ -114,16 +114,20 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
 .qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
 #tab-menu{padding:8px 6px 8px}
-.menu-ochip{display:inline-flex;align-items:center;gap:6px;margin:2px 4px 10px;padding:7px 13px;border-radius:999px;border:1px solid #d7e0ec;background:#f4f7fb;color:#3a5a86;font-size:12.5px;font-family:Arial,sans-serif;cursor:pointer;user-select:none}
-.menu-ochip i{font-size:15px}
-.menu-ochip:active{background:#e9eff7}
-.menu-lembrete{margin:2px 4px 12px;padding:13px 14px;border-radius:14px;border:1px solid #dbe6f3;background:linear-gradient(180deg,#f6f9fd,#eef3fa);font-family:Arial,sans-serif}
-.menu-lembrete .ml-tit{font-size:14px;font-weight:bold;color:#1f3a5f;display:flex;align-items:center;gap:7px}
-.menu-lembrete .ml-sub{font-size:12.5px;color:#5a6b80;margin:5px 0 11px;line-height:1.4}
-.menu-lembrete .ml-acts{display:flex;gap:9px}
-.menu-lembrete .ml-ok{flex:1;padding:9px;border:none;border-radius:9px;background:#185FA5;color:#fff;font-size:13px;font-weight:bold;cursor:pointer}
-.menu-lembrete .ml-no{flex:1;padding:9px;border:1px solid #cdd7e3;border-radius:9px;background:#fff;color:#5a6b80;font-size:13px;cursor:pointer}
-.menu-lembrete .ml-chk{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:#8693a5;cursor:pointer}
+.menu-obar{display:flex;align-items:center;gap:8px;margin:0 4px 8px;padding:6px 11px;border-radius:999px;border:1px solid #e1e7f0;background:#f6f8fb;font-family:Arial,sans-serif}
+.menu-obar .mob-main{flex:1;display:flex;align-items:center;gap:6px;color:#4a5a72;font-size:11.5px;cursor:pointer;user-select:none}
+.menu-obar .mob-main i{font-size:14px}
+.menu-obar .mob-x{font-size:14px;color:#9aa6b6;cursor:pointer;padding:2px}
+.lanc-tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #e7e7e0}
+.lanc-tab{padding:9px 16px;font-size:13.5px;font-weight:600;color:#888780;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Arial,sans-serif}
+.lanc-tab.on{color:#16267A;border-bottom-color:#16267A}
+.sd-seg{display:flex;gap:6px;background:#f1f3f7;border-radius:10px;padding:4px;margin-bottom:12px}
+.sd-seg-btn{flex:1;text-align:center;padding:7px;border-radius:7px;font-size:12.5px;font-weight:600;color:#6a7686;cursor:pointer;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;gap:5px}
+.sd-seg-btn.on{background:#fff;color:#16267A;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.sd-line{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;border-bottom:1px solid #f0efe9}
+.sd-line .sd-nm{font-size:13.5px;color:#1a1a1a}
+.sd-line .sd-vl{font-size:13.5px;font-weight:600;color:#A32D2D;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.sd-line.zero .sd-vl{color:#b4b2a9;font-weight:500}
 .qsearchwrap{padding:8px 6px 4px}
 .qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(22,38,122,0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:#16267A;background:#fff;outline:none}
 .qsearch::placeholder{color:#9aa0b4}
@@ -572,11 +576,10 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
 
     <div id="tab-menu" class="content" style="display:none">
-      <div class="qsec qsec-fin"><span class="qbar"></span><b>Financeiro</b><em>5</em></div>
+      <div class="qsec qsec-fin"><span class="qbar"></span><b>Financeiro</b><em>4</em></div>
       <div class="qgrid">
         <div class="qcard qc-fin" data-menu="contas" onclick="abrirFuncao(&#39;contas&#39;)"><span class="qdot"></span><i class="ti ti-file-invoice"></i><span class="qnm">Contas a pagar</span></div>
         <div class="qcard qc-fin" data-menu="lancar" onclick="abrirFuncao(&#39;lancar&#39;)"><i class="ti ti-edit"></i><span class="qnm">Lançamentos</span></div>
-        <div class="qcard qc-fin" data-menu="saidas" onclick="abrirSaidas()"><i class="ti ti-arrow-down-circle"></i><span class="qnm">Saídas (despesas)</span></div>
         <div class="qcard qc-fin" data-menu="sangrias" onclick="abrirSangrias()"><i class="ti ti-cash"></i><span class="qnm">Sangrias</span></div>
         <div class="qcard qc-fin" data-menu="ck_contas" onclick="abrirContas()"><i class="ti ti-calendar-dollar"></i><span class="qnm">Contas fixas</span></div>
       </div>
@@ -721,6 +724,12 @@ body:has(#s-login.active) .app{max-width:none}
 
     <!-- LANÇAR -->
     <div id="tab-lancar" class="content" style="display:none">
+      <div class="lanc-tabs">
+        <div class="lanc-tab on" id="lanc-tab-lancar" onclick="lancTab('lancar')">Lançar</div>
+        <div class="lanc-tab" id="lanc-tab-saidas" onclick="lancTab('saidas')" style="display:none">Saídas</div>
+      </div>
+
+      <div id="lanc-pane-lancar">
       <div id="sub-despesa">
         <div class="section-label"><i class="ti ti-wallet"></i> Despesa do caixa físico</div>
         <div class="field-group"><label>Data</label><input type="date" id="desp-data"></div>
@@ -741,6 +750,30 @@ body:has(#s-login.active) .app{max-width:none}
         <button class="btn-primary" id="btn-desp" onclick="salvarDespesa()">Registrar despesa</button>
         <div style="font-size:11px;color:#888780;line-height:1.5;margin-top:8px"><i class="ti ti-report-money" style="vertical-align:-1px;margin-right:3px"></i>Entra na DRE da loja selecionada, em Despesas operacionais (Internet → Telefone; Água/Luz → Energia; o restante → Serviços/outras). Dá pra ajustar a linha depois, na DRE.</div>
 
+      </div>
+      </div>
+
+      <div id="lanc-pane-saidas" style="display:none">
+        <div style="background:linear-gradient(135deg,#7A1616,#A32D2D);color:#fff;border-radius:13px;padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div><div style="font-size:10.5px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total de saídas</div><div id="saidas-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
+            <div style="text-align:right;font-size:11px;opacity:.9" id="saidas-perLbl">—</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <i class="ti ti-chevron-left" style="font-size:20px;cursor:pointer;color:#16267A;padding:4px" onclick="saidasMes(-1)"></i>
+          <button onclick="saidasHoje()" style="flex:1;padding:7px;border:1px solid #cdd7e3;border-radius:9px;background:#fff;color:#3a5a86;font-size:12.5px;font-family:Arial,sans-serif;cursor:pointer">Mês atual</button>
+          <i class="ti ti-chevron-right" style="font-size:20px;cursor:pointer;color:#16267A;padding:4px" onclick="saidasMes(1)"></i>
+        </div>
+
+        <div class="sd-seg">
+          <div class="sd-seg-btn on" id="sd-seg-lista" onclick="saidasSub('lista')"><i class="ti ti-list-details"></i> Lista</div>
+          <div class="sd-seg-btn" id="sd-seg-grafico" onclick="saidasSub('grafico')"><i class="ti ti-chart-bar"></i> Gráfico</div>
+        </div>
+
+        <div id="saidas-lista"></div>
+        <div id="saidas-grafico" style="display:none"></div>
       </div>
     </div>
 
@@ -1729,37 +1762,6 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div id="sa-lista" style="padding:14px 14px 100px"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
-</div>
-
-
-<!-- TELA: Saídas (despesas) — só Financeiro / Gestor / Dono -->
-<div class="screen" id="s-saidas">
-  <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
-    <i class="ti ti-arrow-down-circle" style="font-size:20px;color:#A32D2D;flex-shrink:0"></i>
-    <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Saídas (despesas)</div>
-      <div style="font-size:11.5px;color:#888780">Mesmos dados da DRE · sem venda nem lucro</div>
-    </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="dreCarregarCaixa().then(renderSaidas)" title="Atualizar"></i>
-  </div>
-
-  <div style="padding:12px 14px 0">
-    <div style="background:linear-gradient(135deg,#7A1616,#A32D2D);color:#fff;border-radius:13px;padding:13px 15px">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total de saídas</div><div id="saidas-total" style="font-size:22px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
-        <div style="text-align:right;font-size:11.5px;opacity:.9" id="saidas-perLbl">—</div>
-      </div>
-    </div>
-  </div>
-
-  <div style="display:flex;align-items:center;gap:8px;padding:12px 14px 0">
-    <i class="ti ti-chevron-left" style="font-size:20px;cursor:pointer;color:#16267A;padding:4px" onclick="saidasMes(-1)"></i>
-    <button onclick="saidasHoje()" style="flex:1;padding:8px;border:1px solid #cdd7e3;border-radius:9px;background:#fff;color:#3a5a86;font-size:12.5px;font-family:Arial,sans-serif;cursor:pointer">Mês atual</button>
-    <i class="ti ti-chevron-right" style="font-size:20px;cursor:pointer;color:#16267A;padding:4px" onclick="saidasMes(1)"></i>
-  </div>
-
-  <div id="saidas-corpo" style="padding:14px 14px 100px"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
 </div>
 
 
@@ -5632,6 +5634,7 @@ function showTab(name, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(name==='dre') renderDRE();
+  if(name==='lancar' && typeof lancSetupTabs==='function') lancSetupTabs();
   window.scrollTo(0,0);
 }
 function abrirFuncao(name){
@@ -6521,9 +6524,8 @@ let MENU_PERMS = {};                 // { setorKey: { itemKey: 0|1 } }
 const MENU_DEFAULTS = {
   financ:   { lucro:0, abc:0, maisvendidos:0, terminais:0 },
   dono:     { terminais:0 },
-  cadastro: { terminais:0, saidas:0 },
-  fiscal:   { terminais:0, saidas:0 },
-  gerente:  { saidas:0 }
+  cadastro: { terminais:0 },
+  fiscal:   { terminais:0 }
 };
 function _menuItemPermitido(k, item){
   const m = MENU_PERMS[k] || {};
@@ -6545,7 +6547,6 @@ const PERMS_SETORES = [
 const MENU_ITENS = [
   {k:'contas',     ic:'ti-file-invoice',     nm:'Contas a pagar'},
   {k:'lancar',     ic:'ti-edit',             nm:'Lançamentos'},
-  {k:'saidas',     ic:'ti-arrow-down-circle',nm:'Saídas (despesas)'},
   {k:'cotacao',    ic:'ti-shopping-cart',    nm:'Lista de cotação'},
   {k:'sangrias',   ic:'ti-cash',             nm:'Lançamento de sangrias'},
   {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento'},
@@ -6672,37 +6673,17 @@ function menuToggleOcultar(v){
 // lembrete único: aparece só na 1ª vez pra quem TEM módulo sem acesso
 function _menuLembrete(gestor){
   var host=document.getElementById('tab-menu'); if(!host) return;
-  var ja=document.getElementById('menu-lembrete');
+  var bar=document.getElementById('menu-obar');
   var temBloqueado = !!host.querySelector('.qcard.locked');
-  var dispensado = (localStorage.getItem('ideal_menu_lembrete')==='1');
-  // chip de alternância (sempre disponível pra quem tem bloqueio)
-  var chip=document.getElementById('menu-ocultar-chip');
-  if(!gestor && temBloqueado){
-    if(!chip){
-      chip=document.createElement('div'); chip.id='menu-ocultar-chip';
-      chip.className='menu-ochip';
-      host.insertBefore(chip, host.firstChild);
-    }
-    var on=(localStorage.getItem('ideal_menu_ocultar')==='1');
-    chip.innerHTML='<i class="ti ti-eye'+(on?'-off':'')+'"></i>'
-      +(on?'Mostrar todos os módulos':'Ocultar módulos sem acesso');
-    chip.onclick=function(){ menuToggleOcultar(!on); };
-  } else if(chip){ chip.remove(); }
-  // banner de 1ª vez
-  if(gestor || !temBloqueado || dispensado){ if(ja) ja.remove(); return; }
-  if(ja) return;
-  var b=document.createElement('div'); b.id='menu-lembrete'; b.className='menu-lembrete';
-  b.innerHTML='<div class="ml-tit"><i class="ti ti-eye-off"></i> Deixar o menu mais limpo?</div>'
-    +'<div class="ml-sub">Alguns módulos não são do seu acesso. Quer ocultar e ver só os seus?</div>'
-    +'<div class="ml-acts"><button class="ml-ok" id="ml-ok">Ocultar</button>'
-    +'<button class="ml-no" id="ml-no">Agora não</button></div>'
-    +'<label class="ml-chk"><input type="checkbox" id="ml-naomais"> Não mostrar de novo</label>';
-  host.insertBefore(b, host.firstChild);
-  document.getElementById('ml-ok').onclick=function(){ localStorage.setItem('ideal_menu_lembrete','1'); menuToggleOcultar(true); };
-  document.getElementById('ml-no').onclick=function(){
-    if(document.getElementById('ml-naomais').checked) localStorage.setItem('ideal_menu_lembrete','1');
-    b.remove();
-  };
+  if(gestor || !temBloqueado){ if(bar) bar.remove(); return; }
+  if(!bar){ bar=document.createElement('div'); bar.id='menu-obar'; bar.className='menu-obar'; host.insertBefore(bar, host.firstChild); }
+  var on=(localStorage.getItem('ideal_menu_ocultar')==='1');
+  var dispensado=(localStorage.getItem('ideal_menu_lembrete')==='1');
+  var x=(!on && !dispensado) ? '<i class="ti ti-x mob-x" title="Não mostrar de novo"></i>' : '';
+  bar.innerHTML='<span class="mob-main"><i class="ti ti-eye'+(on?'-off':'')+'"></i>'
+    +(on?'Só os seus módulos · toque pra ver todos':'Ocultar módulos sem acesso')+'</span>'+x;
+  bar.querySelector('.mob-main').onclick=function(){ menuToggleOcultar(!on); };
+  var xi=bar.querySelector('.mob-x'); if(xi) xi.onclick=function(e){ e.stopPropagation(); localStorage.setItem('ideal_menu_lembrete','1'); _menuLembrete(gestor); };
 }
 
 // ── editor (só o gestor) ──
@@ -7055,6 +7036,7 @@ function salvarAjuste(){
   dreEnviarAjusteSheet({acao:'ajuste', chave:key, loja:dreLoja, periodo:dreLabelPeriodo(), linha:ajLinhaAtual, valor});
   fecharModalAjuste();
   renderDRE();
+  if(typeof renderSaidasAtivo==='function' && typeof _lancSaidasAtivo==='function' && _lancSaidasAtivo()) renderSaidasAtivo();
   toast('Ajuste salvo ✓');
 }
 function limparAjuste(){
@@ -7065,6 +7047,7 @@ function limparAjuste(){
   dreEnviarAjusteSheet({acao:'ajuste_del', chave:key});
   fecharModalAjuste();
   renderDRE();
+  if(typeof renderSaidasAtivo==='function' && typeof _lancSaidasAtivo==='function' && _lancSaidasAtivo()) renderSaidasAtivo();
   toast('Voltou ao automático');
 }
 
@@ -7477,60 +7460,98 @@ function renderDRE(){
 }
 
 // ══════════════════════════════════════════════════════
-// TELA SAÍDAS (despesas) — só Financeiro / Gestor / Dono
-// Reusa dreCalcular(): MESMOS números da DRE, sem mostrar venda nem lucro.
+// SAÍDAS (despesas) — aba DENTRO de Lançamentos (Lançar | Saídas → Lista | Gráfico)
+// Só Financeiro / Gestor / Dono. Reusa dreCalcular(): MESMOS números da DRE.
 // ══════════════════════════════════════════════════════
 function _saidasPodeVer(){ var k=_setorKey(userAtual && userAtual.setor); return k==='gestor' || k==='dono' || k==='financ'; }
-function abrirSaidas(){
-  if(!_saidasPodeVer()){ toast('Você não tem acesso a esta tela.'); return; }
-  show('s-saidas'); window.scrollTo(0,0);
-  renderSaidas();
-  if(!dadosCaixa || !dadosCaixa.length){ dreCarregarCaixa().then(function(){ renderSaidas(); }); }
+var _saidasSub='lista';
+function _vis(id, on){ var e=document.getElementById(id); if(e) e.style.display = on?'':'none'; }
+function _lancSaidasAtivo(){ var p=document.getElementById('lanc-pane-saidas'); return !!(p && p.style.display!=='none'); }
+
+// chamado quando Lançamentos abre: mostra/esconde a aba Saídas e prepara os dados
+function lancSetupTabs(){
+  var tab=document.getElementById('lanc-tab-saidas');
+  if(tab) tab.style.display=_saidasPodeVer()?'':'none';
+  lancTab('lancar'); // começa sempre em "Lançar"
+  if(_saidasPodeVer()){
+    if(!DESP_CATS || !DESP_CATS.length){ try{ categoriasCarregar(); }catch(e){} }
+    if(!dadosCaixa || !dadosCaixa.length){ dreCarregarCaixa().then(function(){ if(_lancSaidasAtivo()) renderSaidasAtivo(); }); }
+  }
 }
-function saidasMes(delta){ drePer='mes'; dreMesRef.setMonth(dreMesRef.getMonth()+delta); renderSaidas(); }
-function saidasHoje(){ drePer='mes'; var d=new Date(); dreMesRef=new Date(d.getFullYear(), d.getMonth(), 1); renderSaidas(); }
-function renderSaidas(){
-  var corpo=document.getElementById('saidas-corpo'); if(!corpo) return;
+function lancTab(which){
+  var a=(which==='saidas');
+  if(a && !_saidasPodeVer()) return;
+  _vis('lanc-pane-lancar', !a);
+  _vis('lanc-pane-saidas', a);
+  var t1=document.getElementById('lanc-tab-lancar'), t2=document.getElementById('lanc-tab-saidas');
+  if(t1) t1.classList.toggle('on', !a);
+  if(t2) t2.classList.toggle('on', a);
+  if(a) renderSaidasAtivo();
+}
+function saidasSub(which){
+  _saidasSub=which;
+  var l=document.getElementById('sd-seg-lista'), g=document.getElementById('sd-seg-grafico');
+  if(l) l.classList.toggle('on', which==='lista');
+  if(g) g.classList.toggle('on', which==='grafico');
+  _vis('saidas-lista', which==='lista');
+  _vis('saidas-grafico', which==='grafico');
+  renderSaidasAtivo();
+}
+function saidasMes(delta){ drePer='mes'; dreMesRef.setMonth(dreMesRef.getMonth()+delta); renderSaidasAtivo(); }
+function saidasHoje(){ drePer='mes'; var d=new Date(); dreMesRef=new Date(d.getFullYear(), d.getMonth(), 1); renderSaidasAtivo(); }
+
+function renderSaidasAtivo(){
   var lbl=document.getElementById('saidas-perLbl'); if(lbl) lbl.textContent=dreLabelPeriodo();
   var D=dreCalcular();
-  var totalEl=document.getElementById('saidas-total'); if(totalEl) totalEl.textContent=brlC(D.despOp);
+  var t=document.getElementById('saidas-total'); if(t) t.textContent=brlC(D.despOp);
+  if(_saidasSub==='grafico') renderSaidasGrafico(D); else renderSaidasLista(D);
+}
 
-  // monta os itens: despesas operacionais (>0) + grupos do caixa por categoria
-  var itens=[];
-  (D.subCats||[]).forEach(function(par){ var k=par[0], nome=par[1], v=D.sub[k]||0; if(v>0.005) itens.push({nome:nome, valor:v, grupo:null}); });
-  (D.caixaGrupos||[]).forEach(function(g){ itens.push({nome:g.nome, valor:g.total, grupo:g}); });
-  itens.sort(function(a,b){ return b.valor-a.valor; });
-
-  if(!itens.length){
-    corpo.innerHTML=_vazio({ico:'ti-receipt-off', tit:'Sem saídas no período', sub:'Nenhuma despesa em '+dreLabelPeriodo()+'.'});
-    return;
+// junta as categorias CADASTRADAS (mesmo zeradas) com os grupos LANÇADOS, sem duplicar
+function _saidasCategorias(D){
+  var by={}, ordem=[];
+  function push(nome, valor, grupo){
+    var key=String(nome||'Outros').toLowerCase();
+    if(!by[key]){ by[key]={nome:nome||'Outros', valor:0, grupo:null}; ordem.push(key); }
+    by[key].valor += (valor||0);
+    if(grupo) by[key].grupo=grupo;
   }
+  (DESP_CATS||[]).forEach(function(c){ push(c.nome, 0, null); });        // todas cadastradas
+  (D.caixaGrupos||[]).forEach(function(g){ push(g.nome, g.total, g); }); // somam os lançamentos
+  var arr=ordem.map(function(k){ return by[k]; });
+  arr.sort(function(a,b){ return b.valor-a.valor; });
+  return arr;
+}
 
-  // gráfico de barras (reusa o CSS .dre-hbars da DRE)
-  var max=1; itens.forEach(function(i){ if(i.valor>max) max=i.valor; });
-  var barras=itens.map(function(it){
-    var w=Math.max(2, Math.round(it.valor/max*100));
-    var pct=D.despOp>0 ? (it.valor/D.despOp*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
-    return '<div class="dre-hrow"><div class="dre-hlbl">'+dreEsc(it.nome)+'</div>'
-      +'<div class="dre-htrack"><div class="dre-hfill" data-w="'+w+'" style="width:0;background:#A32D2D"></div></div>'
-      +'<div class="dre-htxt">'+brlC(it.valor)+'<br><span class="dre-hpct">'+pct+'</span></div></div>';
+// LISTA: espelha a DRE — operacionais (5 linhas, com lápis pro gestor) + categorias do caixa
+function renderSaidasLista(D){
+  var box=document.getElementById('saidas-lista'); if(!box) return;
+  var G=ehGestor();
+  var lap=function(linha,label){ return G ? ' <i class="ti ti-pencil dre-aj-edit" onclick="abrirModalAjuste(\''+linha+'\',\''+dreEsc(label)+'\')"></i>' : ''; };
+  var tagA=function(on){ return on ? ' <span class="dre-tag-aj">ajustado</span>' : ''; };
+
+  var opHtml=(D.subCats||[]).map(function(par){
+    var k=par[0], label=par[1], v=D.sub[k]||0;
+    return '<div class="sd-line'+(v>0.005?'':' zero')+'"><div class="sd-nm">'+label+tagA(D.subAj[k])+'</div>'
+      +'<div class="sd-vl">'+(v>0.005?'− '+brlC(v):'R$ 0,00')+lap(k,label)+'</div></div>';
   }).join('');
 
-  // lista detalhada: grupos do caixa abrem/fecham (igual à DRE); operacionais como linha simples
-  var lista=itens.map(function(it){
-    if(!it.grupo){
-      return '<div class="dre-lanc-grp"><div class="dlg-head" style="cursor:default">'
-        +'<div class="dlg-left"><span class="dlg-nm">'+dreEsc(it.nome)+'</span><span class="dlg-badge">despesa fixa</span></div>'
-        +'<span class="dlg-val" style="color:#A32D2D">− '+brlC(it.valor)+'</span></div></div>';
+  var cats=_saidasCategorias(D);
+  var catHtml=cats.map(function(it){
+    var temLanc=it.grupo && it.grupo.itens && it.grupo.itens.length;
+    if(!temLanc){
+      return '<div class="sd-line zero"><div class="sd-nm">'+dreEsc(it.nome)+'</div><div class="sd-vl">R$ 0,00</div></div>';
     }
     var g=it.grupo;
     var itensHtml=g.itens.map(function(x){
       var obs=(x.desc&&String(x.desc).trim())?dreEsc(x.desc):'(sem descrição)';
       var meta=[dreDataBR(x.data), dreHora(x.ts), (x.resp&&String(x.resp).trim())?dreEsc(x.resp):''].filter(Boolean).join(' · ');
       var por=(x.lancadoPor&&String(x.lancadoPor).trim())?'<div class="dli-meta" style="color:#185FA5"><i class="ti ti-user-check"></i>lançado por '+dreEsc(x.lancadoPor)+'</div>':'';
+      var idx=dadosCaixa.indexOf(x);
+      var del=G?'<i class="ti ti-trash" style="color:#A32D2D;font-size:15px;cursor:pointer;padding:3px;margin-left:6px" title="Excluir" onclick="event.stopPropagation();excluirDespesa('+idx+')"></i>':'';
       return '<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">'+obs+'</div>'
         +'<div class="dli-meta"><i class="ti ti-calendar"></i>'+(meta||'sem data')+'</div>'+por+'</div>'
-        +'<div class="dli-val" style="color:#A32D2D;white-space:nowrap">− '+brlC(x.valor)+'</div></div>';
+        +'<div class="dli-val" style="color:#A32D2D;white-space:nowrap;display:flex;align-items:center;justify-content:flex-end">− '+brlC(x.valor)+del+'</div></div>';
     }).join('');
     return '<div class="dre-lanc-grp"><div class="dlg-head" onclick="dreToggleGrupo(this)">'
       +'<div class="dlg-left"><i class="ti ti-chevron-right dlg-chev"></i><span class="dlg-nm">'+dreEsc(g.nome)+'</span>'
@@ -7539,17 +7560,35 @@ function renderSaidas(){
       +'<div class="dlg-list">'+itensHtml+'</div></div>';
   }).join('');
 
-  corpo.innerHTML='<div class="dre-hbars" style="margin-bottom:14px">'+barras+'</div>'
-    +'<div class="dre-lanc-sec">'+lista+'</div>';
+  box.innerHTML=
+    '<div class="section-label" style="margin-top:2px"><i class="ti ti-file-invoice"></i> Despesas operacionais</div>'
+    + opHtml
+    + '<div class="dre-lanc-hint" style="margin-top:16px"><i class="ti ti-wallet"></i>Despesas do caixa, por categoria · toque pra abrir</div>'
+    + (catHtml || '<div class="row-sub" style="padding:10px 2px;color:#888780">Nenhuma categoria cadastrada ainda.</div>')
+    + (G ? '<div style="font-size:11px;color:#888780;margin-top:14px"><i class="ti ti-pencil" style="vertical-align:-1px;margin-right:3px"></i>Toque no lápis pra ajustar uma linha operacional — igual à DRE (não altera a origem).</div>' : '');
+}
 
-  // anima as barras (igual à DRE)
+// GRÁFICO: barras das saídas por categoria (só as com valor)
+function renderSaidasGrafico(D){
+  var box=document.getElementById('saidas-grafico'); if(!box) return;
+  var itens=[];
+  (D.subCats||[]).forEach(function(par){ var v=D.sub[par[0]]||0; if(v>0.005) itens.push({nome:par[1], valor:v}); });
+  (D.caixaGrupos||[]).forEach(function(g){ if(g.total>0.005) itens.push({nome:g.nome, valor:g.total}); });
+  itens.sort(function(a,b){ return b.valor-a.valor; });
+  if(!itens.length){ box.innerHTML=_vazio({ico:'ti-chart-bar', tit:'Sem saídas no período', sub:'Nada lançado em '+dreLabelPeriodo()+'.'}); return; }
+  var max=1; itens.forEach(function(i){ if(i.valor>max) max=i.valor; });
+  var barras=itens.map(function(it){
+    var w=Math.max(2, Math.round(it.valor/max*100));
+    var pct=D.despOp>0 ? (it.valor/D.despOp*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
+    return '<div class="dre-hrow"><div class="dre-hlbl">'+dreEsc(it.nome)+'</div>'
+      +'<div class="dre-htrack"><div class="dre-hfill" data-w="'+w+'" style="width:0;background:#A32D2D"></div></div>'
+      +'<div class="dre-htxt">'+brlC(it.valor)+'<br><span class="dre-hpct">'+pct+'</span></div></div>';
+  }).join('');
+  box.innerHTML='<div class="dre-hbars">'+barras+'</div>';
   requestAnimationFrame(function(){
-    var bars=corpo.querySelectorAll('.dre-hfill');
-    bars.forEach(function(b){ b.style.width='0'; });
-    void corpo.offsetHeight;
-    requestAnimationFrame(function(){
-      bars.forEach(function(b,i){ b.style.transitionDelay=(i*0.06)+'s'; b.style.width=b.getAttribute('data-w')+'%'; });
-    });
+    var bars=box.querySelectorAll('.dre-hfill'); bars.forEach(function(b){ b.style.width='0'; });
+    void box.offsetHeight;
+    requestAnimationFrame(function(){ bars.forEach(function(b,i){ b.style.transitionDelay=(i*0.06)+'s'; b.style.width=b.getAttribute('data-w')+'%'; }); });
   });
 }
 // Puxa os MESMOS números da tela; respeita loja e período selecionados.
