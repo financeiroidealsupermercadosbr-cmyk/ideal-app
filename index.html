@@ -130,6 +130,16 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .sd-line .sd-nm{font-size:13.5px;color:#1a1a1a}
 .sd-line .sd-vl{font-size:13.5px;font-weight:600;color:#A32D2D;white-space:nowrap;display:flex;align-items:center;gap:7px}
 .sd-line.zero .sd-vl{color:#b4b2a9;font-weight:500}
+.sd-sec{display:flex;align-items:center;gap:7px;margin:16px 2px 7px}
+.sd-sec.first{margin-top:4px}
+.sd-sec .sd-bar{width:4px;height:14px;border-radius:2px;background:#888780}
+.sd-sec b{font-size:12.5px}
+.sd-sec em{font-size:10.5px;color:#9aa6b6;font-style:normal;font-weight:normal}
+.sd-sec.op .sd-bar{background:#185FA5}.sd-sec.op b{color:#185FA5}
+.sd-sec.cx .sd-bar{background:#A32D2D}.sd-sec.cx b{color:#A32D2D}
+.sd-tag{font-size:9px;border-radius:5px;padding:1px 6px;margin-left:5px;vertical-align:1px;font-weight:600}
+.sd-tag.bol{background:#E6F1FB;color:#0C447C}
+.sd-tag.aj{background:#FAEEDA;color:#854F0B}
 .qsearchwrap{padding:8px 6px 4px}
 .qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(22,38,122,0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:#16267A;background:#fff;outline:none}
 .qsearch::placeholder{color:#9aa0b4}
@@ -758,7 +768,7 @@ body:has(#s-login.active) .app{max-width:none}
       <div id="lanc-pane-saidas" style="display:none">
         <div style="background:linear-gradient(135deg,#7A1616,#A32D2D);color:#fff;border-radius:13px;padding:12px 14px;margin-bottom:10px">
           <div style="display:flex;align-items:center;justify-content:space-between">
-            <div><div style="font-size:10.5px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total de saídas</div><div id="saidas-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
+            <div><div style="font-size:10.5px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total de saídas</div><div id="saidas-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div><div id="saidas-breakdown" style="font-size:10.5px;opacity:.9;margin-top:3px">—</div></div>
             <div style="text-align:right;font-size:11px;opacity:.9" id="saidas-perLbl">—</div>
           </div>
         </div>
@@ -7014,7 +7024,7 @@ function dreParseValor(s){
 }
 let ajLinhaAtual = null;
 function abrirModalAjuste(linha, label){
-  if(!ehGestor()){ toast('Só o usuário master pode ajustar a DRE'); return; }
+  if(!_podeAjustarDRE()){ toast('Você não tem permissão pra ajustar este valor'); return; }
   ajLinhaAtual = linha;
   (document.getElementById('modal-ajuste-title')||{}).textContent = 'Ajustar: ' + label;
   const atual = dreAjGet(linha);
@@ -7026,7 +7036,7 @@ function abrirModalAjuste(linha, label){
 }
 function fecharModalAjuste(){ document.getElementById('modal-ajuste').classList.remove('open'); ajLinhaAtual=null; }
 function salvarAjuste(){
-  if(!ehGestor()){ toast('Só o usuário master pode ajustar a DRE'); return; }
+  if(!_podeAjustarDRE()){ toast('Você não tem permissão pra ajustar este valor'); return; }
   const valor = dreParseValor(document.getElementById('aj-valor').value);
   if(valor==null){ toast('Digite um valor (ou toque em Voltar ao automático)'); return; }
   const key = dreAjKey(ajLinhaAtual);
@@ -7039,7 +7049,7 @@ function salvarAjuste(){
   toast('Ajuste salvo ✓');
 }
 function limparAjuste(){
-  if(!ehGestor() || !ajLinhaAtual) return;
+  if(!_podeAjustarDRE() || !ajLinhaAtual) return;
   const key = dreAjKey(ajLinhaAtual);
   delete dreAjustes[key];
   dreSalvarAjustes();
@@ -7463,6 +7473,8 @@ function renderDRE(){
 // Só Financeiro / Gestor / Dono. Reusa dreCalcular(): MESMOS números da DRE.
 // ══════════════════════════════════════════════════════
 function _saidasPodeVer(){ var k=_setorKey(userAtual && userAtual.setor); return k==='gestor' || k==='dono' || k==='financ'; }
+// quem pode corrigir o valor (lápis de ajuste) dentro das Saídas: mesmo grupo que vê a aba
+function _podeAjustarDRE(){ var k=_setorKey(userAtual && userAtual.setor); return ehGestor() || k==='financ' || k==='dono'; }
 var _saidasSub='lista';
 function _vis(id, on){ var e=document.getElementById(id); if(e) e.style.display = on?'':'none'; }
 function _lancSaidasAtivo(){ var p=document.getElementById('lanc-pane-saidas'); return !!(p && p.style.display!=='none'); }
@@ -7502,7 +7514,8 @@ function saidasHoje(){ drePer='mes'; var d=new Date(); dreMesRef=new Date(d.getF
 function renderSaidasAtivo(){
   var lbl=document.getElementById('saidas-perLbl'); if(lbl) lbl.textContent=dreLabelPeriodo();
   var D=dreCalcular();
-  var t=document.getElementById('saidas-total'); if(t) t.textContent=brlC(D.caixaTotal);
+  var t=document.getElementById('saidas-total'); if(t) t.textContent=brlC(D.despOp);
+  var bd=document.getElementById('saidas-breakdown'); if(bd) bd.textContent='Operacional '+brlC(D.despOpContas)+'  ·  Caixa '+brlC(D.caixaTotal);
   if(_saidasSub==='grafico') renderSaidasGrafico(D); else renderSaidasLista(D);
 }
 
@@ -7522,12 +7535,23 @@ function _saidasCategorias(D){
   return arr;
 }
 
-// LISTA: só "despesas do caixa por categoria" (todas cadastradas, mesmo zeradas).
-// Operacionais (boletos) ficam na DRE/Contas a pagar — aqui evitamos a duplicação.
+// LISTA das Saídas (área do Financeiro): Operacionais (boletos, com lápis de ajuste) + Caixa (lançado pelas fiscais).
+// As duas origens ficam separadas e rotuladas pra não confundir (ex.: "Aluguel boleto" vs categoria do caixa).
 function renderSaidasLista(D){
   var box=document.getElementById('saidas-lista'); if(!box) return;
-  var podeMexer=_saidasPodeVer(); // financeiro/gestor/dono podem excluir um lançamento
+  var podeMexer=_saidasPodeVer();      // financ/gestor/dono podem excluir um lançamento do caixa
+  var podeAjustar=_podeAjustarDRE();   // financ/gestor/dono podem corrigir o valor operacional
 
+  // ── OPERACIONAIS: 5 buckets das Contas a Pagar (boletos); lápis corrige o valor (DRE_Ajustes) ──
+  var opHtml=(D.subCats||[]).map(function(pair){
+    var k=pair[0], label=pair[1], val=(D.sub&&D.sub[k])||0, ajustado=!!(D.subAj&&D.subAj[k]);
+    var tag=ajustado?'<span class="sd-tag aj">ajustado</span>':'<span class="sd-tag bol">boleto</span>';
+    var lap=podeAjustar?'<i class="ti ti-pencil dre-aj-edit" title="Corrigir valor" onclick="abrirModalAjuste(\''+k+'\',\''+String(label).replace(/'/g,"\\'")+'\')"></i>':'';
+    return '<div class="sd-line"><div class="sd-nm">'+dreEsc(label)+tag+'</div>'
+      +'<div class="sd-vl">'+brlC(val)+lap+'</div></div>';
+  }).join('');
+
+  // ── CAIXA: despesas por categoria lançadas pelas fiscais (todas cadastradas, mesmo zeradas) ──
   var cats=_saidasCategorias(D);
   var catHtml=cats.map(function(it){
     var temLanc=it.grupo && it.grupo.itens && it.grupo.itens.length;
@@ -7554,6 +7578,9 @@ function renderSaidasLista(D){
 
   box.innerHTML=
     '<button class="btn-primary" style="margin-bottom:12px" onclick="lancTab(\'lancar\')"><i class="ti ti-plus"></i> Lançar nova saída</button>'
+    + '<div class="sd-sec op first"><span class="sd-bar"></span><b>Operacionais</b><em>· vêm das Contas a Pagar (boletos)</em></div>'
+    + (opHtml || '<div class="row-sub" style="padding:8px 2px;color:#888780">Sem despesa operacional no período.</div>')
+    + '<div class="sd-sec cx"><span class="sd-bar"></span><b>Caixa</b><em>· lançado pelas fiscais</em></div>'
     + '<div class="dre-lanc-hint"><i class="ti ti-wallet"></i>Despesas por categoria · toque pra abrir os lançamentos</div>'
     + (catHtml || '<div class="row-sub" style="padding:10px 2px;color:#888780">Nenhuma categoria cadastrada ainda. Use “Gerenciar” na aba Lançar.</div>');
 }
@@ -7562,18 +7589,22 @@ function renderSaidasLista(D){
 function renderSaidasGrafico(D){
   var box=document.getElementById('saidas-grafico'); if(!box) return;
   var itens=[];
-  (D.caixaGrupos||[]).forEach(function(g){ if(g.total>0.005) itens.push({nome:g.nome, valor:g.total}); });
+  (D.subCats||[]).forEach(function(p){ var v=(D.sub&&D.sub[p[0]])||0; if(v>0.005) itens.push({nome:p[1], valor:v, cor:'#185FA5'}); }); // operacional = azul
+  (D.caixaGrupos||[]).forEach(function(g){ if(g.total>0.005) itens.push({nome:g.nome, valor:g.total, cor:'#A32D2D'}); });            // caixa = vermelho
   itens.sort(function(a,b){ return b.valor-a.valor; });
   if(!itens.length){ box.innerHTML=_vazio({ico:'ti-chart-bar', tit:'Sem saídas no período', sub:'Nada lançado em '+dreLabelPeriodo()+'.'}); return; }
-  var tot=D.caixaTotal||0, max=1; itens.forEach(function(i){ if(i.valor>max) max=i.valor; });
+  var tot=D.despOp||0, max=1; itens.forEach(function(i){ if(i.valor>max) max=i.valor; });
   var barras=itens.map(function(it){
     var w=Math.max(2, Math.round(it.valor/max*100));
     var pct=tot>0 ? (it.valor/tot*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
     return '<div class="dre-hrow"><div class="dre-hlbl">'+dreEsc(it.nome)+'</div>'
-      +'<div class="dre-htrack"><div class="dre-hfill" data-w="'+w+'" style="width:0;background:#A32D2D"></div></div>'
+      +'<div class="dre-htrack"><div class="dre-hfill" data-w="'+w+'" style="width:0;background:'+it.cor+'"></div></div>'
       +'<div class="dre-htxt">'+brlC(it.valor)+'<br><span class="dre-hpct">'+pct+'</span></div></div>';
   }).join('');
-  box.innerHTML='<div class="dre-hbars">'+barras+'</div>';
+  var legenda='<div style="display:flex;gap:14px;justify-content:center;font-size:10.5px;color:#6a7280;margin:2px 0 8px">'
+    +'<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#185FA5;vertical-align:0"></span> Operacional (boletos)</span>'
+    +'<span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#A32D2D;vertical-align:0"></span> Caixa</span></div>';
+  box.innerHTML=legenda+'<div class="dre-hbars">'+barras+'</div>';
   requestAnimationFrame(function(){
     var bars=box.querySelectorAll('.dre-hfill'); bars.forEach(function(b){ b.style.width='0'; });
     void box.offsetHeight;
