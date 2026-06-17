@@ -7503,7 +7503,7 @@ function saidasHoje(){ drePer='mes'; var d=new Date(); dreMesRef=new Date(d.getF
 function renderSaidasAtivo(){
   var lbl=document.getElementById('saidas-perLbl'); if(lbl) lbl.textContent=dreLabelPeriodo();
   var D=dreCalcular();
-  var t=document.getElementById('saidas-total'); if(t) t.textContent=brlC(D.despOp);
+  var t=document.getElementById('saidas-total'); if(t) t.textContent=brlC(D.caixaTotal);
   if(_saidasSub==='grafico') renderSaidasGrafico(D); else renderSaidasLista(D);
 }
 
@@ -7523,18 +7523,11 @@ function _saidasCategorias(D){
   return arr;
 }
 
-// LISTA: espelha a DRE — operacionais (5 linhas, com lápis pro gestor) + categorias do caixa
+// LISTA: só "despesas do caixa por categoria" (todas cadastradas, mesmo zeradas).
+// Operacionais (boletos) ficam na DRE/Contas a pagar — aqui evitamos a duplicação.
 function renderSaidasLista(D){
   var box=document.getElementById('saidas-lista'); if(!box) return;
-  var G=ehGestor();
-  var lap=function(linha,label){ return G ? ' <i class="ti ti-pencil dre-aj-edit" onclick="abrirModalAjuste(\''+linha+'\',\''+dreEsc(label)+'\')"></i>' : ''; };
-  var tagA=function(on){ return on ? ' <span class="dre-tag-aj">ajustado</span>' : ''; };
-
-  var opHtml=(D.subCats||[]).map(function(par){
-    var k=par[0], label=par[1], v=D.sub[k]||0;
-    return '<div class="sd-line'+(v>0.005?'':' zero')+'"><div class="sd-nm">'+label+tagA(D.subAj[k])+'</div>'
-      +'<div class="sd-vl">'+(v>0.005?'− '+brlC(v):'R$ 0,00')+lap(k,label)+'</div></div>';
-  }).join('');
+  var podeMexer=_saidasPodeVer(); // financeiro/gestor/dono podem excluir um lançamento
 
   var cats=_saidasCategorias(D);
   var catHtml=cats.map(function(it){
@@ -7548,7 +7541,7 @@ function renderSaidasLista(D){
       var meta=[dreDataBR(x.data), dreHora(x.ts), (x.resp&&String(x.resp).trim())?dreEsc(x.resp):''].filter(Boolean).join(' · ');
       var por=(x.lancadoPor&&String(x.lancadoPor).trim())?'<div class="dli-meta" style="color:#185FA5"><i class="ti ti-user-check"></i>lançado por '+dreEsc(x.lancadoPor)+'</div>':'';
       var idx=dadosCaixa.indexOf(x);
-      var del=G?'<i class="ti ti-trash" style="color:#A32D2D;font-size:15px;cursor:pointer;padding:3px;margin-left:6px" title="Excluir" onclick="event.stopPropagation();excluirDespesa('+idx+')"></i>':'';
+      var del=podeMexer?'<i class="ti ti-trash" style="color:#A32D2D;font-size:15px;cursor:pointer;padding:3px;margin-left:6px" title="Excluir" onclick="event.stopPropagation();excluirDespesa('+idx+')"></i>':'';
       return '<div class="dlg-item"><div class="dli-mid"><div class="dli-nm">'+obs+'</div>'
         +'<div class="dli-meta"><i class="ti ti-calendar"></i>'+(meta||'sem data')+'</div>'+por+'</div>'
         +'<div class="dli-val" style="color:#A32D2D;white-space:nowrap;display:flex;align-items:center;justify-content:flex-end">− '+brlC(x.valor)+del+'</div></div>';
@@ -7561,25 +7554,22 @@ function renderSaidasLista(D){
   }).join('');
 
   box.innerHTML=
-    '<div class="section-label" style="margin-top:2px"><i class="ti ti-file-invoice"></i> Despesas operacionais</div>'
-    + opHtml
-    + '<div class="dre-lanc-hint" style="margin-top:16px"><i class="ti ti-wallet"></i>Despesas do caixa, por categoria · toque pra abrir</div>'
-    + (catHtml || '<div class="row-sub" style="padding:10px 2px;color:#888780">Nenhuma categoria cadastrada ainda.</div>')
-    + (G ? '<div style="font-size:11px;color:#888780;margin-top:14px"><i class="ti ti-pencil" style="vertical-align:-1px;margin-right:3px"></i>Toque no lápis pra ajustar uma linha operacional — igual à DRE (não altera a origem).</div>' : '');
+    '<button class="btn-primary" style="margin-bottom:12px" onclick="lancTab(\'lancar\')"><i class="ti ti-plus"></i> Lançar nova saída</button>'
+    + '<div class="dre-lanc-hint"><i class="ti ti-wallet"></i>Despesas por categoria · toque pra abrir os lançamentos</div>'
+    + (catHtml || '<div class="row-sub" style="padding:10px 2px;color:#888780">Nenhuma categoria cadastrada ainda. Use “Gerenciar” na aba Lançar.</div>');
 }
 
-// GRÁFICO: barras das saídas por categoria (só as com valor)
+// GRÁFICO: barras das saídas do caixa por categoria (só as com valor)
 function renderSaidasGrafico(D){
   var box=document.getElementById('saidas-grafico'); if(!box) return;
   var itens=[];
-  (D.subCats||[]).forEach(function(par){ var v=D.sub[par[0]]||0; if(v>0.005) itens.push({nome:par[1], valor:v}); });
   (D.caixaGrupos||[]).forEach(function(g){ if(g.total>0.005) itens.push({nome:g.nome, valor:g.total}); });
   itens.sort(function(a,b){ return b.valor-a.valor; });
   if(!itens.length){ box.innerHTML=_vazio({ico:'ti-chart-bar', tit:'Sem saídas no período', sub:'Nada lançado em '+dreLabelPeriodo()+'.'}); return; }
-  var max=1; itens.forEach(function(i){ if(i.valor>max) max=i.valor; });
+  var tot=D.caixaTotal||0, max=1; itens.forEach(function(i){ if(i.valor>max) max=i.valor; });
   var barras=itens.map(function(it){
     var w=Math.max(2, Math.round(it.valor/max*100));
-    var pct=D.despOp>0 ? (it.valor/D.despOp*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
+    var pct=tot>0 ? (it.valor/tot*100).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%' : '—';
     return '<div class="dre-hrow"><div class="dre-hlbl">'+dreEsc(it.nome)+'</div>'
       +'<div class="dre-htrack"><div class="dre-hfill" data-w="'+w+'" style="width:0;background:#A32D2D"></div></div>'
       +'<div class="dre-htxt">'+brlC(it.valor)+'<br><span class="dre-hpct">'+pct+'</span></div></div>';
