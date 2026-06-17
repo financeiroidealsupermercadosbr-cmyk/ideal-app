@@ -483,6 +483,16 @@ body:has(#s-login.active) .app{max-width:none}
   .tab-anim,.vazio,.brand-mark,.brand-word,.qcard{animation:none!important}
   #ptr-ind.ptr-spin .ptr-ic{animation-duration:1.3s}
 }
+
+/* Busca de preço — animação do estado vazio */
+.preco-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 18px 30px;text-align:center}
+.pe-stage{position:relative;width:150px;height:104px;margin-bottom:16px}
+.pe-barcode{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:112px;height:60px;border-radius:8px;background:repeating-linear-gradient(90deg,#16267A 0 3px,transparent 3px 6px,#16267A 6px 8px,transparent 8px 13px,#16267A 13px 15px,transparent 15px 20px);opacity:.9}
+.pe-scan{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:126px;height:3px;border-radius:3px;background:#D32B2B;box-shadow:0 0 10px rgba(211,43,43,.7);animation:peScan 2.4s ease-in-out infinite}
+@keyframes peScan{0%,100%{top:10px}50%{top:64px}}
+.pe-cart{position:absolute;right:-4px;bottom:-6px;font-size:30px;color:#1B3A9E;background:#fff;border-radius:50%;padding:7px;box-shadow:0 4px 14px rgba(22,38,122,.20);animation:peBob 2.4s ease-in-out infinite}
+@keyframes peBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.pe-hint{font-size:13px;color:#888780;line-height:1.55;max-width:280px}
 </style>
 </head>
 <body>
@@ -1103,7 +1113,7 @@ body:has(#s-login.active) .app{max-width:none}
       <input id="preco-busca" type="text" inputmode="search" autocomplete="off" placeholder="Nome, código ou código de barras" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box" oninput="precoBuscarDebounce()">
       <button class="btn-primary" style="width:52px;padding:0;margin-top:0" onclick="precoScanAbrir()" aria-label="Escanear código de barras"><i class="ti ti-barcode" style="font-size:23px"></i></button>
     </div>
-    <div id="preco-res"><div class="row-sub" style="padding:6px 2px">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div></div>
+    <div id="preco-res"><div class="preco-empty"><div class="pe-stage"><div class="pe-barcode"></div><div class="pe-scan"></div><i class="ti ti-shopping-cart pe-cart"></i></div><div class="pe-hint">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div></div></div>
   </div>
 
 </div>
@@ -8861,7 +8871,7 @@ async function precoSync(force){
 async function abrirPreco(){
   show('s-preco');
   var inp = document.getElementById('preco-busca'); if(inp) inp.value='';
-  (document.getElementById('preco-res')||{}).innerHTML = '<div class="row-sub" style="padding:6px 2px">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div>';
+  (document.getElementById('preco-res')||{}).innerHTML = '<div class="preco-empty"><div class="pe-stage"><div class="pe-barcode"></div><div class="pe-scan"></div><i class="ti ti-shopping-cart pe-cart"></i></div><div class="pe-hint">Digite um pedaço do nome (ex.: "omo", "coca", "pão") ou escaneie o código de barras.</div></div>';
   if(!PRODUTOS.length){
     var cache = await _precoGet('all').catch(function(){return null;});
     if(cache && cache.length){ PRODUTOS = cache; _precoSub(); }
