@@ -2017,6 +2017,7 @@ let userAtual     = null;
 let dadosVendas   = [];
 let dadosContas   = [];
 let dadosCaixa    = [];   // despesas de caixa lançadas no app (aba Despesas_Caixa) → entram na DRE
+let dadosAvarias  = [];   // avarias do controle de perdas (via avarias_list) → subtraídas na DRE
 let boletoCurrent = null;
 let selecionados  = new Set(); // índices selecionados para baixa em massa
 let baixasLocais  = new Set(); // chaves doc|forn|venc baixadas nesta sessão (rede de segurança contra leitura atrasada)
@@ -5813,6 +5814,7 @@ function trocarLoja(btn,nome,id) {
   (document.getElementById('h-store')||{}).textContent=nome;
   dreLoja = id;            // o seletor de cima agora comanda a DRE também
   renderizarPainel(); filtrar(); renderDRE();
+  if(typeof dreCarregarAvarias==='function') dreCarregarAvarias().then(function(ok){ if(ok) renderDRE(); });
   if(typeof _lancSaidasAtivo==='function' && _lancSaidasAtivo() && typeof renderSaidasAtivo==='function') renderSaidasAtivo();
 }
 
@@ -5956,6 +5958,7 @@ async function carregarSheets() {
     dreCarregarGruposSheet().then(ok=>{ if(ok) renderDRE(); });
     dreCarregarAjustesSheet().then(ok=>{ if(ok) renderDRE(); });
     dreCarregarCaixa().then(ok=>{ if(ok) renderDRE(); });
+    dreCarregarAvarias().then(ok=>{ if(ok) renderDRE(); });
 
   } catch(e) {
     console.error(e);
@@ -7238,7 +7241,28 @@ function dreSomaCaixa(){
   return b;
 }
 
-// ── DESTRINCHAR LANÇAMENTOS NA DRE: agrupa as despesas de caixa do período/loja
+// ── AVARIAS na DRE: carrega via avarias_list (backend já filtra por loja) e subtrai como "Perdas"
+async function dreCarregarAvarias(){
+  try {
+    const j = await _avPost({acao:'avarias_list'});
+    dadosAvarias = (j && Array.isArray(j.avarias)) ? j.avarias : [];
+    return true;
+  } catch(e){ dadosAvarias = []; return false; } // backend antigo/sem avarias → sem perdas
+}
+// avaria.data vem em ISO (YYYY-MM-DD); aplica o MESMO período da DRE
+function _avNoPeriodoDRE(iso){
+  const p=String(iso||'').split('-'); if(p.length<3) return false;
+  const a=+p[0], m=+p[1];
+  if(drePer==='tudo') return true;
+  if(drePer==='ano')  return a===dreMesRef.getFullYear();
+  return m===(dreMesRef.getMonth()+1) && a===dreMesRef.getFullYear(); // 'mes'
+}
+function drePerdaAvarias(){
+  // sem fonte de dados (Loja 1/Bolos) → 0. O backend já devolveu só a loja atual.
+  if(dreLoja!=='l2' && dreLoja!=='all') return 0;
+  let t=0; (dadosAvarias||[]).forEach(function(a){ if(_avNoPeriodoDRE(a.data)) t+=_foNum(a.total); });
+  return t;
+}
 // por categoria (grupo) e devolve cada grupo com seus lançamentos individuais. ──
 function dreEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function dreP2(n){ n=parseInt(n,10)||0; return (n<10?'0':'')+n; }
@@ -7332,9 +7356,10 @@ function dreCalcular(){
   const margem  = recLiq - cmv;
   const grupos  = dreGruposVisiveis();
   const grpSoma = grupos.reduce((s,g)=> s + (g.sinal==='+'? g.valor : -g.valor), 0);
-  const resultado = margem - despOp + recFin - despFin + grpSoma;
+  const perdas  = drePerdaAvarias();
+  const resultado = margem - despOp + recFin - despFin + grpSoma - perdas;
   return {rec, ct, subCats, sub, subAj, despOp, despOpContas, caixaTotal, caixaGrupos, imposto, cmv, despFin, recFin, recLiq, margem,
-          grupos, grpSoma, resultado, aj:{imposto:aImp!=null, cmv:aCmv!=null, despFin:aDF!=null, recFin:aRF!=null}};
+          grupos, grpSoma, perdas, resultado, aj:{imposto:aImp!=null, cmv:aCmv!=null, despFin:aDF!=null, recFin:aRF!=null}};
 }
 
 function renderDRE(){
@@ -7468,6 +7493,8 @@ function renderDRE(){
           <i class="ti ti-trash gr-x" onclick="dreRemoverGrupo(${g.id})"></i>`:''}
         </div>
       </div>`).join('') : ''}
+
+    ${D.perdas>0?`<div class="dre-row"><div class="dr-lbl">(−) Perdas (avarias)</div><div class="dr-val" style="color:#A32D2D">− ${brlC(D.perdas)}<div class="dr-sub">${pct(D.perdas)} da receita · do controle de avarias</div></div></div>`:''}
 
     <div class="dre-result" style="background:${posit?'#0F6E56':'#A32D2D'}">
       <div><span class="dr-lbl">(=) Resultado</span><div class="dr-note">${posit?'lucro no período':'prejuízo no período'} · margem ${pct(resultado)}</div></div>
@@ -7699,6 +7726,7 @@ tr.grp td{color:#16267A;font-size:12px}
       ${subDesp}
       <tr><td>(+) Receitas financeiras</td><td class="v">${recFin>0?brlC(recFin):'— (entram depois)'}</td></tr>
       <tr><td>(−) Despesas financeiras</td><td class="v">${despFin>0?'− '+brlC(despFin):'R$ 0,00'}</td></tr>
+      ${D.perdas>0?`<tr><td>(−) Perdas (avarias)</td><td class="v">− ${brlC(D.perdas)} · ${pct(D.perdas)}</td></tr>`:''}
       ${grupos.length?`<tr class="head"><td colspan="2">Grupos manuais</td></tr>${subGrp}`:''}
     </table>
     <div class="result" style="background:${posit?'#0F6E56':'#A32D2D'}">
