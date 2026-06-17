@@ -4324,7 +4324,7 @@ function fichaModal(func, post, onSaved){
 }
 
 // ══════════════════════════════════════════════════════
-// SANGRIAS / COFRE (por loja). Fiscal lança; gerência/gestor/financeiro recolhe.
+// SANGRIAS / COFRE (por loja). Fiscal/gerente/financeiro LANÇAM (sem ver lista nem total); só DONO/GESTOR veem e recolhem.
 // Reusa _foLoja, _foNomeLoja, _precoBRL, _precoEsc, _foNum, _setorKey,
 // appConfirm, toast, show, userAtual, _urlApps, SHEET_ID.
 // ══════════════════════════════════════════════════════
@@ -4350,6 +4350,11 @@ function abrirSangrias(){
   else { box.innerHTML='<div class="row-sub" style="padding:18px 2px;text-align:center;color:#888780">Toque em <b>Lançar sangria</b> pra registrar uma retirada pro cofre.<br><span style="font-size:12px;color:#B4B2A9">O valor do cofre fica com a diretoria.</span></div>'; }
 }
 async function saCarregar(){
+  if(!_saPodeVer()){ // fiscal/gerente/financeiro lançam, mas NÃO veem lista nem total
+    var b0=document.getElementById('sa-lista');
+    if(b0) b0.innerHTML='<div class="row-sub" style="padding:18px 2px;text-align:center;color:#888780">Toque em <b>Lançar sangria</b> pra registrar uma retirada pro cofre.<br><span style="font-size:12px;color:#B4B2A9">O valor do cofre fica com a diretoria.</span></div>';
+    return;
+  }
   var sub=document.getElementById('sa-sub'); if(sub) sub.textContent=_foNomeLoja();
   var box=document.getElementById('sa-lista');
   box.innerHTML=_skel(4);
@@ -6349,7 +6354,7 @@ function filtrar() {
   // converte o vencimento DD/MM/YYYY do boleto para YYYY-MM-DD (ou '' se inválido)
   const _vencISO = b=>{ const p=String(b.venc||'').split('/'); return (p.length>=3)? (p[2]+'-'+p[1]+'-'+p[0]) : ''; };
 
-  const items = dadosContas.filter(b=>{
+  const items = cAtivas().filter(b=>{
     const st = statusB(b);
     if(q&&!b.forn.toLowerCase().includes(q)) return false;
     // status: "hoje" = vence hoje; os demais usam o status normal
@@ -6380,7 +6385,11 @@ function filtrar() {
   var _cfr=document.getElementById('cf-rotulo'); if(_cfr) _cfr.textContent=_rot;
 
   if(!items.length){
-    lista.innerHTML=_vazio({ico:'ti-file-invoice',tit:'Nenhum boleto encontrado',sub:'Ajuste os filtros acima — ou aguarde a próxima atualização da ponte.'});
+    if(!lojaTemDados()){
+      lista.innerHTML=_vazio({ico:'ti-building-store',tit:'Sem Contas a Pagar nesta loja',sub:'O Contas a Pagar só tem dados da Loja 2 — Melhor QS8. Troque a loja no seletor de cima.'});
+    } else {
+      lista.innerHTML=_vazio({ico:'ti-file-invoice',tit:'Nenhum boleto encontrado',sub:'Ajuste os filtros acima — ou aguarde a próxima atualização da ponte.'});
+    }
     return;
   }
 
