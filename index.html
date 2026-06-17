@@ -114,6 +114,16 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
 .qdot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E21E1E}
 #tab-menu{padding:8px 6px 8px}
+.menu-ochip{display:inline-flex;align-items:center;gap:6px;margin:2px 4px 10px;padding:7px 13px;border-radius:999px;border:1px solid #d7e0ec;background:#f4f7fb;color:#3a5a86;font-size:12.5px;font-family:Arial,sans-serif;cursor:pointer;user-select:none}
+.menu-ochip i{font-size:15px}
+.menu-ochip:active{background:#e9eff7}
+.menu-lembrete{margin:2px 4px 12px;padding:13px 14px;border-radius:14px;border:1px solid #dbe6f3;background:linear-gradient(180deg,#f6f9fd,#eef3fa);font-family:Arial,sans-serif}
+.menu-lembrete .ml-tit{font-size:14px;font-weight:bold;color:#1f3a5f;display:flex;align-items:center;gap:7px}
+.menu-lembrete .ml-sub{font-size:12.5px;color:#5a6b80;margin:5px 0 11px;line-height:1.4}
+.menu-lembrete .ml-acts{display:flex;gap:9px}
+.menu-lembrete .ml-ok{flex:1;padding:9px;border:none;border-radius:9px;background:#185FA5;color:#fff;font-size:13px;font-weight:bold;cursor:pointer}
+.menu-lembrete .ml-no{flex:1;padding:9px;border:1px solid #cdd7e3;border-radius:9px;background:#fff;color:#5a6b80;font-size:13px;cursor:pointer}
+.menu-lembrete .ml-chk{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:#8693a5;cursor:pointer}
 .qsearchwrap{padding:8px 6px 4px}
 .qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(22,38,122,0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:#16267A;background:#fff;outline:none}
 .qsearch::placeholder{color:#9aa0b4}
@@ -6429,7 +6439,7 @@ function permsDoSetor(setor){
   const s = String(setor||'').toLowerCase();
   if(s.indexOf('master')>=0 || s.indexOf('gestor')>=0) return {painel:1,dre:1,menu:1,config:1};
   if(s.indexOf('dono')>=0   || s.indexOf('propriet')>=0) return {painel:1,dre:1,menu:1,config:0};
-  if(s.indexOf('financ')>=0)  return {painel:0,dre:1,menu:1,config:0};
+  if(s.indexOf('financ')>=0)  return {painel:0,dre:0,menu:1,config:0};
   if(s.indexOf('gerente')>=0) return {painel:0,dre:0,menu:1,config:0};
   if(s.indexOf('fiscal')>=0)  return {painel:0,dre:0,menu:1,config:0};
   return {painel:0,dre:0,menu:1,config:0}; // padrão: o mais restrito
@@ -6473,6 +6483,22 @@ function aplicarPermissoes(usr, l){
 // Quais itens cada setor pode abrir no Menu. Guardado na aba "Permissoes" do Sheets.
 // Padrão = LIBERADO: só esconde o que o gestor marcar como desligado (valor 0).
 let MENU_PERMS = {};                 // { setorKey: { itemKey: 0|1 } }
+// Defaults por setor: itens que já vêm DESLIGADOS mesmo sem linha na aba Permissoes.
+// A aba Permissoes (MENU_PERMS) SEMPRE vence: se o gestor ligar lá, fica ligado.
+// (terminais = busca-preços: por enquanto só Gestor/Master e Gerentes.)
+const MENU_DEFAULTS = {
+  financ:   { lucro:0, abc:0, maisvendidos:0, terminais:0 },
+  dono:     { terminais:0 },
+  cadastro: { terminais:0 },
+  fiscal:   { terminais:0 }
+};
+function _menuItemPermitido(k, item){
+  const m = MENU_PERMS[k] || {};
+  if(m[item] !== undefined) return m[item] !== 0;        // aba Permissoes manda
+  const d = MENU_DEFAULTS[k] || {};
+  if(d[item] !== undefined) return d[item] !== 0;        // default por setor
+  return true;                                            // resto: liberado
+}
 let permsEdit = {};                  // estado temporário enquanto o gestor edita
 let permsSetorSel = 'gerente';
 
@@ -6491,6 +6517,13 @@ const MENU_ITENS = [
   {k:'orcamento',  ic:'ti-wallet',           nm:'Orçamento'},
   {k:'avarias',    ic:'ti-alert-triangle',   nm:'Controle de avarias'},
   {k:'preco',      ic:'ti-barcode',          nm:'Busca de preço'},
+  {k:'calc',       ic:'ti-calculator',       nm:'Calculadora'},
+  {k:'lucro',      ic:'ti-coin',             nm:'Lucratividade'},
+  {k:'abc',        ic:'ti-chart-bar',        nm:'Curva ABC'},
+  {k:'maisvendidos',ic:'ti-trophy',          nm:'Mais vendidos'},
+  {k:'compras',    ic:'ti-truck-delivery',   nm:'Compras'},
+  {k:'terminais',  ic:'ti-device-desktop',   nm:'Terminais (busca-preços)'},
+  {k:'vale',       ic:'ti-receipt',          nm:'Vale / Convênio'},
   {k:'ck_gerentes',ic:'ti-clipboard-check',  nm:'Checklist gerentes', soon:1},
   {k:'ck_temp',    ic:'ti-temperature-snow', nm:'Checklist temperatura freezers', soon:1},
   {k:'ck_contas',  ic:'ti-calendar-dollar',  nm:'Checklist contas mensais'},
@@ -6534,13 +6567,15 @@ function _vazio(o){ o=o||{}; var b=o.btnTxt?('<button onclick="'+(o.btnAcao||'')
 // === Busca do Menu (filtra os cards por nome, ignora acentos) ===
 function menuFiltrar(q){
   var n=((q||'')+'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  var ocultar=(localStorage.getItem('ideal_menu_ocultar')==='1');
   var grids=document.querySelectorAll('#tab-menu .qgrid');
   for(var i=0;i<grids.length;i++){
     var g=grids[i], cards=g.querySelectorAll('.qcard'), vis=0;
     for(var j=0;j<cards.length;j++){
       var el=cards[j].querySelector('.qnm');
       var nm=((el?el.textContent:'')+'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-      var ok=(!n || nm.indexOf(n)>=0);
+      var oculto=(ocultar && cards[j].classList.contains('locked'));
+      var ok=(!oculto) && (!n || nm.indexOf(n)>=0);
       cards[j].style.display=ok?'':'none';
       if(ok)vis++;
     }
@@ -6558,10 +6593,10 @@ function aplicarPermsMenu(){
   if(!userAtual) return;
   const k = _setorKey(userAtual.setor);
   const gestor = (k==='gestor');
-  const m = MENU_PERMS[k] || {};
+  const ocultar = (localStorage.getItem('ideal_menu_ocultar')==='1');
   document.querySelectorAll('#tab-menu [data-menu]').forEach(function(card){
     const item = card.getAttribute('data-menu');
-    const bloqueado = (!gestor && m[item]===0);   // explicitamente desligado
+    const bloqueado = (!gestor && !_menuItemPermitido(k, item));
     const ehSoon = card.classList.contains('soon'); // "em breve" já fica apagado sozinho
     const trancar = bloqueado && !ehSoon;
     card.classList.toggle('locked', trancar);
@@ -6574,7 +6609,66 @@ function aplicarPermsMenu(){
       s.textContent = 'sem acesso';
       card.appendChild(s);
     }
+    // modo "ocultar módulos sem acesso": esconde o card travado de vez
+    card.style.display = (trancar && ocultar) ? 'none' : '';
   });
+  _menuRecalcSecoes();
+  _menuLembrete(gestor);
+}
+
+// some com as seções (título + contador) que ficaram sem nenhum card visível
+function _menuRecalcSecoes(){
+  document.querySelectorAll('#tab-menu .qgrid').forEach(function(g){
+    var vis=0, cards=g.querySelectorAll('.qcard');
+    for(var i=0;i<cards.length;i++){ if(cards[i].style.display!=='none') vis++; }
+    var sec=g.previousElementSibling;
+    if(sec && (''+sec.className).indexOf('qsec')>=0){
+      sec.style.display = vis ? '' : 'none';
+      var em=sec.querySelector('em'); if(em) em.textContent=vis;
+    }
+  });
+}
+
+// liga/desliga o "ocultar módulos sem acesso" e reaplica
+function menuToggleOcultar(v){
+  localStorage.setItem('ideal_menu_ocultar', v ? '1' : '0');
+  aplicarPermsMenu();
+}
+
+// lembrete único: aparece só na 1ª vez pra quem TEM módulo sem acesso
+function _menuLembrete(gestor){
+  var host=document.getElementById('tab-menu'); if(!host) return;
+  var ja=document.getElementById('menu-lembrete');
+  var temBloqueado = !!host.querySelector('.qcard.locked');
+  var dispensado = (localStorage.getItem('ideal_menu_lembrete')==='1');
+  // chip de alternância (sempre disponível pra quem tem bloqueio)
+  var chip=document.getElementById('menu-ocultar-chip');
+  if(!gestor && temBloqueado){
+    if(!chip){
+      chip=document.createElement('div'); chip.id='menu-ocultar-chip';
+      chip.className='menu-ochip';
+      host.insertBefore(chip, host.firstChild);
+    }
+    var on=(localStorage.getItem('ideal_menu_ocultar')==='1');
+    chip.innerHTML='<i class="ti ti-eye'+(on?'-off':'')+'"></i>'
+      +(on?'Mostrar todos os módulos':'Ocultar módulos sem acesso');
+    chip.onclick=function(){ menuToggleOcultar(!on); };
+  } else if(chip){ chip.remove(); }
+  // banner de 1ª vez
+  if(gestor || !temBloqueado || dispensado){ if(ja) ja.remove(); return; }
+  if(ja) return;
+  var b=document.createElement('div'); b.id='menu-lembrete'; b.className='menu-lembrete';
+  b.innerHTML='<div class="ml-tit"><i class="ti ti-eye-off"></i> Deixar o menu mais limpo?</div>'
+    +'<div class="ml-sub">Alguns módulos não são do seu acesso. Quer ocultar e ver só os seus?</div>'
+    +'<div class="ml-acts"><button class="ml-ok" id="ml-ok">Ocultar</button>'
+    +'<button class="ml-no" id="ml-no">Agora não</button></div>'
+    +'<label class="ml-chk"><input type="checkbox" id="ml-naomais"> Não mostrar de novo</label>';
+  host.insertBefore(b, host.firstChild);
+  document.getElementById('ml-ok').onclick=function(){ localStorage.setItem('ideal_menu_lembrete','1'); menuToggleOcultar(true); };
+  document.getElementById('ml-no').onclick=function(){
+    if(document.getElementById('ml-naomais').checked) localStorage.setItem('ideal_menu_lembrete','1');
+    b.remove();
+  };
 }
 
 // ── editor (só o gestor) ──
@@ -6588,8 +6682,11 @@ function abrirPermsMenu(){
     PERMS_SETORES.forEach(function(s){
       permsEdit[s.key] = {};
       const m = MENU_PERMS[s.key];
+      const d = MENU_DEFAULTS[s.key] || {};
       MENU_ITENS.forEach(function(it){
-        permsEdit[s.key][it.k] = (m && m[it.k]===0) ? 0 : 1; // padrão ligado
+        if(m && m[it.k]!==undefined)      permsEdit[s.key][it.k] = (m[it.k]===0)?0:1; // aba manda
+        else if(d[it.k]!==undefined)      permsEdit[s.key][it.k] = (d[it.k]===0)?0:1; // default setor
+        else                              permsEdit[s.key][it.k] = 1;                  // liberado
       });
     });
     permsSetorSel = 'gerente';
