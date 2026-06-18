@@ -8969,7 +8969,7 @@ async function _precoSyncSupa(){
       var r = rows[i]; var cod = String(r.codigo||'').trim();
       if(!/^\d+$/.test(cod)) continue;
       var desc = String(r.descricao||''); var bar = String(r.referencia||'').trim();
-      arr.push({ c:cod, d:desc, b:bar, u:String(r.unidade||'').trim(), ct:N(r.preco_custo), cm:N(r.custo_medio), v:N(r.preco_varejo), a:N(r.preco_atacado), at:String(r.ativo||'').trim().toUpperCase(), n:_precoNorm(desc+' '+cod+' '+bar) });
+      arr.push({ c:cod, d:desc, b:bar, u:String(r.unidade||'').trim(), ct:Number(r.preco_custo)||0, cm:Number(r.custo_medio)||0, v:Number(r.preco_varejo)||0, a:Number(r.preco_atacado)||0, at:String(r.ativo||'').trim().toUpperCase(), n:_precoNorm(desc+' '+cod+' '+bar) });
     }
     if(rows.length < page) break;
     offset += page;
