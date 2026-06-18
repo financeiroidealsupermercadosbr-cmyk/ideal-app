@@ -114,6 +114,11 @@
   var IDLE_MS     = 9000;       // volta ao repouso depois de mostrar um preço
   var CACHE_KEY   = 'ideal_bp_v2';
 
+  // >>> SUPABASE (fonte primaria; Sheets vira reserva automatica) <<<
+  var SUPA_URL   = 'https://jnupgembzivsiowdkacc.supabase.co';
+  var SUPA_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudXBnZW1ieml2c2lvd2RrYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDY4NDgsImV4cCI6MjA5NzMyMjg0OH0.emhFhJOZvoHd-qFR-bvNc_zSWpPs9oQK_7vwd-H0aR0';   // Settings > API > anon/public. E publica (pode ficar no codigo).
+  var CLIENTE_ID = 'd9b2c1a4-7e3f-4a6b-9c2d-1f0e5a8b3c47';   // Grupo Ideal
+
   // >>> SITUAÇÃO DO TERMINAL ("dá o oi" pro painel do app) <<<
   // O id do terminal vem da URL: busca-preco.html?t=bp1  (ou ?t=bp2 etc).
   // A cada HEARTBEAT_MS o terminal manda um "oi" pro Apps Script, que anota
@@ -325,7 +330,8 @@
     }catch(e){ return false; }
   }
 
-  function atualizar(){
+  // Reserva: le direto do Google Sheets (jeito antigo).
+  function atualizarSheets(){
     var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID
             + '/values/' + encodeURIComponent(RANGE) + '?key=' + API_KEY + '&_=' + Date.now();
     fetch(url, {cache:'no-store'})
@@ -339,6 +345,23 @@
         setOnline(false);
         if(total===0) elFtR.textContent = 'sem conexão — tentando…';
       });
+  }
+
+  // Principal: le do Supabase (rapido, sem cota). Se falhar, cai pro Sheets.
+  function atualizar(){
+    if(!SUPA_ANON || SUPA_ANON.indexOf('COLE_AQUI') === 0){ atualizarSheets(); return; }
+    fetch(SUPA_URL + '/rest/v1/rpc/bp_produtos', {
+      method:'POST',
+      headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+SUPA_ANON, 'Content-Type':'application/json' },
+      cache:'no-store',
+      body: JSON.stringify({ p_cliente: CLIENTE_ID })
+    })
+      .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
+      .then(function(arr){
+        if(arr && arr.length){ construirCompact(arr); salvarCompact(arr); setOnline(true); }
+        else { atualizarSheets(); }   // veio vazio -> tenta o Sheets
+      })
+      .catch(function(e){ atualizarSheets(); });   // erro -> reserva
   }
 
   // ---- leitor de código (funciona como teclado) ----
