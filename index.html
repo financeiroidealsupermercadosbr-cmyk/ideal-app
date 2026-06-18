@@ -1962,6 +1962,14 @@ const BASE_URL  = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/val
 
 // URL do Apps Script — salva no localStorage entre sessões
 let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url') || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+
+// ── SUPABASE (nuvem) — auth + leitura das telas sensíveis ──────────────
+// A anon é PÚBLICA por design (mesma do busca-preco.html). Cole a chave abaixo.
+const SUPA_URL    = 'https://jnupgembzivsiowdkacc.supabase.co';
+const SUPA_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudXBnZW1ieml2c2lvd2RrYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDY4NDgsImV4cCI6MjA5NzMyMjg0OH0.emhFhJOZvoHd-qFR-bvNc_zSWpPs9oQK_7vwd-H0aR0';   // anon public (Ideal SaaS)
+const CLIENTE_ID  = 'd9b2c1a4-7e3f-4a6b-9c2d-1f0e5a8b3c47';           // Grupo Ideal (carimbo multi-tenant)
+const SUPA_EMAIL_DOMAIN = 'ideal.local';                             // login sintético: <usuario>@ideal.local
+const _SUPA_SESS_KEY = 'ideal_supa_sess';                            // onde guardo o token (localStorage)
 const APP_VERSAO = '1.0';   // <<< versão do app — alterar SÓ aqui. Login e Config leem deste valor.
 // Injeta a versão (única) no rodapé do login e na Config.
 (function _aplicarVersao_(){
@@ -5741,6 +5749,113 @@ function togglePass(el){
   if(inp.type==='password'){ inp.type='text'; el.className='ti ti-eye-off login2-eye'; }
   else { inp.type='password'; el.className='ti ti-eye login2-eye'; }
 }
+
+// ══════════════════════════════════════════════════════
+// SUPABASE AUTH — login por trás do login da planilha.
+// Não troca a tela: o usuário continua entrando com usuário+senha.
+// O app monta o e-mail sintético (<usuario>@ideal.local) e pega o JWT.
+// Se o Supabase falhar, NÃO trava o login — o app segue no Sheets.
+// ══════════════════════════════════════════════════════
+function _supaAtivo(){ return SUPA_ANON && SUPA_ANON !== 'COLE_A_ANON_AQUI' && SUPA_URL; }
+function _supaEmail(usuario){ return String(usuario||'').trim().toLowerCase() + '@' + SUPA_EMAIL_DOMAIN; }
+
+// fetch com timeout (AbortController) — rede ruim NUNCA trava o app.
+// Estoura o tempo => aborta a chamada => o caller cai no Sheets.
+function _supaFetchT(url, init, ms){
+  const ac = new AbortController();
+  const t  = setTimeout(function(){ ac.abort(); }, ms || 8000);
+  return fetch(url, Object.assign({}, init||{}, { signal: ac.signal }))
+    .finally(function(){ clearTimeout(t); });
+}
+
+// Guarda/lê a sessão (access_token, refresh_token, validade) no localStorage.
+function supaSessGet(){
+  try { return JSON.parse(localStorage.getItem(_SUPA_SESS_KEY) || 'null'); } catch(e){ return null; }
+}
+function supaSessSet(s){
+  if(!s){ localStorage.removeItem(_SUPA_SESS_KEY); return; }
+  // expires_at vem em epoch (s) do GoTrue; se não vier, calcula por expires_in.
+  const exp = s.expires_at ? s.expires_at*1000 : (Date.now() + (s.expires_in||3600)*1000);
+  localStorage.setItem(_SUPA_SESS_KEY, JSON.stringify({
+    access_token: s.access_token, refresh_token: s.refresh_token, exp: exp
+  }));
+}
+function supaSessClear(){ try{ localStorage.removeItem(_SUPA_SESS_KEY); }catch(e){} }
+
+// Login no Supabase (grant_type=password). Devolve true/false; NUNCA lança pra fora.
+async function supaLogin(usuario, senha){
+  if(!_supaAtivo()) return false;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON },
+      body: JSON.stringify({ email:_supaEmail(usuario), password:senha })
+    }, 8000);
+    const data = await res.json().catch(()=>null);
+    if(!res.ok || !data || !data.access_token){
+      console.warn('[supa] login falhou (segue no Sheets):', (data && (data.error_description||data.msg||data.error)) || res.status);
+      supaSessClear();
+      return false;
+    }
+    supaSessSet(data);
+    return true;
+  } catch(e){
+    console.warn('[supa] sem conexão com a nuvem (segue no Sheets):', e);
+    return false;
+  }
+}
+
+// Renova o token com o refresh_token. Devolve o novo access_token ou null.
+async function supaRefresh(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.refresh_token) return null;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON },
+      body: JSON.stringify({ refresh_token: s.refresh_token })
+    }, 8000);
+    const data = await res.json().catch(()=>null);
+    if(!res.ok || !data || !data.access_token){ supaSessClear(); return null; }
+    supaSessSet(data);
+    return data.access_token;
+  } catch(e){ return null; }
+}
+
+// Devolve um access_token válido (renova se faltar < 60s). null = sem sessão.
+async function supaToken(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.access_token) return null;
+  if(s.exp && s.exp - Date.now() < 60000) return await supaRefresh();
+  return s.access_token;
+}
+
+// Headers prontos pra chamar PostgREST/RPC com o token do usuário (RLS reconhece a loja).
+async function supaAuthHeaders(extra){
+  const tk = await supaToken();
+  const h = { 'apikey':SUPA_ANON, 'Content-Type':'application/json' };
+  if(tk) h['Authorization'] = 'Bearer ' + tk;
+  return Object.assign(h, extra||{});
+}
+
+// fetch genérico pro Supabase já com auth; tenta renovar 1x em caso de 401.
+// path = caminho relativo, ex: '/rest/v1/produtos?select=*' ou '/rest/v1/rpc/bp_produtos'.
+async function supaFetch(path, init){
+  init = init || {};
+  const doCall = async () => {
+    const headers = await supaAuthHeaders(init.headers);
+    return _supaFetchT(SUPA_URL + path, Object.assign({}, init, { headers }), init.timeoutMs || 15000);
+  };
+  let res = await doCall();
+  if(res.status === 401){
+    const tk = await supaRefresh();
+    if(tk) res = await doCall();
+  }
+  return res;
+}
+
 async function fazerLogin() {
   const u   = document.getElementById('login-user').value.trim().toLowerCase();
   const p   = document.getElementById('login-pass').value;
@@ -5771,6 +5886,8 @@ async function fazerLogin() {
       err.style.display='flex'; etx.textContent = 'Não consegui confirmar seu acesso agora. Tente de novo em instantes.'; return;
     }
     usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u, telefone:data.telefone||'', email:data.email||'' };
+    // Login no Supabase POR TRÁS (pega o JWT pras telas sensíveis). Não bloqueia: se falhar, segue no Sheets.
+    try { await supaLogin(u, p); } catch(_e){ /* nuvem opcional nesta fase */ }
   } catch(e){
     console.error('Falha no login:', e);
     if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
@@ -5813,6 +5930,7 @@ async function fazerLogin() {
 }
 function fazerLogout() {
   userAtual=null;
+  supaSessClear();   // encerra o token da nuvem junto com a sessão local
   vigiaTerminaisParar();
   ['login-user','login-pass'].forEach(id=>document.getElementById(id).value='');
   document.querySelectorAll('.nav-btn').forEach(b=>b.style.display='');
