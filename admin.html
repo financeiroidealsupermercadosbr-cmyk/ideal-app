@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ideal · Painel do Operador</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0f1424; --card:#171d31; --line:#262d44; --txt:#e8ecf6; --mut:#8b93ad;
+    --azul:#3b6ef5; --on:#27c08a; --off:#ef4d5a; --warn:#e8a93b; --cut:#6b7280;
+  }
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Arial,sans-serif;min-height:100vh}
+  .wrap{max-width:880px;margin:0 auto;padding:20px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+  h1{font-size:20px;font-weight:700}
+  h1 small{display:block;font-size:12px;color:var(--mut);font-weight:400;margin-top:2px}
+  .btn{background:var(--azul);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--mut)}
+  .btn:active{transform:translateY(1px)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  /* login */
+  #login{max-width:360px;margin:8vh auto}
+  #login h1{margin-bottom:4px}
+  #login p{color:var(--mut);font-size:13px;margin-bottom:18px}
+  label{display:block;font-size:12px;color:var(--mut);margin:12px 0 6px}
+  input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--txt);font-size:15px}
+  input:focus{outline:0;border-color:var(--azul)}
+  #login .btn{width:100%;margin-top:18px}
+  .erro{color:var(--off);font-size:13px;margin-top:12px;min-height:16px}
+  /* lista */
+  .resumo{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mut)}
+  .pill b{color:var(--txt)}
+  .row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .nome{flex:1;min-width:0}
+  .nome .t{font-weight:600;font-size:15px}
+  .nome .s{font-size:12px;color:var(--mut);margin-top:2px}
+  .badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;white-space:nowrap}
+  .b-online{background:rgba(39,192,138,.15);color:var(--on)}
+  .b-parado{background:rgba(239,77,90,.15);color:var(--off)}
+  .b-nunca{background:rgba(232,169,59,.15);color:var(--warn)}
+  .b-cortado{background:rgba(107,114,128,.2);color:var(--cut)}
+  .vazio{color:var(--mut);text-align:center;padding:30px 0;font-size:14px}
+  .hide{display:none!important}
+  .foot{color:var(--mut);font-size:12px;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="login" class="card">
+    <h1>Painel do Operador</h1>
+    <p>Acesso restrito · Ideal SaaS</p>
+    <label>Usuário</label>
+    <input id="u" autocomplete="username" placeholder="usuario">
+    <label>Senha</label>
+    <input id="p" type="password" autocomplete="current-password" placeholder="••••••">
+    <button class="btn" id="entrar">Entrar</button>
+    <div class="erro" id="loginErro"></div>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="painel" class="hide">
+    <header>
+      <h1>Pontes dos clientes <small id="sub">—</small></h1>
+      <div>
+        <button class="btn ghost" id="atualizar">Atualizar</button>
+        <button class="btn ghost" id="sair">Sair</button>
+      </div>
+    </header>
+    <div class="resumo" id="resumo"></div>
+    <div class="card"><div id="lista"><div class="vazio">Carregando…</div></div></div>
+    <div class="foot" id="rodape"></div>
+  </div>
+
+</div>
+
+<script>
+const SUPA_URL  = 'https://jnupgembzivsiowdkacc.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudXBnZW1ieml2c2lvd2RrYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDY4NDgsImV4cCI6MjA5NzMyMjg0OH0.emhFhJOZvoHd-qFR-bvNc_zSWpPs9oQK_7vwd-H0aR0';
+const DOMINIO   = 'ideal.local';
+const SESS_KEY  = 'ideal_admin_sess';
+
+const $ = id => document.getElementById(id);
+function sessGet(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)||'null'); }catch(e){ return null; } }
+function sessSet(s){ if(!s){ localStorage.removeItem(SESS_KEY); return; }
+  const exp = s.expires_at ? s.expires_at*1000 : (Date.now()+(s.expires_in||3600)*1000);
+  localStorage.setItem(SESS_KEY, JSON.stringify({access_token:s.access_token, refresh_token:s.refresh_token, exp:exp})); }
+
+async function login(usuario, senha){
+  const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`,{
+    method:'POST', headers:{'Content-Type':'application/json','apikey':SUPA_ANON},
+    body: JSON.stringify({ email: usuario.trim().toLowerCase()+'@'+DOMINIO, password: senha })
+  });
+  const d = await res.json().catch(()=>null);
+  if(!res.ok || !d || !d.access_token) throw new Error((d&&(d.error_description||d.msg))||'login falhou');
+  sessSet(d); return true;
+}
+async function token(){
+  const s = sessGet(); if(!s) return null;
+  if(s.exp && s.exp-Date.now() < 60000){
+    const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=refresh_token`,{
+      method:'POST', headers:{'Content-Type':'application/json','apikey':SUPA_ANON},
+      body: JSON.stringify({refresh_token:s.refresh_token})});
+    const d = await r.json().catch(()=>null);
+    if(!r.ok||!d||!d.access_token){ sessSet(null); return null; }
+    sessSet(d); return d.access_token;
+  }
+  return s.access_token;
+}
+async function rpc(fn, args){
+  const tk = await token(); if(!tk) throw new Error('sessão expirada');
+  const res = await fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`,{
+    method:'POST', headers:{'apikey':SUPA_ANON,'Authorization':'Bearer '+tk,'Content-Type':'application/json'},
+    body: JSON.stringify(args||{})});
+  if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.message||('HTTP '+res.status)); }
+  return res.json();
+}
+
+function tempoTxt(min){
+  if(min==null) return 'nunca enviou';
+  if(min<1)  return 'agora mesmo';
+  if(min<60) return 'há '+min+' min';
+  const h=Math.floor(min/60), m=min%60;
+  if(h<24) return 'há '+h+'h'+(m?(' '+m+'min'):'');
+  return 'há '+Math.floor(h/24)+' dia(s)';
+}
+const COR = { online:'var(--on)', parado:'var(--off)', nunca:'var(--warn)', cortado:'var(--cut)' };
+const ROT = { online:'🟢 Online', parado:'🔴 Parado', nunca:'🟡 Nunca enviou', cortado:'⚪ Cortado' };
+
+async function carregar(){
+  $('lista').innerHTML = '<div class="vazio">Carregando…</div>';
+  let dados;
+  try{ dados = await rpc('admin_pontes'); }
+  catch(e){
+    if(String(e.message).includes('acesso negado')){ $('lista').innerHTML='<div class="vazio">Sua conta não é administradora do painel.</div>'; return; }
+    $('lista').innerHTML = '<div class="vazio">Erro: '+e.message+'</div>'; return;
+  }
+  if(!dados.length){ $('lista').innerHTML='<div class="vazio">Nenhuma Ponte cadastrada ainda.</div>'; }
+  else {
+    let on=0,off=0;
+    $('lista').innerHTML = dados.map(d=>{
+      if(d.status==='online') on++; else off++;
+      return `<div class="row">
+        <span class="dot" style="background:${COR[d.status]||'var(--cut)'}"></span>
+        <div class="nome"><div class="t">${d.rotulo||'(sem rótulo)'}</div>
+          <div class="s">visto ${tempoTxt(d.min_atras)}${d.ativo?'':' · acesso cortado'}</div></div>
+        <span class="badge b-${d.status}">${ROT[d.status]||d.status}</span>
+      </div>`;
+    }).join('');
+    $('resumo').innerHTML =
+      `<span class="pill">Total <b>${dados.length}</b></span>`+
+      `<span class="pill">Online <b style="color:var(--on)">${on}</b></span>`+
+      `<span class="pill">Atenção <b style="color:var(--off)">${off}</b></span>`;
+  }
+  $('sub').textContent = 'atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  $('rodape').textContent = 'Online = enviou nos últimos 20 min · atualiza sozinho a cada 60s';
+}
+
+function mostrarPainel(){ $('login').classList.add('hide'); $('painel').classList.remove('hide'); carregar(); }
+function mostrarLogin(){ $('painel').classList.add('hide'); $('login').classList.remove('hide'); }
+
+$('entrar').onclick = async ()=>{
+  $('loginErro').textContent='';
+  try{ await login($('u').value, $('p').value); mostrarPainel(); }
+  catch(e){ $('loginErro').textContent = 'Não foi possível entrar. Confira usuário e senha.'; }
+};
+$('p').addEventListener('keydown', e=>{ if(e.key==='Enter') $('entrar').click(); });
+$('atualizar').onclick = carregar;
+$('sair').onclick = ()=>{ sessSet(null); mostrarLogin(); };
+
+// auto-refresh + arranque
+setInterval(()=>{ if(!$('painel').classList.contains('hide')) carregar(); }, 60000);
+(async ()=>{ if(await token()) mostrarPainel(); else mostrarLogin(); })();
+</script>
+</body>
+</html>
