@@ -8947,10 +8947,52 @@ async function _precoSub(state){
   var meta=null; try{ meta = await _precoGet('meta'); }catch(e){}
   var n = PRODUTOS.length || (meta && meta.n) || 0;
   var quando = (meta && meta.ts) ? new Date(meta.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
-  el.textContent = n ? (n.toLocaleString('pt-BR') + ' produtos' + (quando ? ' · atualizado ' + quando : '')) : 'Toque em ↻ para carregar';
+  var fonte = (meta && meta.src) ? (' · ' + (meta.src==='nuvem'?'nuvem':'planilha')) : '';
+  el.textContent = n ? (n.toLocaleString('pt-BR') + ' produtos' + (quando ? ' · atualizado ' + quando : '') + fonte) : 'Toque em ↻ para carregar';
 }
 
-// Baixa a aba Produtos e guarda no aparelho. force=true ignora o "está fresquinho".
+// ── Fonte NUVEM (Supabase) — lê produtos via supaFetch, paginado (traz todos). ──
+// Mapeia pras MESMAS chaves compactas do app (c,d,b,u,ct,cm,v,a,at,n).
+// referencia = código de barras (mesma posição da antiga coluna C/barras da planilha).
+// Retorna null se não há sessão na nuvem → deixa cair no Sheets.
+async function _precoSyncSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var sel = 'codigo,descricao,referencia,unidade,preco_custo,custo_medio,preco_varejo,preco_atacado,ativo';
+  var page = 1000, offset = 0, arr = [];
+  for(;;){
+    var res = await supaFetch('/rest/v1/produtos?select='+sel+'&order=codigo&limit='+page+'&offset='+offset);
+    if(!res.ok) throw new Error('produtos HTTP '+res.status);
+    var rows = await res.json();
+    if(!Array.isArray(rows) || !rows.length) break;
+    for(var i=0;i<rows.length;i++){
+      var r = rows[i]; var cod = String(r.codigo||'').trim();
+      if(!/^\d+$/.test(cod)) continue;
+      var desc = String(r.descricao||''); var bar = String(r.referencia||'').trim();
+      arr.push({ c:cod, d:desc, b:bar, u:String(r.unidade||'').trim(), ct:N(r.preco_custo), cm:N(r.custo_medio), v:N(r.preco_varejo), a:N(r.preco_atacado), at:String(r.ativo||'').trim().toUpperCase(), n:_precoNorm(desc+' '+cod+' '+bar) });
+    }
+    if(rows.length < page) break;
+    offset += page;
+    if(offset > 300000) break; // trava de segurança
+  }
+  return arr;
+}
+
+// ── Fonte PLANILHA (Sheets) — comportamento original, agora como fallback. ──
+async function _precoSyncSheets(){
+  var rows = await fetchRange('Produtos!A:M');
+  var arr = [];
+  for(var i=0;i<rows.length;i++){
+    var r = rows[i]; var cod = String(r[0]||'').trim();
+    if(!/^\d+$/.test(cod)) continue;
+    var desc = String(r[1]||''); var bar = String(r[2]||'').trim();
+    arr.push({ c:cod, d:desc, b:bar, u:String(r[3]||'').trim(), ct:N(r[5]), cm:N(r[6]), v:N(r[7]), a:N(r[8]), at:String(r[12]||'').trim().toUpperCase(), n:_precoNorm(desc+' '+cod+' '+bar) });
+  }
+  return arr;
+}
+
+// Baixa os produtos e guarda no aparelho. Tenta a NUVEM primeiro; cai no Sheets.
+// force=true ignora o "está fresquinho".
 async function precoSync(force){
   if(_precoSyncing) return;
   try{
@@ -8963,18 +9005,14 @@ async function precoSync(force){
       }
     }
     _precoSyncing = true; _precoSub('sync');
-    var rows = await fetchRange('Produtos!A:M');
-    var arr = [];
-    for(var i=0;i<rows.length;i++){
-      var r = rows[i]; var cod = String(r[0]||'').trim();
-      if(!/^\d+$/.test(cod)) continue;
-      var desc = String(r[1]||''); var bar = String(r[2]||'').trim();
-      arr.push({ c:cod, d:desc, b:bar, u:String(r[3]||'').trim(), ct:N(r[5]), cm:N(r[6]), v:N(r[7]), a:N(r[8]), at:String(r[12]||'').trim().toUpperCase(), n:_precoNorm(desc+' '+cod+' '+bar) });
-    }
-    if(arr.length){
+    var arr = null, src = 'planilha';
+    try{ arr = await _precoSyncSupa(); if(arr && arr.length) src = 'nuvem'; }
+    catch(e){ console.warn('preco: nuvem falhou, caindo no Sheets', e); arr = null; }
+    if(!arr || !arr.length){ arr = await _precoSyncSheets(); src = 'planilha'; }
+    if(arr && arr.length){
       PRODUTOS = arr;
       await _precoSet('all', arr).catch(function(){});
-      await _precoSet('meta', {ts:Date.now(), n:arr.length}).catch(function(){});
+      await _precoSet('meta', {ts:Date.now(), n:arr.length, src:src}).catch(function(){});
     }
     _precoSub();
     var inp = document.getElementById('preco-busca');
