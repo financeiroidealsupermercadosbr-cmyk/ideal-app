@@ -3668,7 +3668,7 @@ function avAplicarIntervalo(){
   _avFiltro={tipo:'intervalo', de:de, ate:ate};
   avRenderSalvos();
 }
-function _avPassa(d){ d=String(d||''); if(_avFiltro.tipo==='tudo') return true; if(_avFiltro.tipo==='mes') return d.slice(0,7)===_avFiltro.mes; if(_avFiltro.tipo==='intervalo') return d>=_avFiltro.de && d<=_avFiltro.ate; return true; }
+function _avPassa(d){ d=String(d||''); if(_avFiltro.tipo==='tudo') return true; if(_avFiltro.tipo==='mes') return (!_avFiltro.mes) ? true : d.slice(0,7)===_avFiltro.mes; if(_avFiltro.tipo==='intervalo') return d>=_avFiltro.de && d<=_avFiltro.ate; return true; }
 function _avFiltroLabel(){ if(_avFiltro.tipo==='tudo') return 'Todos os meses'; if(_avFiltro.tipo==='mes') return _avMesLabel(_avFiltro.mes); if(_avFiltro.tipo==='intervalo') return _avDataBR(_avFiltro.de)+' a '+_avDataBR(_avFiltro.ate); return ''; }
 function _avFiltradas(){ return _avAvarias.filter(function(a){ return _avPassa(a.data); }); }
 
@@ -8888,7 +8888,7 @@ const iv = setInterval(()=>{
   w+=2; prog.style.width=Math.min(w,100)+'%';
   if(w>=100){ clearInterval(iv); setTimeout(()=>show('s-login'),300); }
 },30);
-try{ categoriasCarregar(); }catch(e){}
+setTimeout(function(){ try{ categoriasCarregar(); }catch(e){} }, 0);
 
 // Fechar modais clicando fora
 ['modal-baixa','modal-massa','modal-grupo'].forEach(id=>{
