@@ -8359,7 +8359,7 @@ function initFiltro(){
       cell.addEventListener('click',(function(dia){ return function(){
         const clicked=new Date(calY,calM,dia);
         if(!rStart || (rStart&&rEnd)){ rStart=clicked; rEnd=null; }
-        else if(clicked>rStart){ rEnd=clicked; }
+        else if(clicked>=rStart){ rEnd=clicked; }
         else { rStart=clicked; }
         modo='range';
         document.querySelectorAll('#flt-panel [data-group="per"]').forEach(function(x){ x.classList.remove('on'); });
