@@ -6209,7 +6209,10 @@ async function supaToken(){
   if(!_supaAtivo()) return null;
   const s = supaSessGet();
   if(!s || !s.access_token) return null;
-  if(s.exp && s.exp - Date.now() < 60000) return await supaRefresh();
+  // renova com folga de 5 min — token GoTrue dura ~1h e o PostgREST com RLS não
+  // devolve 401 quando expira (devolve 200 com lista vazia), então não dá pra
+  // confiar no 401 pra renovar. Melhor renovar cedo.
+  if(s.exp && s.exp - Date.now() < 300000) return await supaRefresh();
   return s.access_token;
 }
 
