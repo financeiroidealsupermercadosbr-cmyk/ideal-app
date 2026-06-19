@@ -4764,6 +4764,18 @@ async function mvRender(){
   box.innerHTML=html;
 }
 async function mvHoraLoad(){
+  // FONTE: nuvem (vendas_hora) primeiro; Sheets como fallback (Ideal).
+  // select=* protege contra nome de coluna incerto (ex.: cupons). Number() na nuvem.
+  try{
+    var crows = await _supaPaged('/rest/v1/vendas_hora?select=*&order=data');
+    if(crows){
+      var cout=[];
+      for(var c=0;c<crows.length;c++){ var cr=crows[c]; var ciso=_vdIso(cr.data); if(!ciso) continue;
+        cout.push({iso:ciso, hora:parseInt(cr.hora,10)||0, fat:Number(cr.faturamento)||0, cupons:parseInt(cr.cupons,10)||0}); }
+      try{ console.log('[ideal] vendas_hora via nuvem'); }catch(e){}
+      return cout;
+    }
+  }catch(e){ console.warn('[hora] nuvem falhou, caindo no Sheets', e); }
   var rows = await fetchRange('Vendas_Hora!A:D');
   var out=[];
   for(var i=0;i<rows.length;i++){ var rr=rows[i]; if(!rr||!rr[0]) continue;
@@ -9242,6 +9254,54 @@ function _estBuildMap(){
   for(var i=0;i<EST_BASE.length;i++){ var e=EST_BASE[i]; ESTMAP[e.codigo] = {setor:e.setor||'A REVISAR', grupo:e.grupo, codbarras:e.cod, descricao:e.descricao}; }
 }
 
+// GET paginado no Supabase (1000/vez). Devolve array de objetos, ou null se não há sessão.
+// Lança em erro de HTTP (deixa o caller cair no Sheets).
+async function _supaPaged(path){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var page = 1000, offset = 0, all = [];
+  for(;;){
+    var sep = (path.indexOf('?') >= 0) ? '&' : '?';
+    var res = await supaFetch(path + sep + 'limit=' + page + '&offset=' + offset);
+    if(!res.ok) throw new Error('supa HTTP ' + res.status);
+    var rows = await res.json();
+    if(!Array.isArray(rows) || !rows.length) break;
+    all = all.concat(rows);
+    if(rows.length < page) break;
+    offset += page;
+    if(offset > 500000) break; // trava de segurança
+  }
+  return all;
+}
+
+// FONTE NUVEM p/ Mais vendidos / setor: estrutura_produtos + vendas_codigo + vendas_diaria.
+// Já parseado no MESMO formato do Sheets (eb/vb/vdb). REGRA DE OURO: nuvem usa Number().
+// Retorna null se não há sessão na nuvem (deixa cair no Sheets).
+async function _estFonteSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var est = await _supaPaged('/rest/v1/estrutura_produtos?select=codigo,descricao,codbarras,col_aux,setor,grupo&order=codigo');
+  if(est === null) return null;
+  var eb = [];
+  for(var i=0;i<est.length;i++){ var r=est[i]; var cod=String(r.codigo||'').trim(); if(!cod) continue;
+    var desc=String(r.descricao||''); var bar=String(r.codbarras||'').trim();
+    var setor=(String(r.setor||'').trim().toUpperCase())||'A REVISAR'; var grupo=String(r.grupo||'');
+    eb.push({codigo:cod, descricao:desc, cod:bar, setor:setor, grupo:grupo, n:_precoNorm(desc+' '+cod+' '+bar)});
+  }
+  var ven = await _supaPaged('/rest/v1/vendas_codigo?select=codigo,descricao,qtd,faturamento&order=codigo');
+  var vb = [];
+  (ven||[]).forEach(function(rv){ var cv=String(rv.codigo||'').trim(); if(!cv || isNaN(parseFloat(cv))) return;
+    vb.push({codigo:cv, desc:String(rv.descricao||''), qtd:Number(rv.qtd)||0, fat:Number(rv.faturamento)||0});
+  });
+  var vd = await _supaPaged('/rest/v1/vendas_diaria?select=data,codigo,qtd,faturamento&order=data');
+  var vdb = [];
+  (vd||[]).forEach(function(rd){ var iso=_vdIso(rd.data); if(!iso) return;
+    var cd=String(rd.codigo||'').trim(); if(!cd || isNaN(parseFloat(cd))) return;
+    vdb.push({iso:iso, codigo:cd, qtd:Number(rd.qtd)||0, fat:Number(rd.faturamento)||0});
+  });
+  return { eb:eb, vb:vb, vdb:vdb };
+}
+
 async function estSync(force){
   try{
     if(!force){
@@ -9254,23 +9314,31 @@ async function estSync(force){
       }
     }
     _estSyncing = true;
-    var par = await Promise.all([ fetchRange('Estrutura_Produtos!A:J'), fetchRange('Vendas_Codigo!A:D').catch(function(){return [];}), fetchRange('Vendas_Diaria!A:D').catch(function(){return [];}) ]);
-    var est=par[0], ven=par[1], vd=par[2];
-    var eb=[];
-    for(var i=1;i<est.length;i++){ var r=est[i]; var cod=String(r[0]||'').trim(); if(!cod) continue;
-      var desc=String(r[1]||''); var bar=String(r[2]||'').trim();
-      var setor=(String(r[4]||'').trim().toUpperCase())||'A REVISAR'; var grupo=String(r[5]||'');
-      eb.push({codigo:cod, descricao:desc, cod:bar, setor:setor, grupo:grupo, n:_precoNorm(desc+' '+cod+' '+bar)});
+    // FONTE: nuvem (Supabase) primeiro; Sheets como fallback (Ideal).
+    // REGRA DE OURO: nuvem usa Number(); Sheets usa N(). Não cruzar (erro ×100).
+    var eb, vb, vdb, _fonteEst = 'planilha', _estSupa = null;
+    try{ _estSupa = await _estFonteSupa(); }catch(e){ console.warn('[est] nuvem falhou, caindo no Sheets', e); _estSupa = null; }
+    if(_estSupa){ eb = _estSupa.eb; vb = _estSupa.vb; vdb = _estSupa.vdb; _fonteEst = 'nuvem'; }
+    else {
+      var par = await Promise.all([ fetchRange('Estrutura_Produtos!A:J'), fetchRange('Vendas_Codigo!A:D').catch(function(){return [];}), fetchRange('Vendas_Diaria!A:D').catch(function(){return [];}) ]);
+      var est=par[0], ven=par[1], vd=par[2];
+      eb=[];
+      for(var i=1;i<est.length;i++){ var r=est[i]; var cod=String(r[0]||'').trim(); if(!cod) continue;
+        var desc=String(r[1]||''); var bar=String(r[2]||'').trim();
+        var setor=(String(r[4]||'').trim().toUpperCase())||'A REVISAR'; var grupo=String(r[5]||'');
+        eb.push({codigo:cod, descricao:desc, cod:bar, setor:setor, grupo:grupo, n:_precoNorm(desc+' '+cod+' '+bar)});
+      }
+      vb=[];
+      for(var j=0;j<ven.length;j++){ var rv=ven[j]; var cv=String(rv[0]||'').trim(); if(!cv || isNaN(parseFloat(cv))) continue;
+        vb.push({codigo:cv, desc:String(rv[1]||''), qtd:N(rv[2]), fat:N(rv[3])});
+      }
+      vdb=[];
+      for(var z=0;z<vd.length;z++){ var rd=vd[z]; var iso=_vdIso(rd[0]); if(!iso) continue;
+        var cd=String(rd[1]||'').trim(); if(!cd || isNaN(parseFloat(cd))) continue;
+        vdb.push({iso:iso, codigo:cd, qtd:N(rd[2]), fat:N(rd[3])});
+      }
     }
-    var vb=[];
-    for(var j=0;j<ven.length;j++){ var rv=ven[j]; var cv=String(rv[0]||'').trim(); if(!cv || isNaN(parseFloat(cv))) continue;
-      vb.push({codigo:cv, desc:String(rv[1]||''), qtd:N(rv[2]), fat:N(rv[3])});
-    }
-    var vdb=[];
-    for(var z=0;z<vd.length;z++){ var rd=vd[z]; var iso=_vdIso(rd[0]); if(!iso) continue;
-      var cd=String(rd[1]||'').trim(); if(!cd || isNaN(parseFloat(cd))) continue;
-      vdb.push({iso:iso, codigo:cd, qtd:N(rd[2]), fat:N(rd[3])});
-    }
+    try{ console.log('[ideal] estrutura/vendas via ' + _fonteEst); }catch(e){}
     if(eb.length){ EST_BASE=eb; await _precoSet('est_all',eb).catch(function(){}); }
     VEN_BASE=vb; await _precoSet('ven_all',vb).catch(function(){});
     VD_BASE=vdb; await _precoSet('vd_all',vdb).catch(function(){});
