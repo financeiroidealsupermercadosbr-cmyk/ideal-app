@@ -5255,6 +5255,32 @@ async function _preencheFornDatalist(dlId){
   var opts=''; if(typeof FORNEC!=='undefined' && FORNEC){ for(var i=0;i<FORNEC.length;i++){ if(FORNEC[i] && FORNEC[i].nome) opts+='<option value="'+_precoEsc(FORNEC[i].nome)+'"></option>'; } }
   dl.innerHTML=opts;
 }
+// Popula o <select id="cp-forn"> com os fornecedores cadastrados (lista fechada).
+async function _cpPreencheFornSelect(card, selecionado){
+  await _garanteFornec();
+  var sel=card.querySelector('#cp-forn'); if(!sel) return;
+  var lista=(typeof FORNEC!=='undefined' && FORNEC)?FORNEC.slice():[];
+  lista.sort(function(a,b){ return String(a.nome||'').toLowerCase()<String(b.nome||'').toLowerCase()?-1:1; });
+  var html='<option value="">— escolha o fornecedor —</option>';
+  for(var i=0;i<lista.length;i++){ if(lista[i]&&lista[i].nome){ var n=_precoEsc(lista[i].nome); html+='<option value="'+n+'"'+(lista[i].nome===selecionado?' selected':'')+'>'+n+'</option>'; } }
+  sel.innerHTML=html;
+  // se a compra tinha um fornecedor antigo (texto livre) que não está cadastrado, mantém como opção
+  if(selecionado && !lista.some(function(f){ return f.nome===selecionado; })){
+    var o=document.createElement('option'); o.value=selecionado; o.textContent=selecionado+' (não cadastrado)'; o.selected=true; sel.insertBefore(o, sel.children[1]||null);
+  }
+}
+// Cadastra um fornecedor na hora (prompt simples) e já seleciona no select.
+async function _cpNovoFornecedor(card){
+  var nome=prompt('Nome do novo fornecedor:'); if(!nome) return; nome=nome.trim(); if(!nome) return;
+  var contato=prompt('Contato (telefone/whats) — opcional:')||'';
+  try{
+    var j=await _estPost({acao:'forn_save', id:'', nome:nome, contato:contato.trim(), pin:''});
+    if(!j||!j.ok){ toast('Não consegui cadastrar o fornecedor'); return; }
+    FORNEC=null; await _garanteFornec();           // recarrega a lista
+    await _cpPreencheFornSelect(card, nome);         // repinta e seleciona o novo
+    toast('Fornecedor cadastrado ✓');
+  }catch(e){ toast('Erro ao cadastrar fornecedor'); }
+}
 function abrirCompras(){ show('s-compras'); window.scrollTo(0,0); cpSetFiltro(_cpFiltro||'ABERTO', true); lemCarregar(); }
 function _cpBtnFiltro(on){ return 'flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
 function cpSetFiltro(f, carrega){
@@ -5315,7 +5341,10 @@ function cpEditar(id){
   var card=document.createElement('div'); card.style.cssText='background:#fff;border-radius:14px;max-width:380px;width:100%;max-height:88vh;overflow:auto;padding:18px;box-shadow:0 12px 44px rgba(0,0,0,.25)';
   card.innerHTML='<div style="font-size:15px;font-weight:600;color:#16267A;margin-bottom:12px">'+(novo?'Novo espelho':'Editar espelho')+'</div>'
     +'<label style="font-size:11px;color:#888780">Fornecedor</label>'
-    +'<input id="cp-forn" list="cp-forn-list" value="'+_precoEsc(p.fornecedor)+'" placeholder="ex.: BH Atacadista" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px"><datalist id="cp-forn-list"></datalist>'
+    +'<div style="display:flex;gap:6px;align-items:center;margin:4px 0 10px">'
+    +'<select id="cp-forn" style="flex:1;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;background:#fff"><option value="">Carregando…</option></select>'
+    +'<button id="cp-forn-novo" type="button" title="Cadastrar fornecedor" style="padding:10px 12px;border:1px solid #16267A;background:#fff;color:#16267A;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ novo</button>'
+    +'</div>'
     +'<label style="font-size:11px;color:#888780">Data do pedido</label>'
     +'<input id="cp-data" type="date" value="'+dataVal+'" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;margin:4px 0 10px">'
     +'<label style="font-size:11px;color:#888780">Espelho (PDF)</label>'
@@ -5332,9 +5361,10 @@ function cpEditar(id){
   function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
   ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
   card.querySelector('#cp-cancel').onclick=close;
-  _preencheFornDatalist('cp-forn-list');
+  _cpPreencheFornSelect(card, p.fornecedor);
+  card.querySelector('#cp-forn-novo').onclick=function(){ _cpNovoFornecedor(card); };
   card.querySelector('#cp-save').onclick=async function(){
-    var forn=card.querySelector('#cp-forn').value.trim(); if(!forn){ toast('Digite o fornecedor'); return; }
+    var fsel=card.querySelector('#cp-forn'); var forn=(fsel&&fsel.value||'').trim(); if(!forn){ toast('Escolha o fornecedor (ou cadastre um novo)'); return; }
     var data=card.querySelector('#cp-data').value; var obs=card.querySelector('#cp-obs').value.trim();
     var fileEl=card.querySelector('#cp-pdf'); var file=fileEl&&fileEl.files&&fileEl.files[0];
     var payload={acao:'compras_save', id:p.id, fornecedor:forn, data:data, obs:obs, usuario:(userAtual&&userAtual.usuario)||''};
