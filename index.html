@@ -699,8 +699,8 @@ body:has(#s-login.active) .app{max-width:none}
         <div class="v-chart" id="p-chart" role="img" aria-label="Vendas dos últimos dias"></div>
       </div>
       <div class="grid2" style="margin-top:10px;margin-bottom:0">
-        <div class="metric"><div class="metric-label" id="p-ticket-lbl">Ticket médio (mês)</div><div class="metric-value" id="p-ticket">—</div></div>
-        <div class="metric"><div class="metric-label" id="p-cupons-lbl">Cupons (mês)</div><div class="metric-value" id="p-cupons">—</div></div>
+        <div class="metric"><div class="metric-label">Ticket médio (mês)</div><div class="metric-value" id="p-ticket">—</div></div>
+        <div class="metric"><div class="metric-label">Cupons (mês)</div><div class="metric-value" id="p-cupons">—</div></div>
       </div>
 
       <!-- Saldo do dia e Recebimentos esperados removidos (conciliação de cartões será tratada à parte) -->
@@ -2032,13 +2032,6 @@ const APP_TOKEN = 'idealapp_2026_x7Kq9Rv3LpZ8nW';
 
 let lojaAtual     = 'l2';
 let userAtual     = null;
-// ── Filtro de período do Painel (bug 5.2) ──
-// Estado global do seletor de data. Quando fltModo==='mes' (padrão) o Painel
-// se comporta como antes (último dia / mês corrente). Em qualquer outro período
-// o bloco "Vendas" passa a mostrar o TOTAL do período escolhido.
-let fltStart = (function(){ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),1); })();
-let fltEnd   = new Date();
-let fltModo  = 'mes';
 let dadosVendas   = [];
 let dadosContas   = [];
 let dadosCaixa    = [];   // despesas de caixa lançadas no app (aba Despesas_Caixa) → entram na DRE
@@ -2645,9 +2638,56 @@ function _ckDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/)
 function _ckMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
 function _ckTexto(id){ for(var i=0;i<_ckTarefas.length;i++){ if(_ckTarefas[i].id===id) return _ckTarefas[i].texto; } return '(tarefa removida)'; }
 async function _ckPost(payload){
+  // LEVA 4 — cloud-first: se Supabase ativo, roteia as ações do checklist pra RPC/REST.
+  if(_supaAtivo()){
+    var rc = await _ckPostCloud(payload);
+    if(rc !== null) return rc;            // tratado na nuvem
+  }
+  // Fallback Sheets (Apps Script) — andaime temporário só da Ideal
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_ckLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+async function _ckPostCloud(p){
+  var tk = await supaToken(); if(!tk) return null;
+  var a = p && p.acao;
+  if(a==='cklist_tarefas'){
+    var rows = await _supaPaged('/rest/v1/checklist_tarefas?select=id_ext,texto,ordem,status&order=ordem');
+    if(rows === null) return null;
+    var tar = rows.filter(function(r){ return String(r.status||'').toUpperCase()!=='INATIVO' && String(r.id_ext||'').trim(); })
+                  .map(function(r){ return { id:String(r.id_ext), texto:String(r.texto||'') }; });
+    return { ok:true, tarefas:tar };
+  }
+  if(a==='ckresp_list'){
+    var rr = await _supaPaged('/rest/v1/checklist_respostas?loja=eq.'+encodeURIComponent(_ckLoja())+'&select=data,quem,tarefa_id_ext,resp,obs&order=data.desc');
+    if(rr === null) return null;
+    var resp = rr.map(function(r){ return { data:String(r.data||''), quem:String(r.quem||''), tarefaId:String(r.tarefa_id_ext||''), resp:String(r.resp||''), obs:String(r.obs||'') }; });
+    return { ok:true, respostas:resp };
+  }
+  if(a==='ckresp_save'){
+    var res1 = await supaFetch('/rest/v1/rpc/ck_resp_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_loja:_ckLoja(), p_data:String(p.data||''), p_quem:String(p.quem||''), p_itens:(p.itens||[]) }) });
+    if(!res1.ok){ var t1=await res1.text().catch(function(){return '';}); throw new Error('ck_resp_salvar HTTP '+res1.status+' '+t1.slice(0,80)); }
+    return { ok:true };
+  }
+  if(a==='cktarefa_save'){
+    var res2 = await supaFetch('/rest/v1/rpc/ck_tarefa_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id_ext:String((p&&p.id)||''), p_texto:String((p&&p.texto)||'') }) });
+    if(!res2.ok){ var t2=await res2.text().catch(function(){return '';}); throw new Error('ck_tarefa_salvar HTTP '+res2.status+' '+t2.slice(0,80)); }
+    var nid = await res2.json().catch(function(){return null;});
+    return { ok:true, id:nid };
+  }
+  if(a==='cktarefa_del'){
+    var res3 = await supaFetch('/rest/v1/rpc/ck_tarefa_excluir', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id_ext:String((p&&p.id)||'') }) });
+    if(!res3.ok) throw new Error('ck_tarefa_excluir HTTP '+res3.status);
+    return { ok:true };
+  }
+  return null; // ação não tratada na nuvem → cai no Sheets
 }
 
 function abrirChecklist(){
@@ -6495,53 +6535,6 @@ function renderVendas(dH, dO, ds) {
   const ag = new Date();
   const hoje = String(ag.getDate()).padStart(2,'0') + '/' + String(ag.getMonth()+1).padStart(2,'0') + '/' + ag.getFullYear();
 
-  // ── Filtro de período (bug 5.2) ──
-  // fltModo==='mes' (padrão) → comportamento antigo (último dia / mês corrente).
-  // Qualquer outro período → bloco "Vendas" mostra o TOTAL do período escolhido.
-  const _temFiltro = (typeof fltModo!=='undefined') && fltModo!=='mes';
-  const _ini = (typeof fltStart!=='undefined' && fltStart) ? new Date(fltStart.getFullYear(),fltStart.getMonth(),fltStart.getDate()) : null;
-  const _fim = (typeof fltEnd!=='undefined' && fltEnd) ? new Date(fltEnd.getFullYear(),fltEnd.getMonth(),fltEnd.getDate()) : null;
-  function _noPeriodo(r){
-    const d=parseDataBR(r.data); if(!d) return false;
-    const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate());
-    if(_ini && dd<_ini) return false;
-    if(_fim && dd>_fim) return false;
-    return true;
-  }
-  function _rotuloPeriodo(){
-    if(!_ini) return 'Período';
-    const f=function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0'); };
-    if(_fim && (_ini.getTime()!==_fim.getTime())) return f(_ini)+' a '+f(_fim);
-    return f(_ini);
-  }
-
-  if (_temFiltro) {
-    // ----- MODO PERÍODO: total, ticket e cupons do intervalo -----
-    const linsP = ord.filter(_noPeriodo);
-    let totP=0, _pV=0, _pC=0;
-    linsP.forEach(r=>{ totP+=Number(r.total)||0; if(r.clientes>0){ _pV+=r.total; _pC+=r.clientes; } });
-
-    const lblEl = document.getElementById('p-hoje-lbl');
-    if (lblEl) lblEl.textContent = 'Período · ' + _rotuloPeriodo();
-    (document.getElementById('p-hoje')||{}).textContent = linsP.length ? brl(totP) : '—';
-    (document.getElementById('p-hoje-d')||{}).textContent = linsP.length ? (linsP.length + (linsP.length>1?' dias':' dia')) : 'sem vendas no período';
-    (document.getElementById('p-ticket')||{}).textContent = _pC>0 ? 'R$ '+(_pV/_pC).toFixed(2).replace('.',',') : '—';
-    (document.getElementById('p-cupons')||{}).textContent = _pC>0 ? _pC.toLocaleString('pt-BR') : '—';
-    const _lblTk=document.getElementById('p-ticket-lbl'); if(_lblTk) _lblTk.textContent='Ticket médio (período)';
-    const _lblCu=document.getElementById('p-cupons-lbl'); if(_lblCu) _lblCu.textContent='Cupons (período)';
-
-    // sem comparativo "vs dia anterior" quando é período
-    const cmp = document.getElementById('p-cmp'); if (cmp) cmp.style.display = 'none';
-
-    // gráfico: os dias DO PERÍODO (limita a 14 barras p/ não espremer)
-    const chart = document.getElementById('p-chart');
-    if (chart) {
-      const ult = linsP.slice(-14);
-      _desenhaGraficoVendas(chart, ult, null);
-    }
-    return;
-  }
-
   // dia exibido: hoje se já teve venda, senão o último dia com venda
   const idxHoje = ord.findIndex(r => r.data === hoje);
   let dispIdx = idxHoje >= 0 ? idxHoje : ord.length - 1;
@@ -6554,9 +6547,6 @@ function renderVendas(dH, dO, ds) {
   (document.getElementById('p-hoje')||{}).textContent = dD ? brl(dD.total) : '—';
   const dtD = dD ? parseDataBR(dD.data) : null;
   (document.getElementById('p-hoje-d')||{}).textContent = dtD ? ds[dtD.getDay()] + ' ' + dD.data.slice(0,5) : '';
-  // rótulos voltam ao padrão "mês" (caso tenham sido trocados por um filtro anterior)
-  const _lblTk0=document.getElementById('p-ticket-lbl'); if(_lblTk0) _lblTk0.textContent='Ticket médio (mês)';
-  const _lblCu0=document.getElementById('p-cupons-lbl'); if(_lblCu0) _lblCu0.textContent='Cupons (mês)';
   // Ticket médio do MÊS (acumulado): total de vendas ÷ total de clientes — só dias que têm cupom lançado.
   // Mais estável que o diário e não some se faltar o cupom de um dia.
   let _accV=0,_accC=0;
@@ -6579,16 +6569,10 @@ function renderVendas(dH, dO, ds) {
     }
   }
 
-  // gráfico: últimos 7 dias
+  // gráfico: últimos 7 dias com escala, animação e valor no toque
   const chart = document.getElementById('p-chart');
   if (!chart) return;
-  _desenhaGraficoVendas(chart, ord.slice(-7), dD);
-}
-
-// Desenha o gráfico de barras do bloco Vendas.
-// arr = lista de dias {data,total}; sel = dia a destacar (ou null).
-function _desenhaGraficoVendas(chart, arr, sel) {
-  const ult = arr || [];
+  const ult = ord.slice(-7);
   if (!ult.length) {
     chart.innerHTML = '<div style="padding:20px 0;color:#bbb;font-size:12px;text-align:center">Sem dados de vendas ainda</div>';
     return;
@@ -6599,11 +6583,11 @@ function _desenhaGraficoVendas(chart, arr, sel) {
   const linesHtml = lines.map(L => '<div class="vc-line" style="top:' + L[0] + 'px"></div><span class="vc-lbl" style="top:' + L[0] + 'px">' + fmtK(L[1]) + '</span>').join('');
   const barsHtml = ult.map(r => {
     const h = Math.max(4, Math.round((Number(r.total) / topo) * 105));
-    const _isSel = (sel && r.data === sel.data);
+    const sel = (dD && r.data === dD.data);
     return '<div class="vc-col" data-v="' + brl(r.total) + '">'
-         + '<span class="vc-val"' + (_isSel ? ' style="visibility:visible"' : '') + '>' + brl(r.total) + '</span>'
-         + '<div class="vc-bar" data-h="' + h + '"' + (_isSel ? ' style="background:#FFC400"' : '') + '></div>'
-         + '<span class="vc-x' + (_isSel ? ' on' : '') + '">' + r.data.slice(0, 5) + '</span></div>';
+         + '<span class="vc-val"' + (sel ? ' style="visibility:visible"' : '') + '>' + brl(r.total) + '</span>'
+         + '<div class="vc-bar" data-h="' + h + '"' + (sel ? ' style="background:#FFC400"' : '') + '></div>'
+         + '<span class="vc-x' + (sel ? ' on' : '') + '">' + r.data.slice(0, 5) + '</span></div>';
   }).join('');
   chart.innerHTML = linesHtml + '<div class="vc-bars">' + barsHtml + '</div>';
   // animação: barras crescem
@@ -8633,22 +8617,12 @@ function initFiltro(){
     else if(modo==='range' && rStart){ lbl.textContent=fmtDM(rStart)+' – …'; }
   }
 
-  // espelha o estado local (rStart/rEnd/modo) no estado GLOBAL do filtro,
-  // pra que renderVendas/renderizarPainel possam ler o período escolhido.
-  function _fltSync(){
-    fltStart = rStart ? new Date(rStart) : null;
-    fltEnd   = rEnd   ? new Date(rEnd)   : (rStart ? new Date(rStart) : null);
-    fltModo  = modo;
-  }
-
   bar.addEventListener('click',function(){
     const open=panel.classList.toggle('open');
     chev.className='ti ti-chevron-'+(open?'up':'down');
   });
   document.getElementById('flt-apply').addEventListener('click',function(){
     panel.classList.remove('open'); chev.className='ti ti-chevron-down';
-    _fltSync();                 // grava o período escolhido no estado global
-    renderizarPainel();         // redesenha o Painel respeitando o filtro
   });
 
   document.querySelectorAll('#flt-panel .flt-chip, #flt-panel .flt-pill').forEach(function(ch){
