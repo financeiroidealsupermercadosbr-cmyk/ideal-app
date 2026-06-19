@@ -5957,14 +5957,77 @@ async function fetchRange(range) {
   return j.values || [];
 }
 
+// ══════════════════════════════════════════════════════
+// FATURAMENTO DIÁRIO — fonte NUVEM (Supabase) com fallback Sheets (Ideal)
+// ══════════════════════════════════════════════════════
+// REGRA DE OURO: dado do Supabase usa Number() (vem 1.99 com ponto);
+// dado do Sheets usa N() (vem '1,99' com vírgula). Misturar = erro ×100.
+// Devolve SEMPRE o mesmo formato consumido pela tela:
+//   { mapa: { 'dd/mm/yyyy': {total,clientes,din,deb,cred,pix,alim,ref,vfunc,verm} }, fonte:'nuvem'|'planilha' }
+function _fatDataBR(s){
+  s = String(s||'').trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);          // ISO (Supabase 'date' ou Sheets ISO)
+  if(m) return ('0'+m[3]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[1];
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);           // já BR
+  if(m) return ('0'+m[1]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[3];
+  return '';
+}
+// NUVEM: lê faturamento_diario via supaFetch (paginado, igual à busca de preço).
+// RLS já filtra a loja do usuário. Retorna o mapa, ou null se não há sessão (cai no Sheets).
+async function _fatSupa(){
+  if(!_supaAtivo()) return null;
+  const tk = await supaToken(); if(!tk) return null;
+  const sel = 'data,total,clientes,dinheiro,debito,credito,pix,alim,ref,vfunc,vermelho';
+  const page = 1000; let offset = 0; const mapa = {};
+  for(;;){
+    const res = await supaFetch('/rest/v1/faturamento_diario?select='+sel+'&order=data&limit='+page+'&offset='+offset);
+    if(!res.ok) throw new Error('faturamento HTTP '+res.status);
+    const rows = await res.json();
+    if(!Array.isArray(rows) || !rows.length) break;
+    rows.forEach(function(r){
+      const br = _fatDataBR(r.data); if(!br) return;
+      mapa[br] = { total:Number(r.total)||0, clientes:Number(r.clientes)||0, din:Number(r.dinheiro)||0, deb:Number(r.debito)||0, cred:Number(r.credito)||0, pix:Number(r.pix)||0, alim:Number(r.alim)||0, ref:Number(r.ref)||0, vfunc:Number(r.vfunc)||0, verm:Number(r.vermelho)||0 };
+    });
+    if(rows.length < page) break;
+    offset += page;
+    if(offset > 200000) break; // trava de segurança
+  }
+  return mapa;
+}
+// SHEETS (fallback Ideal): A:K = [0]data [1]total [2]clientes [3]din [4]deb [5]cred [6]pix [7]alim [8]ref [9]vfunc [10]vermelho
+function _fatSheetsMapa(fatBanco){
+  const mapa = {};
+  (fatBanco||[]).forEach(function(r){
+    const br = _fatDataBR(r[0]); if(!br) return;
+    mapa[br] = { total:N(r[1]), clientes:N(r[2]), din:N(r[3]), deb:N(r[4]), cred:N(r[5]), pix:N(r[6]), alim:N(r[7]), ref:N(r[8]), vfunc:N(r[9]), verm:N(r[10]) };
+  });
+  return mapa;
+}
+async function _carregarFatBanco(){
+  try{ const m = await _fatSupa(); if(m && Object.keys(m).length){ return { mapa:m, fonte:'nuvem' }; } }
+  catch(e){ console.warn('[fat] nuvem falhou, caindo no Sheets:', e); }
+  const fatBanco = await fetchRange('Faturamento_Diario!A:K').catch(function(){ return []; });
+  return { mapa:_fatSheetsMapa(fatBanco), fonte:'planilha' };
+}
+// Última data presente no mapa (substitui ultimaDataBanco, que lia o array cru do Sheets).
+function _fatUltimaData(mapa){
+  let best=null;
+  Object.keys(mapa||{}).forEach(function(br){
+    const p=br.split('/'); if(p.length<3) return;
+    const d=new Date(+p[2], +p[1]-1, +p[0]);
+    if(!isNaN(d) && (!best||d>best)) best=d;
+  });
+  if(!best) return '';
+  return ('0'+best.getDate()).slice(-2)+'/'+('0'+(best.getMonth()+1)).slice(-2)+'/'+best.getFullYear();
+}
+
 async function carregarSheets() {
   setSyncBar('carregando','<i class="ti ti-refresh"></i>Carregando dados...');
   try {
-    const [vendas, contas, meta, fatBanco] = await Promise.all([
+    const [vendas, contas, meta] = await Promise.all([
       fetchRange('Lancamento_Diario!A:P'),
       fetchRange('Contas_Pagar!A:N'),
       fetchRange('Metadados!A:B'),
-      fetchRange('Faturamento_Diario!A:K').catch(()=>[]),
     ]);
 
     // ── VENDAS — índices corretos conforme sincronizar_sheets.py ──
@@ -5992,20 +6055,13 @@ async function carregarSheets() {
     }));
 
     // ── FATURAMENTO PELA PONTE (banco) — sobrescreve total E clientes de cada dia ──
-    // Vem da aba Faturamento_Diario: [0]=data, [1]=total, [2]=clientes. Inclui TODOS
-    // os caixas (o sistema antigo deixava o CAIXA6 de fora), inclusive na contagem de clientes.
+    // FONTE: nuvem (Supabase faturamento_diario) primeiro; Sheets (Faturamento_Diario!A:K)
+    // como fallback só da Ideal. mapaFat já vem pronto (Number() na nuvem, N() no Sheets).
+    // Inclui TODOS os caixas (o sistema antigo deixava o CAIXA6 de fora), inclusive clientes.
+    const _fatRes = await _carregarFatBanco();
+    const mapaFat = _fatRes.mapa;
+    const fatFonte = _fatRes.fonte;
     (function(){
-      const mapaFat = {};
-      (fatBanco||[]).forEach(function(r){
-        const s = String(r[0]||'').trim();
-        let br = '';
-        let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-        if(m){ br = ('0'+m[3]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[1]; }
-        else { m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m){ br = ('0'+m[1]).slice(-2)+'/'+('0'+m[2]).slice(-2)+'/'+m[3]; } }
-        if(!br) return;
-        // A:K = [1]=total [2]=clientes [3]=dinheiro [4]=debito [5]=credito [6]=pix [7]=alimentacao [8]=refeicao [9]=valefunc [10]=vermelho (vem da RECEBIMENTOS/PEDIVENV, todos os caixas)
-        mapaFat[br] = { total:N(r[1]), clientes:N(r[2]), din:N(r[3]), deb:N(r[4]), cred:N(r[5]), pix:N(r[6]), alim:N(r[7]), ref:N(r[8]), vfunc:N(r[9]), verm:N(r[10]) };
-      });
       dadosVendas.forEach(function(r){
         if(mapaFat[r.data] !== undefined){
           const f = mapaFat[r.data];
@@ -6060,7 +6116,7 @@ async function carregarSheets() {
     (meta||[]).forEach(r=>{if(r[0]&&r[1])mm[r[0]]=r[1];});
     const ult = mm['ultima_atualizacao']||'—';
     const _cu = document.getElementById('cfg-ultima'); if(_cu) _cu.textContent = ult;
-    const dataBanco = ultimaDataBanco(fatBanco);
+    const dataBanco = _fatUltimaData(mapaFat);
     const carimboBanco = mm['ultima_atualizacao_banco'] || '';
     const mHora = carimboBanco.match(/(\d{1,2}:\d{2})/);
     const horaBanco = mHora ? mHora[1] : '';
@@ -6074,7 +6130,7 @@ async function carregarSheets() {
     const horaMostrar = horaBanco || horaSync;
     const dataMostrar = dataSync || dataBanco;
     if(dataMostrar){
-      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Banco atualizado até ${dataMostrar} às ${horaMostrar} <span style="opacity:.65">· via BANCOGPS</span>`);
+      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Banco atualizado até ${dataMostrar} às ${horaMostrar} <span style="opacity:.65">· via BANCOGPS · ${fatFonte}</span>`);
     } else {
       setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
     }
