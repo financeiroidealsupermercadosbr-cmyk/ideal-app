@@ -2967,9 +2967,54 @@ function _coMesYM(){ return _coMesRef.getFullYear()+'-'+('0'+(_coMesRef.getMonth
 function _coPago(contaId){ return !!_coPagos[contaId+'|'+_coMesYM()]; }
 function _coRenderMes(){ var el=document.getElementById('co-mes-titulo'); if(el) el.textContent=_fzMesNomes[_coMesRef.getMonth()]+' '+_coMesRef.getFullYear(); }
 async function _coPost(payload){
+  // LEVA B-1 — cloud-first: se Supabase ativo, roteia as ações de contas fixas pra RPC/REST.
+  if(_supaAtivo()){
+    var rc = await _coPostCloud(payload);
+    if(rc !== null) return rc;            // tratado na nuvem
+  }
+  // Fallback Sheets (Apps Script) — andaime temporário só da Ideal
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_coLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+async function _coPostCloud(p){
+  var tk = await supaToken(); if(!tk) return null;
+  var a = p && p.acao;
+  if(a==='contas_list'){
+    var loja = _coLoja();
+    var cs = await _supaPaged('/rest/v1/contas_fixas?loja=eq.'+encodeURIComponent(loja)+'&status=neq.INATIVO&select=id_ext,nome,dia,valor&order=dia');
+    if(cs === null) return null;
+    var contas = cs.filter(function(r){ return String(r.id_ext||'').trim(); })
+                   .map(function(r){ return { id:String(r.id_ext), nome:String(r.nome||''), dia:(parseInt(r.dia,10)||0), valor:(r.valor==null?'':String(r.valor)) }; });
+    var ps = await _supaPaged('/rest/v1/contas_pagamentos?loja=eq.'+encodeURIComponent(loja)+'&status=eq.ATIVO&select=conta_id_ext,mes');
+    var pagamentos = (ps||[]).map(function(r){ return { contaId:String(r.conta_id_ext||''), mes:String(r.mes||'') }; });
+    return { ok:true, contas:contas, pagamentos:pagamentos };
+  }
+  if(a==='conta_save'){
+    var r1 = await supaFetch('/rest/v1/rpc/co_conta_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id_ext:String((p&&p.id)||''), p_loja:_coLoja(), p_nome:String((p&&p.nome)||''), p_dia:(parseInt(p&&p.dia,10)||0), p_valor:String(((p&&p.valor)==null)?'':p.valor) }) });
+    if(!r1.ok){ var e1=await r1.text().catch(function(){return '';}); throw new Error('co_conta_salvar HTTP '+r1.status+' '+e1.slice(0,80)); }
+    var nid=await r1.json().catch(function(){return null;});
+    return { ok:true, id:nid };
+  }
+  if(a==='conta_del'){
+    var r2 = await supaFetch('/rest/v1/rpc/co_conta_excluir', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id_ext:String((p&&p.id)||'') }) });
+    if(!r2.ok) throw new Error('co_conta_excluir HTTP '+r2.status);
+    return { ok:true };
+  }
+  if(a==='contapag_set'){
+    var r3 = await supaFetch('/rest/v1/rpc/co_pag_set', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_loja:_coLoja(), p_conta_id_ext:String((p&&p.contaId)||''), p_mes:String((p&&p.mes)||''), p_pago:((p&&p.pago)===true), p_quem:String((p&&p.quem)||'') }) });
+    if(!r3.ok) throw new Error('co_pag_set HTTP '+r3.status);
+    var pg=await r3.json().catch(function(){return null;});
+    return { ok:true, pago:(pg===null?((p&&p.pago)===true):pg) };
+  }
+  return null; // ação não tratada na nuvem → cai no Sheets
 }
 
 function abrirContas(){
