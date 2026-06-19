@@ -3287,17 +3287,120 @@ function _avDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/)
 function _avMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
 function _avNum(s){ s=String(s==null?'':s).trim(); if(s==='') return 0; if(s.indexOf(',')>=0) s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,''); var n=parseFloat(s); return isNaN(n)?0:n; }
 function _avFmtNum(n){ n=Number(n)||0; return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function _avThumb(id,sz){ return 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(sz||800); }
-function _avOpen(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
+// Detecta a origem da foto:
+//  - Storage (nuvem): valor é um CAMINHO, contém '/'  -> URL pública direta do Supabase (abre sem login)
+//  - Drive (registros antigos da Ideal): valor é um ID  -> mantém o comportamento antigo
+function _avEhStorage(v){ return typeof v==='string' && v.indexOf('/')>=0; }
+function _avStorageUrl(path){ return SUPA_URL+'/storage/v1/object/public/arquivos/'+path.split('/').map(encodeURIComponent).join('/'); }
+function _avThumb(id,sz){ return _avEhStorage(id) ? _avStorageUrl(id) : 'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(sz||800); }
+function _avOpen(id){ return _avEhStorage(id) ? _avStorageUrl(id) : 'https://drive.google.com/file/d/'+id+'/view'; }
 function _avImg(id, sz, style){
+  if(_avEhStorage(id)){
+    return '<img src="'+_avStorageUrl(id)+'" style="'+style+'" onerror="this.style.opacity=0.25;">';
+  }
   var prim='https://drive.google.com/thumbnail?id='+id+'&sz=w'+sz;
   var fb='https://lh3.googleusercontent.com/d/'+id+'=w'+sz;
   return '<img src="'+prim+'" style="'+style+'" onerror="if(!this.dataset.fb){this.dataset.fb=1;this.src=\''+fb+'\';}else{this.style.opacity=0.25;}">';
 }
 async function _avPost(payload){
+  // cloud-first: se a nuvem estiver ativa, roteia pro Supabase; senão, cai no Sheets (fallback Ideal).
+  if(_supaAtivo()){
+    try{
+      var cloud = await _avPostCloud(payload);
+      if(cloud !== null) return cloud;
+    }catch(e){ /* se a nuvem falhar de leve, tenta o Sheets abaixo */ }
+  }
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_avLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+
+// Sobe a foto (base64) pro bucket público 'arquivos' usando o token do usuário (RLS por cliente_id).
+// Retorna o CAMINHO salvo (ex.: <cliente_id>/avarias/A123.jpg) ou null se não subiu.
+async function _avUploadFoto(idExt, base64, mime){
+  if(!base64) return null;
+  var ext = (String(mime||'').indexOf('png')>=0) ? 'png' : 'jpg';
+  var path = CLIENTE_ID + '/avarias/' + idExt + '.' + ext;
+  // base64 -> binário
+  var bin = atob(base64); var len = bin.length; var bytes = new Uint8Array(len);
+  for(var i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+  var tk = await supaToken(); if(!tk) return null;
+  var res = await _supaFetchT(SUPA_URL+'/storage/v1/object/arquivos/'+path.split('/').map(encodeURIComponent).join('/'), {
+    method:'POST',
+    headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk, 'Content-Type':(mime||'image/jpeg'), 'x-upsert':'true' },
+    body: bytes
+  }, 30000);
+  if(!res.ok) return null;
+  return path;
+}
+
+// Tradutor de cada ação do _avPost para Supabase (RPC/REST). null = "não sei tratar, usa Sheets".
+async function _avPostCloud(payload){
+  var acao = payload.acao;
+
+  // ── LISTAR avarias + classes ──
+  if(acao==='avarias_list'){
+    var loja = _avLoja();
+    var r = await supaFetch('/rest/v1/avarias?select=*&status=eq.ATIVO&loja=eq.'+encodeURIComponent(loja)+'&order=data.desc&limit=5000');
+    if(!r.ok) throw new Error('avarias '+r.status);
+    var rows = await r.json();
+    var avarias = rows.map(function(a){
+      // foto: se ainda tem foto_path -> usa o caminho (Storage). Se expirou (path nulo mas tinha validade) -> marca expirada.
+      var fotoId = a.foto_path || '';
+      var expirada = (!a.foto_path && a.foto_expira_em) ? true : false;
+      return { id:a.id_ext, data:a.data||'', produto:a.produto||'', cod:a.cod||'',
+        qtd:String(a.qtd==null?'':a.qtd), valorUnit:String(a.valor_unit==null?'':a.valor_unit),
+        total:String(a.total==null?'':a.total), motivo:a.motivo||'', quem:a.quem||'', obs:a.obs||'',
+        fotoId:fotoId, fotoExpirada:expirada, origem:a.origem||'', ocorrencia:a.ocorrencia||'' };
+    });
+    var rc = await supaFetch('/rest/v1/avaria_classes?select=*&status=eq.ATIVO&limit=2000');
+    var classes = { origem:[], ocorrencia:[], motivo:[] };
+    if(rc.ok){ (await rc.json()).forEach(function(c){ if(classes[c.tipo]) classes[c.tipo].push({ id:c.id_ext, texto:c.texto }); }); }
+    return { ok:true, avarias:avarias, classes:classes };
+  }
+
+  // ── SALVAR avaria (com upload de foto pro Storage) ──
+  if(acao==='avaria_save'){
+    var idExt = 'A' + Date.now();
+    var fotoPath = null;
+    if(payload.fotoBase64){
+      try{ fotoPath = await _avUploadFoto(idExt, payload.fotoBase64, payload.fotoMime); }catch(e){ fotoPath = null; }
+    }
+    var body = { p_id_ext:idExt, p_loja:_avLoja(), p_data:payload.data||null,
+      p_produto:payload.produto||'', p_cod:payload.cod||'',
+      p_qtd:Number(payload.qtd)||0, p_valor_unit:Number(payload.valorUnit)||0, p_total:Number(payload.total)||0,
+      p_ocorrencia:payload.ocorrencia||'', p_origem:payload.origem||'', p_motivo:payload.motivo||'',
+      p_obs:payload.obs||'', p_quem:payload.quem||'', p_foto_path:fotoPath, p_foto_dias:60 };
+    var r2 = await supaFetch('/rest/v1/rpc/av_avaria_salvar', { method:'POST', body:JSON.stringify(body) });
+    if(!r2.ok) throw new Error('save '+r2.status);
+    // shape espelha o Sheets: ok + id + fotoId (pro toast "foto não subiu" funcionar igual)
+    return { ok:true, id:idExt, fotoId:(fotoPath||'') };
+  }
+
+  // ── EXCLUIR avaria ──
+  if(acao==='avaria_del'){
+    var r3 = await supaFetch('/rest/v1/rpc/av_avaria_excluir', { method:'POST', body:JSON.stringify({ p_id_ext:payload.id }) });
+    if(!r3.ok) throw new Error('del '+r3.status);
+    return { ok:true };
+  }
+
+  // ── SALVAR classe (origem/ocorrencia/motivo) ──
+  if(acao==='avariaclasse_save' || acao==='avariamotivo_save'){
+    var r4 = await supaFetch('/rest/v1/rpc/av_classe_salvar', { method:'POST',
+      body:JSON.stringify({ p_id_ext:payload.id||'', p_tipo:payload.tipo||'motivo', p_texto:payload.texto||'' }) });
+    if(!r4.ok) throw new Error('classe save '+r4.status);
+    var cr = await r4.json();
+    return { ok:true, id:(cr && cr.id_ext) || '' };
+  }
+
+  // ── EXCLUIR classe ──
+  if(acao==='avariaclasse_del' || acao==='avariamotivo_del'){
+    var r5 = await supaFetch('/rest/v1/rpc/av_classe_excluir', { method:'POST', body:JSON.stringify({ p_id_ext:payload.id }) });
+    if(!r5.ok) throw new Error('classe del '+r5.status);
+    return { ok:true };
+  }
+
+  return null; // ação desconhecida -> deixa o Sheets tratar
 }
 
 function abrirAvarias(){
@@ -3519,7 +3622,7 @@ function avSalvar(){
   _avPost(payload).then(function(j){
     btn.disabled=false; btn.innerHTML=bh;
     if(j.ok){
-      if(tinhaFoto && !j.fotoId){ toast('Avaria salva, mas a FOTO não subiu — falta autorizar o Drive (veja o passo no app).'); }
+      if(tinhaFoto && !j.fotoId){ toast('Avaria salva, mas a FOTO não subiu — tente reenviar (se for grande, aguarde a conexão).'); }
       else { toast('✓ Avaria registrada'); }
       avResetForm(); avCarregar();
     }
@@ -3617,7 +3720,10 @@ function avRenderSalvos(){
   var html=''; var dataAtual=null;
   for(var i=0;i<arr.length;i++){ var a=arr[i];
     if(a.data!==dataAtual){ dataAtual=a.data; html+='<div style="font-size:11.5px;color:#888780;font-weight:700;margin:13px 2px 6px;letter-spacing:.3px">'+_avDataBR(a.data)+'</div>'; }
-    var thumb = a.fotoId ? _avImg(a.fotoId,200,'width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px') : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>';
+    var thumb = a.fotoId ? _avImg(a.fotoId,200,'width:42px;height:42px;border-radius:8px;object-fit:cover;margin-right:10px')
+      : (a.fotoExpirada
+          ? '<div title="Foto expirada (60 dias)" style="width:42px;height:42px;border-radius:8px;background:#F7F2E8;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-clock-x" style="color:#C9A86A;font-size:18px"></i></div>'
+          : '<div style="width:42px;height:42px;border-radius:8px;background:#F1EFE9;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="ti ti-photo-off" style="color:#C9C6BC;font-size:18px"></i></div>');
     var oc=a.ocorrencia||a.motivo||'';
     html+='<div class="row-card" style="cursor:pointer;margin-bottom:8px;align-items:center" onclick="avDetalhe(\''+a.id+'\')">'+thumb+'<div style="flex:1"><div class="row-label">'+_precoEsc(a.produto)+'</div><div class="row-sub">'+_precoEsc(a.qtd)+' un'+(oc?' · '+_precoEsc(oc):'')+'</div></div><div style="font-weight:600;color:#A32D2D;white-space:nowrap">'+_precoBRL(_avNum(a.total))+'</div></div>';
   }
@@ -3631,7 +3737,11 @@ function avDetalhe(id){
   document.getElementById('av-detalhe').style.display='block';
   (document.getElementById('av-det-nome')||{}).textContent=a.produto;
   (document.getElementById('av-det-sub')||{}).textContent=_avDataBR(a.data)+' · '+_precoBRL(_avNum(a.total));
-  var foto = a.fotoId ? '<a href="'+_avOpen(a.fotoId)+'" target="_blank" rel="noopener">'+_avImg(a.fotoId,1000,'width:100%;border-radius:12px;margin-top:10px;display:block')+'</a><div style="font-size:11px;color:#888780;margin-top:4px">Toque na foto para abrir no Drive.</div>' : '<div class="row-sub" style="padding:8px 2px">Sem foto.</div>';
+  var foto = a.fotoId
+    ? '<a href="'+_avOpen(a.fotoId)+'" target="_blank" rel="noopener">'+_avImg(a.fotoId,1000,'width:100%;border-radius:12px;margin-top:10px;display:block')+'</a><div style="font-size:11px;color:#888780;margin-top:4px">Toque na foto para abrir.</div>'
+    : (a.fotoExpirada
+        ? '<div class="row-sub" style="padding:10px 12px;margin-top:10px;background:#F7F2E8;border-radius:10px;color:#A86A00"><i class="ti ti-clock-x"></i> Foto expirada — guardada por 60 dias. O valor da avaria continua registrado.</div>'
+        : '<div class="row-sub" style="padding:8px 2px">Sem foto.</div>');
   var html='<div class="row-card" style="display:block">'
     +'<div class="row-sub">Produto</div><div class="row-label">'+_precoEsc(a.produto)+' <span style="color:#888780;font-weight:400">· cód '+_precoEsc(a.cod)+'</span></div>'
     +'<div style="display:flex;gap:20px;margin-top:8px"><div><div class="row-sub">Qtd</div><div class="row-label">'+_precoEsc(a.qtd)+'</div></div><div><div class="row-sub">Valor unit.</div><div class="row-label">'+_precoBRL(_avNum(a.valorUnit))+'</div></div><div><div class="row-sub">Total</div><div class="row-label" style="color:#A32D2D">'+_precoBRL(_avNum(a.total))+'</div></div></div>'
@@ -3650,7 +3760,7 @@ function avDetalhe(id){
 }
 function avVoltarSalvos(){ document.getElementById('av-detalhe').style.display='none'; avTab('salvos'); }
 function avRemover(id){
-  appConfirm('Excluir esta avaria?\n(A foto continua guardada no Drive.)', function(){
+  appConfirm('Excluir esta avaria?', function(){
     _avPost({acao:'avaria_del', id:id}).then(function(j){ if(j.ok){ toast('Avaria excluída'); document.getElementById('av-detalhe').style.display='none'; avCarregar(); avTab('salvos'); } else toast(j.erro||'Erro'); }).catch(function(){ toast('Erro'); });
   }, {danger:true, okText:'Excluir'});
 }
