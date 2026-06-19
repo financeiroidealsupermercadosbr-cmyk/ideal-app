@@ -5269,17 +5269,14 @@ async function _cpPreencheFornSelect(card, selecionado){
     var o=document.createElement('option'); o.value=selecionado; o.textContent=selecionado+' (não cadastrado)'; o.selected=true; sel.insertBefore(o, sel.children[1]||null);
   }
 }
-// Cadastra um fornecedor na hora (prompt simples) e já seleciona no select.
-async function _cpNovoFornecedor(card){
-  var nome=prompt('Nome do novo fornecedor:'); if(!nome) return; nome=nome.trim(); if(!nome) return;
-  var contato=prompt('Contato (telefone/whats) — opcional:')||'';
-  try{
-    var j=await _estPost({acao:'forn_save', id:'', nome:nome, contato:contato.trim(), pin:''});
-    if(!j||!j.ok){ toast('Não consegui cadastrar o fornecedor'); return; }
-    FORNEC=null; await _garanteFornec();           // recarrega a lista
-    await _cpPreencheFornSelect(card, nome);         // repinta e seleciona o novo
-    toast('Fornecedor cadastrado ✓');
-  }catch(e){ toast('Erro ao cadastrar fornecedor'); }
+// Abre o modal OFICIAL de cadastro de fornecedor (mesmo da tela Fornecedores).
+// Ao salvar lá, recarrega o select das Compras já com o novo fornecedor selecionado.
+function _cpNovoFornecedor(card){
+  var sel=card.querySelector('#cp-forn');
+  fnEditar('', function(nomeSalvo){
+    FORNEC=null;
+    _cpPreencheFornSelect(card, nomeSalvo||'');
+  });
 }
 function abrirCompras(){ show('s-compras'); window.scrollTo(0,0); cpSetFiltro(_cpFiltro||'ABERTO', true); lemCarregar(); }
 function _cpBtnFiltro(on){ return 'flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;'+(on?'background:#16267A;color:#fff;border:none':'background:#fff;color:#16267A;border:1px solid #16267A'); }
@@ -5420,7 +5417,7 @@ function fnRender(){
   }
   box.innerHTML=h;
 }
-function fnEditar(id){
+function fnEditar(id, aoSalvar){
   var f=null; for(var i=0;i<FORNEC.length;i++){ if(String(FORNEC[i].id)===String(id)){ f=FORNEC[i]; break; } }
   var novo=!f; f=f||{id:'',nome:'',contato:'',pin:''};
   var ov=document.createElement('div');
@@ -5457,6 +5454,7 @@ function fnEditar(id){
       var j=await _estPost({acao:'forn_save', id:f.id, nome:nome, contato:contato, pin:f.pin||''});
       if(!j.ok) throw new Error(j.erro||'falha');
       toast('✓ Fornecedor salvo'); close(); fnCarregar();
+      if(typeof aoSalvar==='function'){ try{ aoSalvar(nome); }catch(e){} }
     }catch(e){ console.error('fnSave',e); toast('⚠ Não consegui salvar'); btn.disabled=false; btn.textContent='Salvar'; }
   };
   var rst=card.querySelector('#fn-reset');
