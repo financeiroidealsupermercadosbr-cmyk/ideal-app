@@ -3781,9 +3781,89 @@ function _foValeDe(funcId){ var ym=_foMesYM(), t=0; _foVale.forEach(function(v){
 function _foValeBaixa(funcId){ return !!_foVaBaixas[funcId+'|'+_foMesYM()]; }
 function _foEhSalario(tipo){ return _foNorm(tipo).indexOf('salario')>=0; }
 async function _foPost(payload){
+  // LEVA B-3 — cloud-first (folha + vale partilham funcionários).
+  if(_supaAtivo()){ var rc = await _folhaCloud(payload); if(rc !== null) return rc; }
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_foLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+// Roteador cloud compartilhado por Folha (_foPost) e Vale (_vaPost). Retorna null => cai no Sheets.
+async function _folhaCloud(p){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var a = p && p.acao, loja = _foLoja();
+
+  if(a==='folha_list' || a==='vales_list'){
+    var fs = await _supaPaged('/rest/v1/funcionarios?loja=eq.'+encodeURIComponent(loja)+'&status=neq.INATIVO&select=id_ext,setor,nome,email,tel,pix,pix_tipo&order=nome');
+    if(fs === null) return null;
+    var funcionarios = fs.filter(function(r){ return String(r.id_ext||'').trim(); })
+      .map(function(r){ return { id:String(r.id_ext), setor:String(r.setor||''), nome:String(r.nome||''),
+        email:String(r.email||''), tel:String(r.tel||''), pix:String(r.pix||''), pixTipo:String(r.pix_tipo||'') }; });
+    var vs = await _supaPaged('/rest/v1/vales?loja=eq.'+encodeURIComponent(loja)+'&status=neq.REMOVIDO&select=id_ext,func_id_ext,data,valor,obs&order=data');
+    var vales = (vs||[]).map(function(r){ return { id:String(r.id_ext||''), funcId:String(r.func_id_ext||''), data:String(r.data||''), valor:(r.valor==null?'':String(r.valor)), obs:String(r.obs||'') }; });
+    var bs = await _supaPaged('/rest/v1/vale_baixas?loja=eq.'+encodeURIComponent(loja)+'&status=eq.ATIVO&select=func_id_ext,mes');
+    var baixas = (bs||[]).map(function(r){ return { funcId:String(r.func_id_ext||''), mes:String(r.mes||'') }; });
+    if(a==='vales_list') return { ok:true, funcionarios:funcionarios, vales:vales, baixas:baixas };
+    var ps = await _supaPaged('/rest/v1/folha_pagamentos?loja=eq.'+encodeURIComponent(loja)+'&status=neq.REMOVIDO&select=id_ext,func_id_ext,tipo,valor,dia,obs');
+    var pagamentos = (ps||[]).map(function(r){ return { id:String(r.id_ext||''), funcId:String(r.func_id_ext||''), tipo:String(r.tipo||''), valor:(r.valor==null?'':String(r.valor)), dia:String(r.dia||''), obs:String(r.obs||'') }; });
+    var gs = await _supaPaged('/rest/v1/folha_pagos?loja=eq.'+encodeURIComponent(loja)+'&status=eq.ATIVO&select=pag_id_ext,mes');
+    var pagos = (gs||[]).map(function(r){ return { pagId:String(r.pag_id_ext||''), mes:String(r.mes||'') }; });
+    return { ok:true, funcionarios:funcionarios, pagamentos:pagamentos, pagos:pagos, vales:vales, baixas:baixas };
+  }
+  if(a==='funcionario_save'){
+    var b={ p_id_ext:String((p&&p.id)||''), p_loja:loja, p_nome:String((p&&p.nome)||'') };
+    b.p_setor    = (p.setor   ===undefined?null:String(p.setor));
+    b.p_email    = (p.email   ===undefined?null:String(p.email));
+    b.p_tel      = (p.tel     ===undefined?null:String(p.tel));
+    b.p_pix      = (p.pix     ===undefined?null:String(p.pix));
+    b.p_pix_tipo = (p.pixTipo ===undefined?null:String(p.pixTipo));
+    var rf=await supaFetch('/rest/v1/rpc/fo_func_salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+    if(!rf.ok){ var ef=await rf.text().catch(function(){return '';}); throw new Error('fo_func_salvar HTTP '+rf.status+' '+ef.slice(0,80)); }
+    var nid=await rf.json().catch(function(){return null;}); return { ok:true, id:nid };
+  }
+  if(a==='funcionario_del'){
+    var rd=await supaFetch('/rest/v1/rpc/fo_func_excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_id_ext:String((p&&p.id)||'')})});
+    if(!rd.ok) throw new Error('fo_func_excluir HTTP '+rd.status); return { ok:true };
+  }
+  if(a==='pagamento_save'){
+    var rp=await supaFetch('/rest/v1/rpc/fo_pag_salvar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ p_id_ext:String((p&&p.id)||''), p_loja:loja, p_func_id_ext:String((p&&p.funcId)||''), p_tipo:String((p&&p.tipo)||''), p_valor:String(((p&&p.valor)==null)?'':p.valor), p_dia:String(((p&&p.dia)==null)?'':p.dia), p_obs:(p.obs===undefined?null:String(p.obs)) })});
+    if(!rp.ok){ var ep=await rp.text().catch(function(){return '';}); throw new Error('fo_pag_salvar HTTP '+rp.status+' '+ep.slice(0,80)); }
+    var pid=await rp.json().catch(function(){return null;}); return { ok:true, id:pid };
+  }
+  if(a==='pagamento_del'){
+    var rpd=await supaFetch('/rest/v1/rpc/fo_pag_excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_id_ext:String((p&&p.id)||'')})});
+    if(!rpd.ok) throw new Error('fo_pag_excluir HTTP '+rpd.status); return { ok:true };
+  }
+  if(a==='folhapag_set'){
+    var rps=await supaFetch('/rest/v1/rpc/fo_pag_set',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ p_loja:loja, p_pag_id_ext:String((p&&p.pagId)||''), p_mes:String((p&&p.mes)||''), p_pago:((p&&p.pago)===true), p_quem:String((p&&p.quem)||'') })});
+    if(!rps.ok) throw new Error('fo_pag_set HTTP '+rps.status);
+    var pg=await rps.json().catch(function(){return null;}); return { ok:true, pago:(pg===null?((p&&p.pago)===true):pg) };
+  }
+  if(a==='valebaixa_set'){
+    var rvb=await supaFetch('/rest/v1/rpc/vale_baixa_set',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ p_loja:loja, p_func_id_ext:String((p&&p.funcId)||''), p_mes:String((p&&p.mes)||''), p_baixado:((p&&p.baixado)===true), p_quem:String((p&&p.quem)||'') })});
+    if(!rvb.ok) throw new Error('vale_baixa_set HTTP '+rvb.status);
+    var bx=await rvb.json().catch(function(){return null;}); return { ok:true, baixado:(bx===null?((p&&p.baixado)===true):bx) };
+  }
+  if(a==='vale_save'){
+    var rv=await supaFetch('/rest/v1/rpc/vale_salvar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ p_id_ext:String((p&&p.id)||''), p_loja:loja, p_func_id_ext:String((p&&p.funcId)||''), p_data:String((p&&p.data)||''), p_valor:String(((p&&p.valor)==null)?'':p.valor), p_obs:String((p&&p.obs)||''), p_quem:String((p&&p.quem)||'') })});
+    if(!rv.ok){ var ev=await rv.text().catch(function(){return '';}); throw new Error('vale_salvar HTTP '+rv.status+' '+ev.slice(0,80)); }
+    var vid=await rv.json().catch(function(){return null;}); return { ok:true, id:vid };
+  }
+  if(a==='vale_del'){
+    var rvd=await supaFetch('/rest/v1/rpc/vale_excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_id_ext:String((p&&p.id)||'')})});
+    if(!rvd.ok) throw new Error('vale_excluir HTTP '+rvd.status); return { ok:true };
+  }
+  if(a==='folha_importar'){
+    var ri=await supaFetch('/rest/v1/rpc/fo_importar_inicial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_loja:loja})});
+    if(!ri.ok){ var ei=await ri.text().catch(function(){return '';}); throw new Error('fo_importar_inicial HTTP '+ri.status+' '+ei.slice(0,80)); }
+    var cri=await ri.json().catch(function(){return null;}); return { ok:true, criados:(cri==null?0:cri) };
+  }
+  return null;
 }
 
 function abrirFolha(){
@@ -4202,6 +4282,9 @@ function _vaValesDe(funcId){ var ym=_vaMesYM(); return _vaVale.filter(function(v
 function _vaTotalDe(funcId){ var t=0; _vaValesDe(funcId).forEach(function(v){ t+=_foNum(v.valor); }); return t; }
 function _vaTemBaixa(funcId){ return !!_vaBaixas[funcId+'|'+_vaMesYM()]; }
 async function _vaPost(payload){
+  // LEVA B-3 — cloud-first (mesmo domínio da folha; partilha funcionários).
+  if(_supaAtivo()){ var rc = await _folhaCloud(payload); if(rc !== null) return rc; }
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
   var res=await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_foLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
