@@ -2031,6 +2031,7 @@ const APP_TOKEN = 'idealapp_2026_x7Kq9Rv3LpZ8nW';
 // pelo Apps Script. As senhas não ficam mais dentro do app. (Fase 1 — gestão de usuários)
 
 let lojaAtual     = 'l2';
+let _lojaConsolidado = false;  // true quando o seletor está em "Consolidado" (mostra todas as lojas; só leitura em telas por-loja)
 let userAtual     = null;
 let dadosVendas   = [];
 let dadosContas   = [];
@@ -3318,16 +3319,21 @@ async function _avPost(payload){
 // Sobe a foto (base64) pro bucket público 'arquivos' usando o token do usuário (RLS por cliente_id).
 // Retorna o CAMINHO salvo (ex.: <cliente_id>/avarias/A123.jpg) ou null se não subiu.
 async function _avUploadFoto(idExt, base64, mime){
-  if(!base64) return null;
   var ext = (String(mime||'').indexOf('png')>=0) ? 'png' : 'jpg';
-  var path = CLIENTE_ID + '/avarias/' + idExt + '.' + ext;
-  // base64 -> binário
+  return _upArquivo('avarias', idExt, base64, mime||'image/jpeg', ext);
+}
+
+// Upload genérico pro bucket 'arquivos'. modulo=avarias|compras, ext=jpg|png|pdf.
+// Caminho: <cliente_id>/<modulo>/<idExt>.<ext>. Retorna o caminho ou null.
+async function _upArquivo(modulo, idExt, base64, mime, ext){
+  if(!base64) return null;
+  var path = CLIENTE_ID + '/' + modulo + '/' + idExt + '.' + ext;
   var bin = atob(base64); var len = bin.length; var bytes = new Uint8Array(len);
   for(var i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
   var tk = await supaToken(); if(!tk) return null;
   var res = await _supaFetchT(SUPA_URL+'/storage/v1/object/arquivos/'+path.split('/').map(encodeURIComponent).join('/'), {
     method:'POST',
-    headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk, 'Content-Type':(mime||'image/jpeg'), 'x-upsert':'true' },
+    headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk, 'Content-Type':(mime||'application/octet-stream'), 'x-upsert':'true' },
     body: bytes
   }, 30000);
   if(!res.ok) return null;
@@ -3340,8 +3346,9 @@ async function _avPostCloud(payload){
 
   // ── LISTAR avarias + classes ──
   if(acao==='avarias_list'){
-    var loja = _avLoja();
-    var r = await supaFetch('/rest/v1/avarias?select=*&status=eq.ATIVO&loja=eq.'+encodeURIComponent(loja)+'&order=data.desc&limit=5000');
+    // Consolidado = todas as lojas; senão, só a loja atual.
+    var _filtroLoja = _lojaConsolidado ? '' : ('&loja=eq.'+encodeURIComponent(_avLoja()));
+    var r = await supaFetch('/rest/v1/avarias?select=*&status=eq.ATIVO'+_filtroLoja+'&order=data.desc&limit=5000');
     if(!r.ok) throw new Error('avarias '+r.status);
     var rows = await r.json();
     var avarias = rows.map(function(a){
@@ -3606,6 +3613,7 @@ function avRemoverFoto(){ _avFoto=null; avRenderFotoPreview(); }
 
 // ── SALVAR ──
 function avSalvar(){
+  if(_lojaConsolidado){ toast('No Consolidado é só visualização. Escolha Loja 1, 2 ou Bolos para lançar.'); return; }
   if(!_avProd){ toast('Escolha o produto'); return; }
   var data=document.getElementById('av-data').value; if(!data){ toast('Escolha a data'); return; }
   var qtd=_avNum(document.getElementById('av-qtd').value); if(qtd<=0){ toast('Quantidade inválida'); return; }
@@ -5284,6 +5292,7 @@ function cpRender(){
       +badge+'</div>'
       +'<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">';
     if(p.espelhoUrl){ h+='<a href="'+_precoEsc(p.espelhoUrl)+'" target="_blank" rel="noopener" class="btn-primary" style="flex:1;min-width:130px;margin-top:0;text-decoration:none;text-align:center;background:#16267A"><i class="ti ti-file-type-pdf"></i> Ver espelho</a>'; }
+    else if(p.espelhoExpirado){ h+='<span style="flex:1;min-width:130px;font-size:11.5px;color:#A86A00;align-self:center"><i class="ti ti-clock-x"></i> PDF expirado (60 dias)</span>'; }
     else { h+='<span style="flex:1;min-width:130px;font-size:11.5px;color:#9a988f;align-self:center">sem PDF anexado</span>'; }
     if(aberto){ h+='<button class="btn-primary" style="flex:1;min-width:130px;margin-top:0;background:#0F6E56" onclick="cpStatus(\''+_precoEsc(p.id)+'\',\'RECEBIDO\')"><i class="ti ti-check"></i> Recebido</button>'; }
     else { h+='<button onclick="cpStatus(\''+_precoEsc(p.id)+'\',\'ABERTO\')" style="flex:0 0 auto;padding:0 12px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:10px;font-size:12.5px;cursor:pointer">Reabrir</button>'; }
@@ -5297,7 +5306,7 @@ async function cpStatus(id, novo){
   catch(e){ toast('⚠ Não consegui atualizar'); }
 }
 function _fileToB64(file){ return new Promise(function(res,rej){ var r=new FileReader(); r.onload=function(){ res(String(r.result).split(',')[1]||''); }; r.onerror=function(){ rej(new Error('leitura')); }; r.readAsDataURL(file); }); }
-function cpNovo(){ cpEditar(''); }
+function cpNovo(){ if(_lojaConsolidado){ toast('No Consolidado é só visualização. Escolha Loja 1, 2 ou Bolos para lançar.'); return; } cpEditar(''); }
 function cpEditar(id){
   var p=_cpAcha(id); var novo=!p; p=p||{id:'',fornecedor:'',data:'',obs:'',status:'ABERTO',espelhoUrl:''};
   var hoje=new Date(); var hojeISO=hoje.getFullYear()+'-'+('0'+(hoje.getMonth()+1)).slice(-2)+'-'+('0'+hoje.getDate()).slice(-2);
@@ -6311,6 +6320,7 @@ function fazerLogout() {
 function trocarLoja(btn,nome,id) {
   document.querySelectorAll('.loja-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); lojaAtual=id;
+  _lojaConsolidado = (String(nome||'').toLowerCase().indexOf('consolidado')>=0);  // marca o modo "tudo" sem mexer no lojaAtual
   (document.getElementById('h-store')||{}).textContent=nome;
   dreLoja = id;            // o seletor de cima agora comanda a DRE também
   renderizarPainel(); filtrar(); renderDRE();
@@ -9014,9 +9024,98 @@ function _estEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/
 function _jsq(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
 async function _estPost(payload){
+  // cloud-first SÓ para as ações já migradas (compras_*, forn_*). As demais (cotweb, merc,
+  // estrutura, lembrete, coleta) continuam indo pro Sheets normalmente.
+  if(_supaAtivo()){
+    try{
+      var cloud = await _estPostCloud(payload);
+      if(cloud !== null) return cloud;
+    }catch(e){ /* falha leve -> tenta Sheets abaixo */ }
+  }
   const res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+
+// Loja atual para Compras (mesma regra das outras telas). No Consolidado retorna 'all' (só leitura).
+function _cmpLoja(){ return _lojaConsolidado ? 'all' : lojaAtual; }
+
+// URL pública de um arquivo no Storage (mesmo bucket das avarias).
+function _cmpArqUrl(path){ return path ? (SUPA_URL+'/storage/v1/object/public/arquivos/'+String(path).split('/').map(encodeURIComponent).join('/')) : ''; }
+
+// Tradutor das ações de Compras/Fornecedores para Supabase. null = não trato (cai no Sheets).
+async function _estPostCloud(payload){
+  var acao = payload.acao;
+
+  // ───────── FORNECEDORES ─────────
+  if(acao==='forn_list'){
+    var rf = await supaFetch('/rest/v1/fornecedores?select=*&status=eq.ATIVO&order=nome.asc&limit=5000');
+    if(!rf.ok) throw new Error('forn_list '+rf.status);
+    var fs = (await rf.json()).map(function(f){ return { id:f.id_ext, nome:f.nome||'', contato:f.contato||'', pin:f.pin||'' }; });
+    return { ok:true, fornecedores:fs };
+  }
+  if(acao==='forn_save'){
+    var fid = String(payload.id||'').trim() || ('F'+Date.now());
+    var r2 = await supaFetch('/rest/v1/rpc/forn_salvar', { method:'POST',
+      body:JSON.stringify({ p_id_ext:fid, p_nome:payload.nome||'', p_contato:payload.contato||'', p_pin:payload.pin||'' }) });
+    if(!r2.ok) throw new Error('forn_save '+r2.status);
+    return { ok:true, id:fid, novo:!String(payload.id||'').trim() };
+  }
+  if(acao==='forn_del'){
+    var r3 = await supaFetch('/rest/v1/rpc/forn_excluir', { method:'POST', body:JSON.stringify({ p_id_ext:payload.id }) });
+    if(!r3.ok) throw new Error('forn_del '+r3.status);
+    return { ok:true };
+  }
+  if(acao==='forn_reset_pin'){
+    var r4 = await supaFetch('/rest/v1/rpc/forn_reset_pin', { method:'POST', body:JSON.stringify({ p_id_ext:payload.id }) });
+    if(!r4.ok) throw new Error('forn_reset_pin '+r4.status);
+    return { ok:true };
+  }
+
+  // ───────── COMPRAS / ESPELHOS ─────────
+  if(acao==='compras_list'){
+    // Consolidado = todas as lojas; senão filtra pela loja atual.
+    var _fl = _lojaConsolidado ? '' : ('&loja=eq.'+encodeURIComponent(_cmpLoja()));
+    var rc = await supaFetch('/rest/v1/compras?select=*&status=neq.REMOVIDO'+_fl+'&order=criado_em.desc&limit=5000');
+    if(!rc.ok) throw new Error('compras_list '+rc.status);
+    var pedidos = (await rc.json()).map(function(c){
+      var temPdf = !!c.espelho_path;
+      var expirado = (!c.espelho_path && c.espelho_expira_em) ? true : false;
+      return { id:c.id_ext, fornecedor:c.fornecedor||'', data:c.data||'', status:String(c.status||'ABERTO').toUpperCase(),
+        espelhoId:(c.espelho_path||''), espelhoUrl:_cmpArqUrl(c.espelho_path), espelhoExpirado:expirado,
+        obs:c.obs||'', quem:c.quem||'', criado:c.criado_em||'', loja:c.loja||'' };
+    });
+    return { ok:true, pedidos:pedidos };
+  }
+  if(acao==='compras_save'){
+    if(_lojaConsolidado) return { ok:false, erro:'No Consolidado é só visualização — escolha uma loja para lançar.' };
+    var cid = String(payload.id||'').trim() || ('K'+Date.now());
+    var espPath = null;
+    if(payload.espelhoBase64){
+      try{ espPath = await _upArquivo('compras', cid, payload.espelhoBase64, payload.espelhoMime||'application/pdf', 'pdf'); }catch(e){ espPath=null; }
+    }
+    var body = { p_id_ext:cid, p_loja:_cmpLoja(), p_fornecedor:payload.fornecedor||'', p_data:payload.data||'',
+      p_status:(payload.status||'ABERTO'), p_obs:payload.obs||'', p_quem:(userAtual&&userAtual.nome)||'',
+      p_espelho_path:espPath, p_espelho_dias:60 };
+    var r5 = await supaFetch('/rest/v1/rpc/compra_salvar', { method:'POST', body:JSON.stringify(body) });
+    if(!r5.ok) throw new Error('compras_save '+r5.status);
+    var cr = await r5.json();
+    var finalPath = (cr && cr.espelho_path) || espPath || '';
+    return { ok:true, id:cid, espelhoId:finalPath, espelhoUrl:_cmpArqUrl(finalPath) };
+  }
+  if(acao==='compras_status'){
+    var r6 = await supaFetch('/rest/v1/rpc/compra_status', { method:'POST',
+      body:JSON.stringify({ p_id_ext:payload.id, p_status:(payload.status||'RECEBIDO') }) });
+    if(!r6.ok) throw new Error('compras_status '+r6.status);
+    return { ok:true, status:String(payload.status||'RECEBIDO').toUpperCase() };
+  }
+  if(acao==='compras_del'){
+    var r7 = await supaFetch('/rest/v1/rpc/compra_excluir', { method:'POST', body:JSON.stringify({ p_id_ext:payload.id }) });
+    if(!r7.ok) throw new Error('compras_del '+r7.status);
+    return { ok:true };
+  }
+
+  return null; // não é compras/forn -> Sheets trata
 }
 
 async function abrirEstrutura(){
