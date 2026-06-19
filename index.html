@@ -6061,6 +6061,7 @@ async function carregarSheets() {
     const _fatRes = await _carregarFatBanco();
     const mapaFat = _fatRes.mapa;
     const fatFonte = _fatRes.fonte;
+    try{ console.log('[ideal] faturamento via ' + fatFonte); }catch(e){}
     (function(){
       dadosVendas.forEach(function(r){
         if(mapaFat[r.data] !== undefined){
@@ -6130,7 +6131,7 @@ async function carregarSheets() {
     const horaMostrar = horaBanco || horaSync;
     const dataMostrar = dataSync || dataBanco;
     if(dataMostrar){
-      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Atualizado ${dataMostrar} ${horaMostrar} <span style="opacity:.65">· BANCOGPS · ${fatFonte}</span>`);
+      setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Atualizado em ${dataMostrar} às ${horaMostrar}`);
     } else {
       setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
     }
