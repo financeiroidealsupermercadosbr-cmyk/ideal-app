@@ -6033,12 +6033,71 @@ function _fatUltimaData(mapa){
   return ('0'+best.getDate()).slice(-2)+'/'+('0'+(best.getMonth()+1)).slice(-2)+'/'+best.getFullYear();
 }
 
+// ══════════════════════════════════════════════════════
+// CONTAS A PAGAR — fonte NUVEM (Supabase) com fallback Sheets (Ideal)
+// ══════════════════════════════════════════════════════
+// REGRA DE OURO: nuvem usa Number(); Sheets usa N(). status 'pago' (nuvem) ou 'PAGO' (Sheets).
+function _contaLoja(v){ v=(v==null?'':String(v)).toLowerCase().trim(); if(v==='l1'||v.indexOf('areal')>=0) return 'l1'; if(v==='bolos'||v.indexOf('bolo')>=0) return 'bolos'; if(v==='l2'||v.indexOf('melhor')>=0) return 'l2'; return 'l2'; }
+async function _contasSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var sel = 'num,dt_emissao,dt_vencto,dt_pagto,fornecedor,documento,valor,status,banco,baixa_por,loja';
+  var rows = await _supaPaged('/rest/v1/contas_pagar?select='+sel+'&order=num');
+  if(rows === null) return null;
+  var valid = rows.filter(function(r){ return r.fornecedor; });
+  return valid.map(function(r,i){
+    var chave = String(r.documento||'')+'|'+String(r.fornecedor||'').toUpperCase().trim()+'|'+String(r.dt_vencto||'');
+    var pagoCloud = !!(r.status && String(r.status).toUpperCase().indexOf('PAGO')>=0);
+    return { idx:i, linha:i+2,
+      num:(r.num!=null?String(r.num).trim():''),
+      forn:r.fornecedor||'—', doc:r.documento||'',
+      venc:r.dt_vencto||'', emis:r.dt_emissao||'',
+      valor:Number(r.valor)||0,
+      pago:pagoCloud || baixasLocais.has(chave),
+      banco:r.banco||'', baixaPor:r.baixa_por||'',
+      loja:_contaLoja(r.loja),
+      chave:chave, cat:categoriaConta(r.fornecedor||'') };
+  });
+}
+async function _carregarContas(){
+  try{ var c = await _contasSupa(); if(c){ return { lista:c, fonte:'nuvem' }; } }
+  catch(e){ console.warn('[contas] nuvem falhou, caindo no Sheets', e); }
+  var contas = await fetchRange('Contas_Pagar!A:N').catch(function(){ return []; });
+  var lista = contas.slice(1).filter(function(r){ return r[4]; }).map(function(r,i){
+    var chave = (r[5]||'')+'|'+(r[4]||'').toString().toUpperCase().trim()+'|'+(r[2]||'');
+    var pagoSheet = !!(r[10]&&r[10].toString().toUpperCase().includes('PAGO'));
+    return { idx:i, linha:i+2,
+      num:(r[0]!=null?String(r[0]).trim():''),
+      forn:r[4]||'—', doc:r[5]||'',
+      venc:r[2]||'', emis:r[1]||'', valor:N(r[6]),
+      pago:pagoSheet || baixasLocais.has(chave),
+      banco:r[11]||'', baixaPor:r[13]||'',
+      loja:_contaLoja(r[14]),
+      chave:chave, cat:categoriaConta(r[4]||'') };
+  });
+  return { lista:lista, fonte:'planilha' };
+}
+// Baixa na nuvem (RPC). Idêntico ao Apps Script: status pago + data + banco + quem.
+async function _cpMarcarPagoCloud(num, dataPag, banco, baixaPor){
+  var res = await supaFetch('/rest/v1/rpc/cp_marcar_pago', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_num:String(num), p_data_pag:dataPag||'', p_banco:banco||'', p_baixa_por:baixaPor||'' }) });
+  if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error('cp_marcar_pago HTTP '+res.status+' '+t.slice(0,80)); }
+  return true;
+}
+async function _cpReabrirCloud(num){
+  var res = await supaFetch('/rest/v1/rpc/cp_reabrir', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_num:String(num) }) });
+  if(!res.ok) throw new Error('cp_reabrir HTTP '+res.status);
+  return true;
+}
+
 async function carregarSheets() {
   setSyncBar('carregando','<i class="ti ti-refresh"></i>Carregando dados...');
   try {
-    const [vendas, contas, meta] = await Promise.all([
+    const [vendas, meta] = await Promise.all([
       fetchRange('Lancamento_Diario!A:P'),
-      fetchRange('Contas_Pagar!A:N'),
       fetchRange('Metadados!A:B'),
     ]);
 
@@ -6098,31 +6157,11 @@ async function carregarSheets() {
       });
     })();
 
-    // ── CONTAS — índices corretos ──
-    // [0]=NUM [1]=DT_EMIS [2]=DT_VENCTO [3]=DT_PAGTO
-    // [4]=FORNECEDOR [5]=DOCUMENTO [6]=VALOR [10]=STATUS [11]=BANCO [13]=BAIXA_POR
-    dadosContas = contas.slice(1).filter(r=>r[4]).map((r,i)=>{
-      const chave = (r[5]||'')+'|'+(r[4]||'').toString().toUpperCase().trim()+'|'+(r[2]||'');
-      const pagoSheet = !!(r[10]&&r[10].toString().toUpperCase().includes('PAGO'));
-      return {
-        idx:   i,
-        linha: i+2,       // linha real no Sheets (cabeçalho=1)
-        num:   (r[0]!=null?String(r[0]).trim():''), // NUM do ADIPRON (coluna A) — chave estável p/ baixa
-        forn:  r[4]||'—',
-        doc:   r[5]||'',
-        venc:  r[2]||'',  // DT_VENCTO = coluna C = índice 2
-        emis:  r[1]||'',  // DT_EMISSAO = coluna B = índice 1 (usada na DRE)
-        valor: N(r[6]),   // VALOR = coluna G = índice 6
-        pago:  pagoSheet || baixasLocais.has(chave),
-        banco: r[11]||'',
-        baixaPor: r[13]||'',  // quem deu baixa (coluna N = índice 13) — Fase 5
-        // D2: identificação da loja do boleto. Hoje só a Loja 2 tem ponte, então o padrão é 'l2'.
-        // Quando Loja 1/Bolos tiverem fonte, a ponte preenche a coluna O (índice 14) e isto passa a refletir.
-        loja:  (function(v){ v=(v==null?'':String(v)).toLowerCase().trim(); if(v==='l1'||v.indexOf('areal')>=0) return 'l1'; if(v==='bolos'||v.indexOf('bolo')>=0) return 'bolos'; if(v==='l2'||v.indexOf('melhor')>=0) return 'l2'; return 'l2'; })(r[14]),
-        chave: chave,
-        cat:   categoriaConta(r[4]||''),  // CMV / imposto / despesa, pelo nome do fornecedor
-      };
-    });
+    // ── CONTAS — nuvem (Supabase contas_pagar) primeiro; Sheets como fallback (Ideal) ──
+    // status 'pago' na nuvem; baixa gravada pela RPC cp_marcar_pago.
+    const _contasRes = await _carregarContas();
+    dadosContas = _contasRes.lista;
+    try{ console.log('[ideal] contas via ' + _contasRes.fonte); }catch(e){}
 
     // ── METADADOS ──
     const mm={};
@@ -8010,9 +8049,16 @@ async function confirmarBaixaMassa() {
 
   let salvos=0, erros=0;
   try {
-    const r = await salvarBaixaMassaSheets(itens, dataPag, banco, baixaPor);
-    salvos = (r && r.gravados!=null) ? r.gravados : itens.length;
-    erros  = (r && r.naoAchados!=null) ? r.naoAchados : 0;
+    if(typeof _supaAtivo==='function' && _supaAtivo()){
+      for(const it of itens){
+        try{ await _cpMarcarPagoCloud(it.num, it.dataPag, it.banco, it.baixaPor); salvos++; }
+        catch(e){ erros++; console.error(e); }
+      }
+    } else {
+      const r = await salvarBaixaMassaSheets(itens, dataPag, banco, baixaPor);
+      salvos = (r && r.gravados!=null) ? r.gravados : itens.length;
+      erros  = (r && r.naoAchados!=null) ? r.naoAchados : 0;
+    }
   } catch(e) {
     erros = itens.length;   // falhou tudo (sem conexão / sem URL)
     console.error(e);
@@ -8026,7 +8072,7 @@ async function confirmarBaixaMassa() {
   atualizarContadorSelecionados();
 
   if(erros===0) toast(`✓ ${salvos} boleto(s) marcado(s) como pago!`);
-  else toast(`✓ ${salvos} pagos | ⚠ ${erros} não gravados no Sheets`);
+  else toast(`✓ ${salvos} pagos | ⚠ ${erros} não gravados`);
 
   btn.disabled=false; btn.textContent='✓ Confirmar todos';
 }
@@ -8081,11 +8127,15 @@ async function confirmarBaixa() {
   const baixaPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
   boletoCurrent.baixaPor = baixaPor;
   try {
-    await salvarBaixaSheets(boletoCurrent.num, dataPag, banco, obs, baixaPor);
+    if(typeof _supaAtivo==='function' && _supaAtivo()){
+      await _cpMarcarPagoCloud(boletoCurrent.num, dataPag, banco, baixaPor);
+    } else {
+      await salvarBaixaSheets(boletoCurrent.num, dataPag, banco, obs, baixaPor);
+    }
     if(boletoCurrent.chave) baixasLocais.add(boletoCurrent.chave);
     toast('✓ Baixa registrada com sucesso!');
   } catch(e) {
-    toast('⚠ Não gravou no Google ('+(e.message||'erro de conexão')+') — ficou só local');
+    toast('⚠ Não gravou ('+(e.message||'erro de conexão')+') — ficou só local');
     console.error(e);
   }
   fecharModal(); filtrar(); renderizarPainel();
