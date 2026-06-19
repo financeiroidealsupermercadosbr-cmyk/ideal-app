@@ -5961,7 +5961,11 @@ function trocarLoja(btn,nome,id) {
 // ══════════════════════════════════════════════════════
 // GOOGLE SHEETS — LEITURA
 // ══════════════════════════════════════════════════════
+// Modo de teste/cliente-novo: ?nosheets=1 faz TODA leitura do Sheets devolver vazio,
+// forçando o app a rodar 100% pela nuvem (Supabase). Cliente novo não tem Sheets.
+var _SHEETS_OFF = /[?&]nosheets=1/.test(location.search || '');
 async function fetchRange(range) {
+  if(_SHEETS_OFF) return [];
   const url = `${BASE_URL}/${encodeURIComponent(range)}?key=${API_KEY}&_=${Date.now()}`;
   const res = await fetch(url, {cache:'no-store'});
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -6271,8 +6275,8 @@ async function carregarSheets() {
   setSyncBar('carregando','<i class="ti ti-refresh"></i>Carregando dados...');
   try {
     const [vendas, meta] = await Promise.all([
-      fetchRange('Lancamento_Diario!A:P'),
-      fetchRange('Metadados!A:B'),
+      fetchRange('Lancamento_Diario!A:P').catch(function(){ return []; }),
+      fetchRange('Metadados!A:B').catch(function(){ return []; }),
     ]);
 
     // ── VENDAS — índices corretos conforme sincronizar_sheets.py ──
@@ -6648,7 +6652,7 @@ function renderizarPainel() {
   (document.getElementById('r-cred')||{}).textContent   = brl(vMes.reduce((s,r)=>s+r.credito,0));
   (document.getElementById('r-pix')||{}).textContent    = brl(vMes.reduce((s,r)=>s+r.pix,0));
   (document.getElementById('r-din')||{}).textContent    = brl(vMes.reduce((s,r)=>s+r.dinheiro,0));
-  (document.getElementById('r-tick')||{}).textContent   = brl(vMes.reduce((s,r)=>s+r.aliment,0));
+  (document.getElementById('r-tick')||{}).textContent   = brl(vMes.reduce((s,r)=>s+(r.alimentacao||r.aliment||0),0));
   (document.getElementById('r-cp-tot')||{}).textContent  = brl(dadosContas.reduce((s,b)=>s+b.valor,0));
   (document.getElementById('r-cp-pend')||{}).textContent = brl(dadosContas.filter(b=>!b.pago).reduce((s,b)=>s+b.valor,0));
 }
