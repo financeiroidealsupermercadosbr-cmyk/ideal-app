@@ -6093,6 +6093,180 @@ async function _cpReabrirCloud(num){
   return true;
 }
 
+// ══════════════════════════════════════════════════════
+// LEVA 3 — TELAS DE ESCRITA NA NUVEM (despesas, coletas, DRE, categorias, permissões)
+// Padrão: leitura cloud-first (Sheets fallback) + gravação por RPC SECURITY DEFINER.
+// REGRA DE OURO: valor numeric da nuvem usa Number() (já vem 1.99 com ponto).
+// ══════════════════════════════════════════════════════
+
+// ── DESPESAS DE CAIXA ──
+async function _despSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var rows = await _supaPaged('/rest/v1/despesas_caixa?select=id,data,loja,categoria,descricao,valor,resp,criado,lancado_por&order=criado_em');
+  if(rows === null) return null;
+  return rows.filter(function(r){ return r.data && r.valor!=null; }).map(function(r){
+    return { id:r.id, data:r.data, loja:r.loja||'l2', categoria:r.categoria||'Outros',
+             valor:Number(r.valor)||0, desc:r.descricao||'', resp:r.resp||'',
+             ts:r.criado||'', lancadoPor:r.lancado_por||'' };
+  });
+}
+async function _despSalvarCloud(d){
+  var res = await supaFetch('/rest/v1/rpc/desp_salvar', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_data:d.data||'', p_loja:d.loja||'', p_categoria:d.categoria||'',
+      p_desc:d.desc||'', p_valor:Number(d.valor)||0, p_resp:d.resp||'',
+      p_criado:d.ts||'', p_lancado_por:d.lancadoPor||'' }) });
+  if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error('desp_salvar HTTP '+res.status+' '+t.slice(0,80)); }
+  return await res.json().catch(function(){return null;}); // uuid
+}
+async function _despExcluirCloud(id){
+  var res = await supaFetch('/rest/v1/rpc/desp_excluir', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id:String(id) }) });
+  if(!res.ok) throw new Error('desp_excluir HTTP '+res.status);
+  return true;
+}
+
+// ── COLETAS ──
+async function _coletasSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var rows = await _supaPaged('/rest/v1/coletas?select=id_ext,usuario,data,observacao,itens_json,n_itens,status&order=criado_em.desc');
+  if(rows === null) return null;
+  var out=[];
+  for(var i=0;i<rows.length;i++){ var r=rows[i]; var id=String(r.id_ext||'').trim(); if(!id) continue;
+    if(String(r.status||'').toUpperCase()==='REMOVIDO') continue;
+    var itens = Array.isArray(r.itens_json) ? r.itens_json : [];
+    if(!Array.isArray(itens)){ try{ itens=JSON.parse(r.itens_json||'[]'); }catch(e){ itens=[]; } }
+    out.push({ id:id, usuario:String(r.usuario||''), data:String(r.data||''),
+      obs:String(r.observacao||''), n:(parseInt(r.n_itens,10)||itens.length), itens:itens });
+  }
+  out.sort(function(a,b){ return (parseInt(b.id.replace(/\D/g,''),10)||0)-(parseInt(a.id.replace(/\D/g,''),10)||0); });
+  return out;
+}
+async function _coletaSalvarCloud(d){
+  var res = await supaFetch('/rest/v1/rpc/coleta_salvar', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id_ext:String(d.id||''), p_usuario:String(d.usuario||''),
+      p_obs:String(d.observacao||''), p_itens:(d.itens||[]), p_n:(d.itens||[]).length }) });
+  if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error('coleta_salvar HTTP '+res.status+' '+t.slice(0,80)); }
+  return await res.json().catch(function(){return null;}); // id_ext
+}
+async function _coletaExcluirCloud(id){
+  var res = await supaFetch('/rest/v1/rpc/coleta_excluir', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id_ext:String(id) }) });
+  if(!res.ok) throw new Error('coleta_excluir HTTP '+res.status);
+  return true;
+}
+
+// ── DRE GRUPOS ──
+async function _dreGruposSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var rows = await _supaPaged('/rest/v1/dre_grupos?select=id_ext,nome,sinal,valor,loja,status&order=criado_em');
+  if(rows === null) return null;
+  return rows.filter(function(r){ return r.id_ext && String(r.status||'').toUpperCase()!=='REMOVIDO'; })
+    .map(function(r){ return { id:(Number(r.id_ext)||r.id_ext), nome:r.nome||'',
+      sinal:(String(r.sinal).trim()==='+'?'+':'-'), valor:Number(r.valor)||0, loja:r.loja||'l2' }; });
+}
+async function _dreGrupoSalvarCloud(d){
+  var res = await supaFetch('/rest/v1/rpc/dre_grupo_salvar', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id_ext:String(d.id), p_nome:d.nome||'', p_sinal:d.sinal||'-',
+      p_valor:Number(d.valor)||0, p_loja:d.loja||'' }) });
+  if(!res.ok) throw new Error('dre_grupo_salvar HTTP '+res.status);
+  return true;
+}
+async function _dreGrupoExcluirCloud(id){
+  var res = await supaFetch('/rest/v1/rpc/dre_grupo_excluir', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id_ext:String(id) }) });
+  if(!res.ok) throw new Error('dre_grupo_excluir HTTP '+res.status);
+  return true;
+}
+
+// ── DRE AJUSTES ──
+async function _dreAjustesSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var rows = await _supaPaged('/rest/v1/dre_ajustes?select=chave,valor,status&order=criado_em');
+  if(rows === null) return null;
+  var obj={};
+  rows.forEach(function(r){ if(!r.chave) return;
+    if(String(r.status||'').toUpperCase()==='REMOVIDO') return;
+    obj[r.chave]=Number(r.valor)||0; });
+  return obj;
+}
+async function _dreAjusteSalvarCloud(d){
+  var res = await supaFetch('/rest/v1/rpc/dre_ajuste_salvar', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_chave:String(d.chave), p_loja:d.loja||'', p_periodo:d.periodo||'',
+      p_linha:String(d.linha||''), p_valor:Number(d.valor)||0 }) });
+  if(!res.ok) throw new Error('dre_ajuste_salvar HTTP '+res.status);
+  return true;
+}
+async function _dreAjusteExcluirCloud(chave){
+  var res = await supaFetch('/rest/v1/rpc/dre_ajuste_excluir', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_chave:String(chave) }) });
+  if(!res.ok) throw new Error('dre_ajuste_excluir HTTP '+res.status);
+  return true;
+}
+
+// ── CATEGORIAS DE DESPESA ──
+async function _categoriasSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var rows = await _supaPaged('/rest/v1/categorias?select=id_ext,nome,status&order=nome');
+  if(rows === null) return null;
+  var out=[];
+  rows.forEach(function(r){ var id=String(r.id_ext||'').trim(); if(!id) return;
+    if(String(r.status||'').toUpperCase()==='INATIVO') return;
+    out.push({ id:id, nome:String(r.nome||'') }); });
+  out.sort(function(a,b){ return a.nome.toLowerCase()<b.nome.toLowerCase()?-1:1; });
+  return out;
+}
+async function _catSalvarCloud(nome, id){
+  var res = await supaFetch('/rest/v1/rpc/categoria_salvar', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id_ext:String(id||''), p_nome:String(nome||'') }) });
+  if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error('categoria_salvar HTTP '+res.status+' '+t.slice(0,80)); }
+  var j = await res.json().catch(function(){return null;});
+  return { ok:true, id:j };
+}
+async function _catExcluirCloud(id){
+  var res = await supaFetch('/rest/v1/rpc/categoria_excluir', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_id_ext:String(id) }) });
+  if(!res.ok) throw new Error('categoria_excluir HTTP '+res.status);
+  return { ok:true };
+}
+async function _catSave(nome, id){ if(_supaAtivo()) return await _catSalvarCloud(nome, id); return await _estPost({acao:'categoria_save', nome:nome, id:id}); }
+async function _catDel(id){ if(_supaAtivo()) return await _catExcluirCloud(id); return await _estPost({acao:'categoria_del', id:id}); }
+
+// ── PERMISSÕES DO MENU ──
+async function _permsSupa(){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var rows = await _supaPaged('/rest/v1/permissoes?select=setor,item,permitido&order=setor');
+  if(rows === null) return null;
+  var m={};
+  rows.forEach(function(r){ if(!r.setor) return;
+    var k=String(r.setor).trim(), item=String(r.item).trim();
+    var v=(String(r.permitido).trim()==='1')?1:0;
+    if(!m[k]) m[k]={}; m[k][item]=v; });
+  return m;
+}
+async function _permsSalvarCloud(matriz){
+  var res = await supaFetch('/rest/v1/rpc/perms_salvar', { method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ p_matriz:(matriz||{}) }) });
+  if(!res.ok) throw new Error('perms_salvar HTTP '+res.status);
+  return true;
+}
+
 async function carregarSheets() {
   setSyncBar('carregando','<i class="ti ti-refresh"></i>Carregando dados...');
   try {
@@ -6842,6 +7016,7 @@ function _setorKey(s){
 // lê a aba "Permissoes" (se ainda não existir, fica liberado pra todos)
 async function permsCarregarMenu(){
   MENU_PERMS = {};
+  try{ var _pm = await _permsSupa(); if(_pm){ MENU_PERMS=_pm; return; } }catch(e){ console.warn('[perms] nuvem falhou, caindo no Sheets', e); }
   try{
     const rows = await fetchRange('Permissoes!A:C');
     rows.slice(1).forEach(function(r){
@@ -7009,12 +7184,16 @@ async function salvarPermsMenu(){
   const btn = document.getElementById('perms-btn');
   const t = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
   try{
-    const res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({acao:'perms_save', sheetId:SHEET_ID, matriz:permsEdit})
-    });
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.erro||'falha');
+    if(_supaAtivo()){
+      await _permsSalvarCloud(permsEdit);
+    } else {
+      const res = await fetch(_urlApps(), {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({acao:'perms_save', sheetId:SHEET_ID, matriz:permsEdit})
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.erro||'falha');
+    }
     toast('✓ Permissões salvas');
     fecharPermsMenu();
     await permsCarregarMenu();   // recarrega e reaplica (vale já pro próprio gestor; os outros pegam no próximo login)
@@ -7219,6 +7398,7 @@ function dreSalvarGrupos(){ localStorage.setItem('dre_grupos', JSON.stringify(dr
 
 // lê os grupos da planilha (aba DRE_Grupos). Se a aba ainda não existir, mantém o cache local.
 async function dreCarregarGruposSheet(){
+  try { var _g = await _dreGruposSupa(); if(_g){ dreGrupos=_g; dreSalvarGrupos(); return true; } } catch(e){ console.warn('[dre grupos] nuvem falhou, caindo no Sheets', e); }
   try {
     const rows = await fetchRange('DRE_Grupos!A:F');
     dreGrupos = rows.slice(1)
@@ -7230,6 +7410,13 @@ async function dreCarregarGruposSheet(){
 }
 // grava/remove na planilha via Apps Script (não quebra a tela se estiver offline)
 async function dreEnviarGrupoSheet(payload){
+  if(_supaAtivo()){
+    try{
+      if(payload.acao==='grupo_del') await _dreGrupoExcluirCloud(payload.id);
+      else await _dreGrupoSalvarCloud(payload);
+    }catch(e){ console.error('[dre grupo] nuvem', e); }
+    return;
+  }
   if(!APPS_SCRIPT_URL) return;
   try {
     await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -7245,6 +7432,7 @@ function dreCarregarAjustes(){ try { dreAjustes = JSON.parse(localStorage.getIte
 function dreSalvarAjustes(){ localStorage.setItem('dre_ajustes', JSON.stringify(dreAjustes)); }
 // lê os ajustes da planilha (aba DRE_Ajustes). Se a aba não existir, mantém o cache local.
 async function dreCarregarAjustesSheet(){
+  try { var _aj = await _dreAjustesSupa(); if(_aj){ dreAjustes=_aj; dreSalvarAjustes(); return true; } } catch(e){ console.warn('[dre ajustes] nuvem falhou, caindo no Sheets', e); }
   try {
     const rows = await fetchRange('DRE_Ajustes!A:F');
     const obj = {};
@@ -7258,6 +7446,13 @@ async function dreCarregarAjustesSheet(){
   } catch(e){ return false; } // sem aba/sem conexão → fica com o cache local
 }
 async function dreEnviarAjusteSheet(payload){
+  if(_supaAtivo()){
+    try{
+      if(payload.acao==='ajuste_del') await _dreAjusteExcluirCloud(payload.chave);
+      else await _dreAjusteSalvarCloud(payload);
+    }catch(e){ console.error('[dre ajuste] nuvem', e); }
+    return;
+  }
   if(!APPS_SCRIPT_URL) return;
   try {
     await fetch(APPS_SCRIPT_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -7451,6 +7646,7 @@ function caixaNoPeriodo(raw){
   return o.m===(dreMesRef.getMonth()+1) && o.y===dreMesRef.getFullYear();
 }
 async function dreCarregarCaixa(){
+  try { var _c = await _despSupa(); if(_c){ dadosCaixa = _c; return true; } } catch(e){ console.warn('[desp] nuvem falhou, caindo no Sheets', e); }
   try {
     const rows = await fetchRange('Despesas_Caixa!A:I'); // [0]=DATA [1]=LOJA [2]=CATEGORIA [3]=DESC [4]=VALOR [5]=RESP [6]=TS [7]=LANCADO_POR [8]=STATUS
     // A aba pode vir COM ou SEM linha de cabeçalho ("DATA","LOJA",...). Só pulamos a
@@ -8164,6 +8360,7 @@ async function salvarBaixaSheets(num, dataPag, banco, obs, baixaPor) {
 }
 
 async function salvarDespesaSheets(dados) {
+  if(_supaAtivo()){ return await _despSalvarCloud(dados); }
   if(!APPS_SCRIPT_URL) return;
   const res = await fetch(APPS_SCRIPT_URL, {
     method:'POST',
@@ -8180,6 +8377,7 @@ async function salvarDespesaSheets(dados) {
 // Antes ficavam só no localStorage do aparelho; agora vêm do backend e dá pra excluir.
 var DESP_CATS = [];
 async function categoriasCarregar(){
+  try{ var _k = await _categoriasSupa(); if(_k){ DESP_CATS=_k; despCatsRender(); return; } }catch(e){ console.warn('[cat] nuvem falhou, caindo no Sheets', e); }
   try{
     var j = await _estPost({acao:'categoria_list'});
     if(j && j.ok) DESP_CATS = j.categorias || [];
@@ -8224,7 +8422,7 @@ function despCatsGerenciar(){
     card.querySelector('#_catadd').onclick=async function(){
       var nome=card.querySelector('#_catnova').value.trim(); if(!nome){ toast('Digite o nome'); return; }
       var b=card.querySelector('#_catadd'); b.disabled=true; b.textContent='…';
-      try{ var j=await _estPost({acao:'categoria_save', nome:nome}); if(!j.ok) throw new Error(j.erro||'falha');
+      try{ var j=await _catSave(nome); if(!j.ok) throw new Error(j.erro||'falha');
         await categoriasCarregar(); pinta();
       }catch(e){ toast('⚠ Não consegui salvar'); b.disabled=false; b.textContent='Add'; }
     };
@@ -8232,7 +8430,7 @@ function despCatsGerenciar(){
       el.onclick=function(){
         var id=el.getAttribute('data-del');
         appConfirm('Excluir esta categoria?\nNovas despesas não vão mais usá-la (as antigas continuam na DRE).', async function(){
-          try{ var j=await _estPost({acao:'categoria_del', id:id}); if(!j.ok) throw new Error(j.erro||'falha');
+          try{ var j=await _catDel(id); if(!j.ok) throw new Error(j.erro||'falha');
             await categoriasCarregar(); pinta(); toast('Categoria excluída');
           }catch(e){ toast('⚠ Não consegui excluir'); }
         }, {okText:'Excluir', danger:true});
@@ -8253,7 +8451,7 @@ async function salvarDespesa() {
   if(!valor||valor<=0){ toast('⚠ Informe um valor válido'); return; }
   if(!resp)          { toast('⚠ Informe o responsável'); return; }
   if(cat==='nova' && catF){
-    try{ await _estPost({acao:'categoria_save', nome:catF}); }catch(e){ /* segue mesmo offline */ }
+    try{ await _catSave(catF); }catch(e){ /* segue mesmo offline */ }
     await categoriasCarregar();
     const _sel=document.getElementById('desp-cat'); if(_sel) _sel.value=catF;
     document.getElementById('desp-novacat').style.display='none';
@@ -8263,8 +8461,8 @@ async function salvarDespesa() {
   btn.disabled=true; btn.textContent='Salvando...';
   const lancadoPor = (userAtual && userAtual.nome) ? userAtual.nome : '';
   try {
-    await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp, lancadoPor});
-    dadosCaixa.push({data, loja:lojaAtual, categoria:catF, valor, desc, resp, lancadoPor, ts:new Date().toLocaleString('pt-BR')}); // reflete na DRE na hora
+    const _novoId = await salvarDespesaSheets({data, loja:lojaAtual, categoria:catF, desc, valor, resp, lancadoPor});
+    dadosCaixa.push({id:(_novoId||null), data, loja:lojaAtual, categoria:catF, valor, desc, resp, lancadoPor, ts:new Date().toLocaleString('pt-BR')}); // reflete na DRE na hora
     renderDRE();
     toast(APPS_SCRIPT_URL?'✓ Despesa lançada':'✓ Despesa salva localmente');
     (document.getElementById('desp-desc')||{}).value='';
@@ -8285,7 +8483,9 @@ async function excluirDespesa(idx){
   const resumo = (x.categoria||'Despesa') + ' — ' + brlC(x.valor) + (x.desc&&String(x.desc).trim()?('\n'+x.desc):'');
   appConfirm('Excluir esta despesa do caixa?\n\n'+resumo+'\n\nEla sai da DRE (fica guardada como removida).', async function(){
     try {
-      if(APPS_SCRIPT_URL){
+      if(_supaAtivo() && x.id){
+        await _despExcluirCloud(x.id);
+      } else if(APPS_SCRIPT_URL){
         const res = await fetch(APPS_SCRIPT_URL, {
           method:'POST',
           headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -10040,7 +10240,9 @@ async function cotSalvar(){
   if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
   try{
     var obs=(document.getElementById('cot-obs').value||'').trim();
-    var d=await _estPost({acao:'coleta_save', id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS});
+    var d;
+    if(_supaAtivo()){ var _cid=await _coletaSalvarCloud({id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS}); d={ok:true, id:_cid}; }
+    else { d=await _estPost({acao:'coleta_save', id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS}); }
     if(!d.ok) throw new Error(d.erro||'falha');
     COT_ID = d.id || COT_ID;
     toast('✓ Coleta salva ('+COT_ITENS.length+' itens)');
@@ -10069,6 +10271,7 @@ function cotPDF(){
 let COLETAS = [], _colAtual = null;
 
 async function _colCarregar(){
+  try { var _cc = await _coletasSupa(); if(_cc){ COLETAS=_cc; return _cc; } } catch(e){ console.warn('[coletas] nuvem falhou, caindo no Sheets', e); }
   var rows = await fetchRange('Coletas!A:G').catch(function(){return [];});
   var out=[];
   for(var i=1;i<rows.length;i++){ var r=rows[i]; var id=String(r[0]||'').trim(); if(!id) continue;
@@ -10145,7 +10348,8 @@ async function colAbrir(id){
 function colExcluir(){
   if(!_colAtual) return;
   appConfirm('Excluir esta coleta?\nIsso não pode ser desfeito.', function(){
-    _estPost({acao:'coleta_del', id:_colAtual.id}).then(function(d){
+    var _p = _supaAtivo() ? _coletaExcluirCloud(_colAtual.id).then(function(){return {ok:true};}) : _estPost({acao:'coleta_del', id:_colAtual.id});
+    _p.then(function(d){
       if(d && d.ok){ toast('Coleta excluída'); abrirColetas(); }
       else toast('Não consegui excluir.');
     }).catch(function(){ toast('Não consegui excluir. Verifique a internet.'); });
