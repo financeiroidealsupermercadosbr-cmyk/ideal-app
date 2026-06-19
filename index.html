@@ -4568,9 +4568,42 @@ var _saCofre=[], _saRecolhidas=[];
 function _saPodeVer(){ var k=_setorKey(userAtual && userAtual.setor); return k==='dono' || k==='gestor'; }
 function _saPodeRecolher(){ return _saPodeVer(); }
 async function _saPost(payload){
+  // LEVA B-4 — cloud-first: sangrias.
+  if(_supaAtivo()){ var rc = await _saPostCloud(payload); if(rc !== null) return rc; }
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
   var res=await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_foLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+async function _saPostCloud(p){
+  var tk = await supaToken(); if(!tk) return null;
+  var a = p && p.acao, loja = _foLoja();
+  if(a==='sangrias_list'){
+    var cof = await _supaPaged('/rest/v1/sangrias?loja=eq.'+encodeURIComponent(loja)+'&status=eq.NO_COFRE&select=id_ext,data,hora,valor,caixa,quem,obs&order=data.desc');
+    if(cof === null) return null;
+    var cofre = cof.map(function(r){ return { id:String(r.id_ext||''), data:String(r.data||''), hora:String(r.hora||''), valor:(r.valor==null?'':String(r.valor)), caixa:String(r.caixa||''), quem:String(r.quem||''), obs:String(r.obs||'') }; });
+    var lim = new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+    var rec = await _supaPaged('/rest/v1/sangrias?loja=eq.'+encodeURIComponent(loja)+'&status=eq.RECOLHIDO&recolhido_data=gte.'+lim+'&select=id_ext,valor,caixa,recolhido_data,recolhido_quem&order=recolhido_data.desc');
+    var recolhidas = (rec||[]).map(function(r){ return { id:String(r.id_ext||''), valor:(r.valor==null?'':String(r.valor)), caixa:String(r.caixa||''), recolhidoData:String(r.recolhido_data||''), recolhidoQuem:String(r.recolhido_quem||'') }; });
+    return { ok:true, cofre:cofre, recolhidas:recolhidas };
+  }
+  if(a==='sangria_save'){
+    var r1=await supaFetch('/rest/v1/rpc/sa_salvar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ p_id_ext:String((p&&p.id)||''), p_loja:loja, p_valor:String(((p&&p.valor)==null)?'':p.valor), p_caixa:String((p&&p.caixa)||''), p_obs:String((p&&p.obs)||''), p_quem:String((p&&p.quem)||'') })});
+    if(!r1.ok){ var e1=await r1.text().catch(function(){return '';}); throw new Error('sa_salvar HTTP '+r1.status+' '+e1.slice(0,80)); }
+    var nid=await r1.json().catch(function(){return null;}); return { ok:true, id:nid };
+  }
+  if(a==='sangria_del'){
+    var r2=await supaFetch('/rest/v1/rpc/sa_excluir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p_id_ext:String((p&&p.id)||'')})});
+    if(!r2.ok) throw new Error('sa_excluir HTTP '+r2.status); return { ok:true };
+  }
+  if(a==='sangria_recolher'){
+    var r3=await supaFetch('/rest/v1/rpc/sa_recolher',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ p_loja:loja, p_modo:String((p&&p.modo)||'todas'), p_id_ext:String((p&&p.id)||''), p_quem:String((p&&p.quem)||'') })});
+    if(!r3.ok){ var e3=await r3.text().catch(function(){return '';}); throw new Error('sa_recolher HTTP '+r3.status+' '+e3.slice(0,80)); }
+    var n=await r3.json().catch(function(){return null;}); return { ok:true, recolhidas:(n==null?0:n) };
+  }
+  return null;
 }
 function _saFmt(iso){ var p=String(iso||'').split('-'); return p.length===3?(p[2]+'/'+p[1]):''; }
 function _saTotalCofre(){ var t=0; _saCofre.forEach(function(s){ t+=_foNum(s.valor); }); return t; }
