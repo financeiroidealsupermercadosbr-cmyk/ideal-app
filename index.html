@@ -2279,9 +2279,54 @@ function _fzDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/)
 function _fzMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
 function _fzNomeFreezer(id){ for(var i=0;i<_fzFreezers.length;i++){ if(_fzFreezers[i].id===id) return _fzFreezers[i].nome; } return '(freezer removido)'; }
 async function _fzPost(payload){
+  // LEVA B-2 — cloud-first: se Supabase ativo, roteia as ações de freezers pra RPC/REST.
+  if(_supaAtivo()){
+    var rc = await _fzPostCloud(payload);
+    if(rc !== null) return rc;            // tratado na nuvem
+  }
+  // Fallback Sheets (Apps Script) — andaime temporário só da Ideal
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
   var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({sheetId:SHEET_ID, loja:_fzLoja()}, payload)) });
   if(!res.ok) throw new Error('HTTP '+res.status);
   return await res.json();
+}
+async function _fzPostCloud(p){
+  var tk = await supaToken(); if(!tk) return null;
+  var a = p && p.acao;
+  if(a==='freezers_list'){
+    var loja = _fzLoja();
+    var fs = await _supaPaged('/rest/v1/freezers?loja=eq.'+encodeURIComponent(loja)+'&status=neq.INATIVO&select=id_ext,nome&order=nome');
+    if(fs === null) return null;
+    var freezers = fs.filter(function(r){ return String(r.id_ext||'').trim(); })
+                     .map(function(r){ return { id:String(r.id_ext), nome:String(r.nome||'') }; });
+    var ts = await _supaPaged('/rest/v1/freezer_temps?loja=eq.'+encodeURIComponent(loja)+'&status=eq.ATIVO&select=id,freezer_id_ext,data,temp,quem,obs&order=data');
+    var temps = (ts||[]).map(function(r){ return { id:String(r.id||''), freezerId:String(r.freezer_id_ext||''), data:String(r.data||''), temp:String(r.temp||''), quem:String(r.quem||''), obs:String(r.obs||'') }; });
+    return { ok:true, freezers:freezers, temps:temps };
+  }
+  if(a==='freezer_save'){
+    var r1 = await supaFetch('/rest/v1/rpc/fz_freezer_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id_ext:String((p&&p.id)||''), p_loja:_fzLoja(), p_nome:String((p&&p.nome)||'') }) });
+    if(!r1.ok){ var e1=await r1.text().catch(function(){return '';}); throw new Error('fz_freezer_salvar HTTP '+r1.status+' '+e1.slice(0,80)); }
+    var nid=await r1.json().catch(function(){return null;});
+    return { ok:true, id:nid };
+  }
+  if(a==='freezer_del'){
+    var r2 = await supaFetch('/rest/v1/rpc/fz_freezer_excluir', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id_ext:String((p&&p.id)||'') }) });
+    if(!r2.ok) throw new Error('fz_freezer_excluir HTTP '+r2.status);
+    return { ok:true };
+  }
+  if(a==='freezertemp_save'){
+    var r3 = await supaFetch('/rest/v1/rpc/fz_temp_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_loja:_fzLoja(), p_data:String((p&&p.data)||''), p_quem:String((p&&p.quem)||''), p_itens:((p&&p.itens)||[]) }) });
+    if(!r3.ok){ var e3=await r3.text().catch(function(){return '';}); throw new Error('fz_temp_salvar HTTP '+r3.status+' '+e3.slice(0,80)); }
+    var n=await r3.json().catch(function(){return null;});
+    return { ok:true, gravados:(n==null?0:n) };
+  }
+  return null; // ação não tratada na nuvem → cai no Sheets
 }
 
 function abrirFreezers(){
