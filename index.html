@@ -6237,6 +6237,27 @@ async function supaFetch(path, init){
   return res;
 }
 
+// Paginação genérica do Supabase. Vive no bloco 1 porque é usada na carga inicial
+// (categorias) ANTES do 2o bloco de script rodar — se ficar no 2o bloco, dá
+// "ReferenceError: _supaPaged is not defined".
+async function _supaPaged(path){
+  if(!_supaAtivo()) return null;
+  var tk = await supaToken(); if(!tk) return null;
+  var page = 1000, offset = 0, all = [];
+  for(;;){
+    var sep = (path.indexOf('?') >= 0) ? '&' : '?';
+    var res = await supaFetch(path + sep + 'limit=' + page + '&offset=' + offset);
+    if(!res.ok) throw new Error('supa HTTP ' + res.status);
+    var rows = await res.json();
+    if(!Array.isArray(rows) || !rows.length) break;
+    all = all.concat(rows);
+    if(rows.length < page) break;
+    offset += page;
+    if(offset > 500000) break; // trava de segurança
+  }
+  return all;
+}
+
 async function fazerLogin() {
   const u   = document.getElementById('login-user').value.trim().toLowerCase();
   const p   = document.getElementById('login-pass').value;
@@ -9969,24 +9990,6 @@ function _estBuildMap(){
 
 // GET paginado no Supabase (1000/vez). Devolve array de objetos, ou null se não há sessão.
 // Lança em erro de HTTP (deixa o caller cair no Sheets).
-async function _supaPaged(path){
-  if(!_supaAtivo()) return null;
-  var tk = await supaToken(); if(!tk) return null;
-  var page = 1000, offset = 0, all = [];
-  for(;;){
-    var sep = (path.indexOf('?') >= 0) ? '&' : '?';
-    var res = await supaFetch(path + sep + 'limit=' + page + '&offset=' + offset);
-    if(!res.ok) throw new Error('supa HTTP ' + res.status);
-    var rows = await res.json();
-    if(!Array.isArray(rows) || !rows.length) break;
-    all = all.concat(rows);
-    if(rows.length < page) break;
-    offset += page;
-    if(offset > 500000) break; // trava de segurança
-  }
-  return all;
-}
-
 // FONTE NUVEM p/ Mais vendidos / setor: estrutura_produtos + vendas_codigo + vendas_diaria.
 // Já parseado no MESMO formato do Sheets (eb/vb/vdb). REGRA DE OURO: nuvem usa Number().
 // Retorna null se não há sessão na nuvem (deixa cair no Sheets).
