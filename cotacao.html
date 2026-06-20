@@ -57,7 +57,7 @@
 </div>
 
 <script>
-var APPS_URL = 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+var APPS_URL = 'https://jnupgembzivsiowdkacc.supabase.co/functions/v1/cotacao-publica';
 var COT_ID = (function(){ var m=location.search.match(/[?&]c=([^&]+)/); return m?decodeURIComponent(m[1]):''; })();
 var ESTADO = { titulo:'', status:'', fornecedores:[], fornId:'', nome:'', itens:[], respostas:[], inicioEp:0, fimEp:0 };
 function _fmtEp(ep){ ep=Number(ep)||0; if(!ep) return ''; var d=new Date(ep); var p=function(n){return ('0'+n).slice(-2);}; return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
