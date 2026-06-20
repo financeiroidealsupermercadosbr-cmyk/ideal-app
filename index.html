@@ -5500,7 +5500,9 @@ var LEMBRETES=[], _lemShowAll=false;
 function _lemUser(){ return (typeof userAtual!=='undefined' && userAtual && userAtual.usuario)||''; }
 function _lemAcha(id){ for(var i=0;i<LEMBRETES.length;i++){ if(String(LEMBRETES[i].id)===String(id)) return LEMBRETES[i]; } return null; }
 async function lemCarregar(){
-  try{ var j=await _estPost({acao:'lembrete_list'}); LEMBRETES=(j&&j.ok&&j.lembretes)||[]; }
+  try{ var _r=await supaFetch('/rest/v1/lembretes?select=id_ext,texto,fornecedor,data,quem,dispensado_por&order=criado_em.desc');
+    var _rows=_r.ok?await _r.json():[];
+    LEMBRETES=_rows.map(function(x){ return {id:x.id_ext, texto:x.texto, fornecedor:x.fornecedor, data:x.data, quem:x.quem, dispensadoPor:(Array.isArray(x.dispensado_por)?x.dispensado_por:[])}; }); }
   catch(e){ LEMBRETES=[]; falhou(e,'Não consegui carregar os lembretes'); }
   lemRender();
 }
@@ -5532,7 +5534,7 @@ function lemRender(){
   box.innerHTML=h;
 }
 async function lemDispensar(id){
-  try{ var j=await _estPost({acao:'lembrete_dispensar', id:id, usuario:_lemUser()}); if(!j.ok) throw new Error(j.erro||'falha');
+  try{ var _r=await supaFetch('/rest/v1/rpc/lembrete_dispensar',{method:'POST',body:JSON.stringify({p_id_ext:id, p_usuario:_lemUser()})}); if(!_r.ok) throw new Error('dispensar');
     var l=_lemAcha(id); if(l){ if(!l.dispensadoPor) l.dispensadoPor=[]; if(l.dispensadoPor.indexOf(_lemUser())===-1) l.dispensadoPor.push(_lemUser()); }
     lemRender(); toast('Lembrete dispensado');
   }catch(e){ toast('⚠ Não consegui dispensar'); }
@@ -5565,11 +5567,11 @@ function lemEditar(id){
     var texto=card.querySelector('#lem-texto').value.trim(); if(!texto){ toast('Escreva o lembrete'); return; }
     var forn=card.querySelector('#lem-forn').value.trim(); var data=card.querySelector('#lem-data').value;
     var btn=card.querySelector('#lem-save'); btn.disabled=true; btn.textContent='Salvando…';
-    try{ var j=await _estPost({acao:'lembrete_save', id:l.id, texto:texto, fornecedor:forn, data:data, usuario:_lemUser()}); if(!j.ok) throw new Error(j.erro||'falha'); toast('✓ Lembrete salvo'); close(); _lemShowAll=false; lemCarregar(); }
+    try{ var _r=await supaFetch('/rest/v1/rpc/lembrete_salvar',{method:'POST',body:JSON.stringify({p_id_ext:l.id, p_texto:texto, p_fornecedor:forn, p_data:data, p_usuario:_lemUser()})}); if(!_r.ok) throw new Error('salvar'); toast('✓ Lembrete salvo'); close(); _lemShowAll=false; lemCarregar(); }
     catch(e){ console.error('lemSave',e); toast('⚠ Não consegui salvar'); btn.disabled=false; btn.textContent='Salvar'; }
   };
   var del=card.querySelector('#lem-del');
-  if(del){ del.onclick=function(){ close(); appConfirm('Excluir este lembrete pra todos?', async function(){ try{ var j=await _estPost({acao:'lembrete_del', id:l.id}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Excluído'); lemCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
+  if(del){ del.onclick=function(){ close(); appConfirm('Excluir este lembrete pra todos?', async function(){ try{ var _r=await supaFetch('/rest/v1/rpc/lembrete_excluir',{method:'POST',body:JSON.stringify({p_id_ext:l.id})}); if(!_r.ok) throw new Error('excluir'); toast('Excluído'); lemCarregar(); }catch(e){ toast('⚠ Não consegui excluir'); } }, {okText:'Excluir', danger:true}); }; }
 }
 function abrirCotacoesWeb(){
   show('s-cotweb'); window.scrollTo(0,0);
@@ -7651,11 +7653,11 @@ async function salvarMeuPerfil(){
   if(!nome){ toast('⚠ Informe o nome'); return; }
   const btn = document.getElementById('perfil-btn'); const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
   try{
-    const res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({acao:'perfil_save', sheetId:SHEET_ID, usuario:userAtual.usuario, nome:nome, telefone:tel, email:email, senha:senha})
+    const res = await supaFetch('/rest/v1/rpc/perfil_salvar', {
+      method:'POST',
+      body: JSON.stringify({p_usuario:userAtual.usuario, p_nome:nome, p_telefone:tel, p_email:email, p_senha:senha})
     });
-    const data = await res.json();
+    const data = res.ok?await res.json():{ok:false};
     if(!data.ok) throw new Error(data.erro||'falha');
     userAtual.nome=nome; userAtual.telefone=tel; userAtual.email=email;
     const hu = document.getElementById('h-user'); if(hu) hu.textContent = userAtual.nome+' · '+(userAtual.setor||'');
@@ -7688,14 +7690,11 @@ async function carregarUsuarios(){
   if(!box) return;
   box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando usuários…</div>';
   try{
-    const res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({acao:'usuarios_list', sheetId:SHEET_ID})
-    });
-    const data = await res.json();
-    if(!data.ok || !Array.isArray(data.usuarios)) throw new Error('resposta inválida');
-    usuariosCache = data.usuarios;
-    renderUsuarios(data.usuarios);
+    const res = await supaFetch('/rest/v1/usuarios?select=usuario,nome,setor,loja,telefone,email,status&order=nome');
+    const arr = res.ok?await res.json():null;
+    if(!Array.isArray(arr)) throw new Error('resposta inválida');
+    usuariosCache = arr;
+    renderUsuarios(arr);
   }catch(e){
     console.error('carregarUsuarios:', e);
     box.innerHTML = '<div class="row-sub" style="padding:6px 2px;color:#A32D2D">Não consegui carregar a lista agora. Toque no atualizar (↻) no topo e abra a Config de novo.</div>';
@@ -7783,11 +7782,11 @@ async function salvarUsuario(){
   const btn = document.getElementById('usr-btn-salvar');
   const txt = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
   try{
-    const res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({acao:'usuario_save', sheetId:SHEET_ID, usuario:login, senha:senha, nome:nome, setor:setor, loja:loja, telefone:tel, email:email, status:status})
+    const res = await supaFetch('/rest/v1/rpc/usuario_salvar', {
+      method:'POST',
+      body: JSON.stringify({p_usuario:login, p_senha:senha, p_nome:nome, p_setor:setor, p_loja:loja, p_telefone:tel, p_email:email, p_status:status})
     });
-    const data = await res.json();
+    const data = res.ok?await res.json():{ok:false};
     if(!data.ok) throw new Error(data.erro||'falha');
     toast('✓ Usuário salvo');
     fecharModalUsuario();
@@ -7804,11 +7803,11 @@ async function removerUsuario(login, nome){
   }
   appConfirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)', async function(){
     try{
-      const res = await fetch(_urlApps(), {
-        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({acao:'usuario_del', sheetId:SHEET_ID, usuario:login})
+      const res = await supaFetch('/rest/v1/rpc/usuario_excluir', {
+        method:'POST',
+        body: JSON.stringify({p_usuario:login})
       });
-      const data = await res.json();
+      const data = res.ok?await res.json():{ok:false};
       if(!data.ok) throw new Error(data.erro||'falha');
       toast('✓ Acesso removido');
       carregarUsuarios();
@@ -9329,7 +9328,8 @@ function _estModalInput(titulo, placeholder, onOk){
 async function estNovoSetor(){
   _estModalInput('Novo setor', 'Nome do setor (ex.: Açougue)', async function(nome){
     try{
-      var d = await _estPost({acao:'merc_save', tipo:'setor', nome:nome});
+      var _r=await supaFetch('/rest/v1/rpc/merc_salvar',{method:'POST',body:JSON.stringify({p_tipo:'setor', p_nome:nome, p_setor_pai:''})});
+      var d=_r.ok?await _r.json():{ok:false};
       if(!d.ok) throw new Error(d.erro||'falha');
       toast(d.jaExiste ? 'Esse setor já existe' : '✓ Setor criado');
       await mercLoad(true);
@@ -9343,7 +9343,8 @@ async function estNovoGrupo(){
   if(!estSetorAtual || estSetorAtual==='A REVISAR'){ toast('Abra um setor primeiro'); return; }
   _estModalInput('Novo grupo em '+_estCap(estSetorAtual), 'Nome do grupo (ex.: Bovina)', async function(nome){
     try{
-      var d = await _estPost({acao:'merc_save', tipo:'grupo', nome:nome, setorPai:estSetorAtual});
+      var _r=await supaFetch('/rest/v1/rpc/merc_salvar',{method:'POST',body:JSON.stringify({p_tipo:'grupo', p_nome:nome, p_setor_pai:estSetorAtual})});
+      var d=_r.ok?await _r.json():{ok:false};
       if(!d.ok) throw new Error(d.erro||'falha');
       toast(d.jaExiste ? 'Esse grupo já existe' : '✓ Grupo criado');
       await mercLoad(true);
@@ -9480,7 +9481,9 @@ async function mercLoad(force){
     try{ var c = await _precoGet('merc_cat'); if(c){ MERC_SETORES=c.setores||[]; MERC_GRUPOS=c.grupos||{}; } }catch(e){}
   }
   try{
-    var d = await _estPost({acao:'merc_list'});
+    var _r=await supaFetch('/rest/v1/merc_cat?select=id,tipo,nome,setor_pai&order=nome');
+    var d={ok:false, setores:[], grupos:[]};
+    if(_r.ok){ d.ok=true; (await _r.json()).forEach(function(x){ if(x.tipo==='setor') d.setores.push({id:x.id, nome:x.nome}); else d.grupos.push({id:x.id, nome:x.nome, setor:x.setor_pai}); }); }
     if(d && d.ok){
       MERC_SETORES = (d.setores||[]).map(function(s){ return {id:s.id, nome:String(s.nome||'').toUpperCase()}; });
       MERC_GRUPOS = {};
