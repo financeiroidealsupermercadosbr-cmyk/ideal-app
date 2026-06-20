@@ -9213,10 +9213,10 @@ async function _estPostCloud(payload){
       if(_rfo.ok){ var _fa=await _rfo.json(); for(var _i=0;_i<_fa.length;_i++){ _fmap[_fa[_i].id_ext]=_fa[_i]; } }
     }
     var _rmap={};
-    var _rre=await supaFetch('/rest/v1/cotacao_respostas?select=forn_id_ext,atualizado_em&cot_id_ext=eq.'+encodeURIComponent(payload.cotId)+'&limit=5000');
-    if(_rre.ok){ var _rr=await _rre.json(); for(var _j=0;_j<_rr.length;_j++){ _rmap[_rr[_j].forn_id_ext]=_rr[_j].atualizado_em; } }
-    var _fout=_forn.map(function(id){ var _f=_fmap[id]||{}; var _em=_rmap[id];
-      return { id:id, nome:(_f.nome||id), pin:(_f.pin||''), respondeu:!!_em, em:(_em?_cwData(_em):'') }; });
+    var _rre=await supaFetch('/rest/v1/cotacao_respostas?select=forn_id_ext,atualizado_em,respostas&cot_id_ext=eq.'+encodeURIComponent(payload.cotId)+'&limit=5000');
+    if(_rre.ok){ var _rr=await _rre.json(); for(var _j=0;_j<_rr.length;_j++){ _rmap[_rr[_j].forn_id_ext]={em:_rr[_j].atualizado_em, respostas:(Array.isArray(_rr[_j].respostas)?_rr[_j].respostas:[])}; } }
+    var _fout=_forn.map(function(id){ var _f=_fmap[id]||{}; var _rm=_rmap[id];
+      return { id:id, nome:(_f.nome||id), pin:(_f.pin||''), respondeu:!!_rm, em:(_rm?_cwData(_rm.em):''), respostas:(_rm?_rm.respostas:[]) }; });
     return { ok:true, id:_cp.id_ext, titulo:(_cp.titulo||''),
       status:_cwStatusEfFront({status:_cp.status, inicioEp:(Number(_cp.inicio_ep)||0), fimEp:(Number(_cp.fim_ep)||0)}),
       inicioEp:(Number(_cp.inicio_ep)||0), fimEp:(Number(_cp.fim_ep)||0),
