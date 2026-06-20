@@ -179,12 +179,33 @@ async function carregar(){
   $('kpis').innerHTML=kpi('Receita mensal (MRR)',BRL(f.mrr),'💰',true)+kpi('Clientes ativos',f.clientes_ativos,'🏪')+kpi('Recebido no mês',BRL(f.recebido_mes),'✅')+kpi('Em aberto',BRL(f.aberto_mes),'⏳');
   $('kpisFin').innerHTML=$('kpis').innerHTML;
   desenhaChart(r12||[]);
-  $('pontesMini').innerHTML = CLIENTES.map(c=>linhaCli(c,true)).join('') || '<div class="vazio">Nenhum cliente.</div>';
+  carregarPontes();
   $('listaCli').innerHTML  = CLIENTES.map(c=>linhaCli(c,false)).join('') || '<div class="vazio">Nenhum cliente.</div>';
   $('cliCount').textContent = CLIENTES.length+' cadastrado(s)';
   document.querySelectorAll('[data-cli]').forEach(el=>el.onclick=()=>abrirModal(el.getAttribute('data-cli')));
   $('sub').textContent='atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   carregarPagamentos();
+}
+async function carregarPontes(){
+  const cor={verde:'#22c55e',amarelo:'#f59e0b',vermelho:'#ef4444',sem_dados:'#6b7280'};
+  const rot={verde:'🟢 Online',amarelo:'🟡 Atrasada',vermelho:'🔴 Offline',sem_dados:'⚪ Sem sinal'};
+  try{
+    const rows=await rpc('admin_pontes_status');
+    $('pontesMini').innerHTML=(rows&&rows.length)? rows.map(p=>{
+      const ini=(p.cliente_nome||'?').trim().slice(0,2).toUpperCase();
+      const c=cor[p.status]||'#6b7280';
+      const h=p.ultima_sync?new Date(p.ultima_sync).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
+      const extra=[p.host,p.versao].filter(Boolean).join(' · ');
+      return '<div class="cli" style="cursor:default">'+
+        '<div class="av">'+ini+'</div>'+
+        '<div class="info"><div class="n">'+(p.cliente_nome||'(sem nome)')+'</div>'+
+        '<div class="s"><span>'+h+' · '+tempo(p.minutos)+'</span>'+(extra?'<span class="chip">'+extra+'</span>':'')+'</div></div>'+
+        '<span class="badge" style="background:'+c+'22;color:'+c+'">'+(rot[p.status]||p.status)+'</span></div>';
+    }).join('') : '<div class="vazio">Nenhum cliente.</div>';
+  }catch(e){
+    // fallback: status antigo via admin_clientes (ult_visto)
+    $('pontesMini').innerHTML=CLIENTES.map(c=>linhaCli(c,true)).join('')||'<div class="vazio">Nenhum cliente.</div>';
+  }
 }
 function kpi(lab,val,ico,amar){return '<div class="kpi '+(amar?'amar':'')+'"><div class="ico">'+ico+'</div><div class="lab">'+lab+'</div><div class="val">'+val+'</div></div>';}
 function linhaCli(c,mini){
