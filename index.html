@@ -9095,6 +9095,9 @@ function _cmpLoja(){ return _lojaConsolidado ? 'all' : lojaAtual; }
 // URL pública de um arquivo no Storage (mesmo bucket das avarias).
 function _cmpArqUrl(path){ return path ? (SUPA_URL+'/storage/v1/object/public/arquivos/'+String(path).split('/').map(encodeURIComponent).join('/')) : ''; }
 
+// Formata ISO -> "DD/MM/YYYY HH:MM" (16 chars; casa com o slice(0,16) da lista de cotações).
+function _cwData(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso).slice(0,16); var p=function(n){return ('0'+n).slice(-2);}; return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+
 // Tradutor das ações de Compras/Fornecedores para Supabase. null = não trato (cai no Sheets).
 async function _estPostCloud(payload){
   var acao = payload.acao;
@@ -9165,6 +9168,95 @@ async function _estPostCloud(payload){
     var r7 = await supaFetch('/rest/v1/rpc/compra_excluir', { method:'POST', body:JSON.stringify({ p_id_ext:payload.id }) });
     if(!r7.ok) throw new Error('compras_del '+r7.status);
     return { ok:true };
+  }
+
+  // ───────── COTAÇÃO WEB (C-3) — lado GESTOR ─────────
+  if(acao==='cotweb_criar'){
+    var _cid = String(payload.cotId||payload.id||'').trim() || ('Q'+Date.now());
+    var _rcc = await supaFetch('/rest/v1/rpc/cot_criar', { method:'POST', body:JSON.stringify({
+      p_id_ext:_cid, p_titulo:(payload.titulo||''), p_itens:(payload.itens||[]),
+      p_forn_ids:(payload.fornecedores||payload.fornIds||[]), p_coleta_id:(payload.coletaId||''),
+      p_inicio_ep:(Number(payload.inicioEp)||0), p_fim_ep:(Number(payload.fimEp)||0) }) });
+    if(!_rcc.ok) throw new Error('cotweb_criar '+_rcc.status);
+    return { ok:true, id:_cid, cotId:_cid };
+  }
+  if(acao==='cotweb_fechar'){
+    var _rcf = await supaFetch('/rest/v1/rpc/cot_status', { method:'POST',
+      body:JSON.stringify({ p_id_ext:payload.cotId, p_status:(payload.status||'FECHADA') }) });
+    if(!_rcf.ok) throw new Error('cotweb_fechar '+_rcf.status);
+    return { ok:true };
+  }
+  if(acao==='cotweb_list'){
+    var _rcl = await supaFetch('/rest/v1/cotacoes?select=id_ext,titulo,status,itens,forn_ids,inicio_ep,fim_ep,criado_em&status=neq.REMOVIDA&order=criado_em.desc&limit=5000');
+    if(!_rcl.ok) throw new Error('cotweb_list '+_rcl.status);
+    var _cots = await _rcl.json();
+    var _cnt = {};
+    var _rcr = await supaFetch('/rest/v1/cotacao_respostas?select=cot_id_ext&limit=100000');
+    if(_rcr.ok){ var _ra=await _rcr.json(); for(var _i=0;_i<_ra.length;_i++){ var _kk=_ra[_i].cot_id_ext; _cnt[_kk]=(_cnt[_kk]||0)+1; } }
+    var _out = _cots.map(function(c){
+      var _f=Array.isArray(c.forn_ids)?c.forn_ids:[]; var _it=Array.isArray(c.itens)?c.itens:[];
+      return { id:c.id_ext, titulo:(c.titulo||''), data:_cwData(c.criado_em),
+        nItens:_it.length, nForn:_f.length, nResp:(_cnt[c.id_ext]||0),
+        status:c.status, inicioEp:(Number(c.inicio_ep)||0), fimEp:(Number(c.fim_ep)||0) };
+    });
+    return { ok:true, cotacoes:_out };
+  }
+  if(acao==='cotweb_painel'){
+    var _rcp = await supaFetch('/rest/v1/cotacoes?select=*&id_ext=eq.'+encodeURIComponent(payload.cotId)+'&limit=1');
+    if(!_rcp.ok) throw new Error('cotweb_painel '+_rcp.status);
+    var _cp=(await _rcp.json())[0]; if(!_cp) return { ok:false, erro:'cotação não encontrada' };
+    var _forn=Array.isArray(_cp.forn_ids)?_cp.forn_ids:[];
+    var _fmap={};
+    if(_forn.length){
+      var _inl=_forn.map(function(x){return '"'+String(x).replace(/"/g,'')+'"';}).join(',');
+      var _rfo=await supaFetch('/rest/v1/fornecedores?select=id_ext,nome,pin&id_ext=in.('+_inl+')&limit=5000');
+      if(_rfo.ok){ var _fa=await _rfo.json(); for(var _i=0;_i<_fa.length;_i++){ _fmap[_fa[_i].id_ext]=_fa[_i]; } }
+    }
+    var _rmap={};
+    var _rre=await supaFetch('/rest/v1/cotacao_respostas?select=forn_id_ext,atualizado_em&cot_id_ext=eq.'+encodeURIComponent(payload.cotId)+'&limit=5000');
+    if(_rre.ok){ var _rr=await _rre.json(); for(var _j=0;_j<_rr.length;_j++){ _rmap[_rr[_j].forn_id_ext]=_rr[_j].atualizado_em; } }
+    var _fout=_forn.map(function(id){ var _f=_fmap[id]||{}; var _em=_rmap[id];
+      return { id:id, nome:(_f.nome||id), pin:(_f.pin||''), respondeu:!!_em, em:(_em?_cwData(_em):'') }; });
+    return { ok:true, id:_cp.id_ext, titulo:(_cp.titulo||''),
+      status:_cwStatusEfFront({status:_cp.status, inicioEp:(Number(_cp.inicio_ep)||0), fimEp:(Number(_cp.fim_ep)||0)}),
+      inicioEp:(Number(_cp.inicio_ep)||0), fimEp:(Number(_cp.fim_ep)||0),
+      itens:(Array.isArray(_cp.itens)?_cp.itens:[]), fornecedores:_fout };
+  }
+  if(acao==='cotweb_resumo'){
+    var _de=Number(payload.deEp)||0, _ate=Number(payload.ateEp)||0;
+    var _rsr=await supaFetch('/rest/v1/cotacoes?select=id_ext,itens,status&status=neq.REMOVIDA&limit=5000');
+    if(!_rsr.ok) throw new Error('cotweb_resumo '+_rsr.status);
+    var _scots=(await _rsr.json()).filter(function(c){ var _ep=_cwEpDe(c.id_ext); if(_de&&_ep&&_ep<_de) return false; if(_ate&&_ep&&_ep>_ate) return false; return true; });
+    if(!_scots.length) return { ok:true, nCotacoes:0, totalGanho:0, fornecedores:[] };
+    var _sids=_scots.map(function(c){return c.id_ext;});
+    var _sinl=_sids.map(function(x){return '"'+String(x).replace(/"/g,'')+'"';}).join(',');
+    var _rar=await supaFetch('/rest/v1/cotacao_respostas?select=cot_id_ext,forn_id_ext,nome,respostas&cot_id_ext=in.('+_sinl+')&limit=100000');
+    var _respAll=_rar.ok?await _rar.json():[];
+    var _byCot={}; _respAll.forEach(function(r){ (_byCot[r.cot_id_ext]=_byCot[r.cot_id_ext]||[]).push(r); });
+    var _agg={}; function _A(fid,nome){ if(!_agg[fid]) _agg[fid]={nome:(nome||fid),ganho:0,itensGanhos:0,cotado:0,itensCotados:0}; if(nome) _agg[fid].nome=nome; return _agg[fid]; }
+    var _totalGanho=0;
+    _scots.forEach(function(c){
+      var _its=Array.isArray(c.itens)?c.itens:[]; var _rlist=_byCot[c.id_ext]||[];
+      var _qtd={}; _its.forEach(function(it){ _qtd[String(it.cod)]=Number(it.qtd)||0; });
+      var _porItem={};
+      _rlist.forEach(function(r){
+        var _arr=Array.isArray(r.respostas)?r.respostas:[];
+        _arr.forEach(function(x){
+          var _cod=String(x.cod); var _tem=(x.tem!==false); var _pre=Number(x.preco)||0;
+          if(_tem && _pre>0){
+            var _q=_qtd[_cod]||1; var _val=_pre*(_q||1);
+            var _a=_A(r.forn_id_ext, r.nome); _a.cotado+=_val; _a.itensCotados+=1;
+            (_porItem[_cod]=_porItem[_cod]||[]).push({fid:r.forn_id_ext, nome:r.nome, val:_val});
+          }
+        });
+      });
+      Object.keys(_porItem).forEach(function(cod){
+        var _l=_porItem[cod]; _l.sort(function(p,q){return p.val-q.val;}); var _w=_l[0];
+        var _a=_A(_w.fid,_w.nome); _a.ganho+=_w.val; _a.itensGanhos+=1; _totalGanho+=_w.val;
+      });
+    });
+    var _fr=Object.keys(_agg).map(function(k){return _agg[k];});
+    return { ok:true, nCotacoes:_scots.length, totalGanho:_totalGanho, fornecedores:_fr };
   }
 
   return null; // não é compras/forn -> Sheets trata
