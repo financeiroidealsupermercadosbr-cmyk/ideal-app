@@ -7653,11 +7653,11 @@ async function salvarMeuPerfil(){
   if(!nome){ toast('⚠ Informe o nome'); return; }
   const btn = document.getElementById('perfil-btn'); const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
   try{
-    const res = await supaFetch('/rest/v1/rpc/perfil_salvar', {
-      method:'POST',
-      body: JSON.stringify({p_usuario:userAtual.usuario, p_nome:nome, p_telefone:tel, p_email:email, p_senha:senha})
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'perfil_save', sheetId:SHEET_ID, usuario:userAtual.usuario, nome:nome, telefone:tel, email:email, senha:senha})
     });
-    const data = res.ok?await res.json():{ok:false};
+    const data = await res.json();
     if(!data.ok) throw new Error(data.erro||'falha');
     userAtual.nome=nome; userAtual.telefone=tel; userAtual.email=email;
     const hu = document.getElementById('h-user'); if(hu) hu.textContent = userAtual.nome+' · '+(userAtual.setor||'');
@@ -7690,11 +7690,14 @@ async function carregarUsuarios(){
   if(!box) return;
   box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando usuários…</div>';
   try{
-    const res = await supaFetch('/rest/v1/usuarios?select=usuario,nome,setor,loja,telefone,email,status&order=nome');
-    const arr = res.ok?await res.json():null;
-    if(!Array.isArray(arr)) throw new Error('resposta inválida');
-    usuariosCache = arr;
-    renderUsuarios(arr);
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'usuarios_list', sheetId:SHEET_ID})
+    });
+    const data = await res.json();
+    if(!data.ok || !Array.isArray(data.usuarios)) throw new Error('resposta inválida');
+    usuariosCache = data.usuarios;
+    renderUsuarios(data.usuarios);
   }catch(e){
     console.error('carregarUsuarios:', e);
     box.innerHTML = '<div class="row-sub" style="padding:6px 2px;color:#A32D2D">Não consegui carregar a lista agora. Toque no atualizar (↻) no topo e abra a Config de novo.</div>';
@@ -7782,11 +7785,11 @@ async function salvarUsuario(){
   const btn = document.getElementById('usr-btn-salvar');
   const txt = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
   try{
-    const res = await supaFetch('/rest/v1/rpc/usuario_salvar', {
-      method:'POST',
-      body: JSON.stringify({p_usuario:login, p_senha:senha, p_nome:nome, p_setor:setor, p_loja:loja, p_telefone:tel, p_email:email, p_status:status})
+    const res = await fetch(_urlApps(), {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({acao:'usuario_save', sheetId:SHEET_ID, usuario:login, senha:senha, nome:nome, setor:setor, loja:loja, telefone:tel, email:email, status:status})
     });
-    const data = res.ok?await res.json():{ok:false};
+    const data = await res.json();
     if(!data.ok) throw new Error(data.erro||'falha');
     toast('✓ Usuário salvo');
     fecharModalUsuario();
@@ -7803,11 +7806,11 @@ async function removerUsuario(login, nome){
   }
   appConfirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)', async function(){
     try{
-      const res = await supaFetch('/rest/v1/rpc/usuario_excluir', {
-        method:'POST',
-        body: JSON.stringify({p_usuario:login})
+      const res = await fetch(_urlApps(), {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({acao:'usuario_del', sheetId:SHEET_ID, usuario:login})
       });
-      const data = res.ok?await res.json():{ok:false};
+      const data = await res.json();
       if(!data.ok) throw new Error(data.erro||'falha');
       toast('✓ Acesso removido');
       carregarUsuarios();
