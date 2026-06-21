@@ -1971,6 +1971,46 @@ const CLIENTE_ID  = 'd9b2c1a4-7e3f-4a6b-9c2d-1f0e5a8b3c47';           // Grupo I
 const SUPA_EMAIL_DOMAIN = 'ideal.local';                             // login sintético: <usuario>@ideal.local
 const _SUPA_SESS_KEY = 'ideal_supa_sess';                            // onde guardo o token (localStorage)
 const APP_VERSAO = '1.0';   // <<< versão do app — alterar SÓ aqui. Login e Config leem deste valor.
+
+// ── BRANDING POR CLIENTE (multi-tenant) ────────────────────────────────
+// Fonte única da identidade do cliente. Default = Grupo Ideal (fallback;
+// o app NUNCA fica sem marca se a nuvem falhar). aplicarBranding() sobrescreve
+// com os dados de clientes (RPC meu_branding) logo após o login pela nuvem.
+window.BRAND = window.BRAND || {
+  nome: 'Grupo Ideal',
+  logo_url: '',
+  cor_principal: '',
+  cor_destaque: '',
+  lojas: { l1:'Loja 1 — Areal QS11', l2:'Loja 2 — Melhor QS8', bolos:'Ideal Bolos — Restaurante' }
+};
+// Resolvedor ÚNICO de nome de loja. Substitui os ~9 ternários espalhados.
+// allLabel: o que mostrar p/ 'all'/consolidado. unknownLabel: p/ código desconhecido.
+function lojaNome(l, allLabel, unknownLabel){
+  if(l==='all') return allLabel || 'Todas as lojas';
+  var m = (window.BRAND && window.BRAND.lojas) || {};
+  return m[l] || unknownLabel || l;
+}
+// Aplica a marca do cliente (nome/logo). Cores ficam pra fase 2 (CSS vars).
+// Tudo é guardado: só sobrescreve o que vier preenchido — Ideal nunca quebra.
+function aplicarBranding(b){
+  if(!b) return;
+  try {
+    if(b.nome){
+      window.BRAND.nome = b.nome;
+      document.title = b.nome;
+      var mt = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if(mt) mt.setAttribute('content', b.nome);
+      document.querySelectorAll('.splash-sub, .login2-sub').forEach(function(el){ el.textContent = b.nome; });
+    }
+    if(b.logo_url){
+      window.BRAND.logo_url = b.logo_url;
+      document.querySelectorAll('.splash-logo-wrap img, .login2-logo img, #sync-splash img').forEach(function(im){ im.src = b.logo_url; });
+    }
+    // Cores: guardadas pra fase 2 (recolor por CSS var). Sem efeito visual ainda.
+    if(b.cor_principal) window.BRAND.cor_principal = b.cor_principal;
+    if(b.cor_destaque)  window.BRAND.cor_destaque  = b.cor_destaque;
+  } catch(_e){ /* marca é cosmética: nunca derruba o login */ }
+}
 // Injeta a versão (única) no rodapé do login e na Config.
 (function _aplicarVersao_(){
   function set(){
@@ -2274,7 +2314,7 @@ var _fzMesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho'
 function _fzLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
 function _fzNomeLoja(){
   var l=_fzLoja();
-  return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l;
+  return lojaNome(l);
 }
 function _fzDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
 function _fzMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
@@ -2676,7 +2716,7 @@ var _ckMarcas = {};                       // tarefaId -> 'SIM'|'NAO' durante o p
 var _ckFiltro = { tipo:'mes', mes:null };
 var _ckDetData = '';
 function _ckLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
-function _ckNomeLoja(){ var l=_ckLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _ckNomeLoja(){ return lojaNome(_ckLoja()); }
 function _ckDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
 function _ckMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
 function _ckTexto(id){ for(var i=0;i<_ckTarefas.length;i++){ if(_ckTarefas[i].id===id) return _ckTarefas[i].texto; } return '(tarefa removida)'; }
@@ -3004,7 +3044,7 @@ var CO_LISTA_INICIAL = [
   {nome:'BOM Parcelamento (3 parcelas)', dia:25, valor:''}
 ];
 function _coLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
-function _coNomeLoja(){ var l=_coLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _coNomeLoja(){ return lojaNome(_coLoja()); }
 function _coNum(v){ var n=parseFloat(v); return isNaN(n)?0:n; }
 function _coMesYM(){ return _coMesRef.getFullYear()+'-'+('0'+(_coMesRef.getMonth()+1)).slice(-2); }
 function _coPago(contaId){ return !!_coPagos[contaId+'|'+_coMesYM()]; }
@@ -3283,7 +3323,7 @@ var _avDetId = '';
 var _avCfgOverlay = null;
 var _avScanStream = null, _avScanAtivo = false, _avZXing = null;
 function _avLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
-function _avNomeLoja(){ var l=_avLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _avNomeLoja(){ return lojaNome(_avLoja()); }
 function _avDataBR(iso){ var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):String(iso||''); }
 function _avMesLabel(ym){ var m=String(ym||'').match(/^(\d{4})-(\d{2})$/); if(!m) return ym; return _fzMesNomes[parseInt(m[2],10)-1]+' '+m[1]; }
 function _avNum(s){ s=String(s==null?'':s).trim(); if(s==='') return 0; if(s.indexOf(',')>=0) s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,''); var n=parseFloat(s); return isNaN(n)?0:n; }
@@ -3880,7 +3920,7 @@ var FO_SETOR_ORDEM=['FRENTE DE CAIXA','FISCAIS DE CAIXA','REPOSITORES','AÇOUGUE
 var FO_TIPOS_SUGESTAO=['Salário','Passagem','Quebra de caixa','Auxílio aluguel','Bonificação','Extra','Auxílio cesta','Vale','Comissão'];
 
 function _foLoja(){ return (lojaAtual==='all') ? 'l2' : lojaAtual; }
-function _foNomeLoja(){ var l=_foLoja(); return l==='l1'?'Loja 1 — Areal QS11':l==='l2'?'Loja 2 — Melhor QS8':l==='bolos'?'Ideal Bolos — Restaurante':l; }
+function _foNomeLoja(){ return lojaNome(_foLoja()); }
 function _foNum(s){ s=String(s==null?'':s).trim(); if(s==='')return 0; if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,''); var n=parseFloat(s); return isNaN(n)?0:n; }
 function _foMesYM(){ return _foMesRef.getFullYear()+'-'+('0'+(_foMesRef.getMonth()+1)).slice(-2); }
 function _foRenderMes(){ var el=document.getElementById('fo-mes-titulo'); if(el) el.textContent=_fzMesNomes[_foMesRef.getMonth()]+' '+_foMesRef.getFullYear(); }
@@ -6312,6 +6352,25 @@ async function supaMeuPerfil(){
   } catch(e){ return null; }
 }
 
+// BRANDING: lê a identidade do cliente logado (RPC meu_branding()).
+// Retorna {nome_exibicao, logo_url, cor_principal, cor_destaque} ou null.
+async function supaMeuBranding(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.access_token) return null;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meu_branding`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body: '{}'
+    }, 8000);
+    const arr = await res.json().catch(function(){ return null; });
+    if(!res.ok || !Array.isArray(arr) || !arr.length) return null;
+    const r = arr[0];
+    return { nome:r.nome_exibicao, logo_url:r.logo_url, cor_principal:r.cor_principal, cor_destaque:r.cor_destaque };
+  } catch(e){ return null; }
+}
+
 async function fazerLogin() {
   const u   = document.getElementById('login-user').value.trim().toLowerCase();
   const p   = document.getElementById('login-pass').value;
@@ -6370,11 +6429,13 @@ async function fazerLogin() {
   const l = usr.loja || 'l2';   // loja vem do cadastro do usuário; 'all' = master => Consolidado
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
+  // BRANDING: aplica a marca do cliente (nome/logo) se a nuvem tiver dados. Não bloqueia.
+  try { aplicarBranding(await supaMeuBranding()); } catch(_e){ /* marca opcional */ }
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
   document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
   dreLoja = lojaAtual;
-  const _lojaNome = l==='l2'?'Loja 2 — Melhor QS8':l==='l1'?'Loja 1 — Areal QS11':l==='bolos'?'Ideal Bolos — Restaurante':'Consolidado';
+  const _lojaNome = lojaNome(l, 'Consolidado');
   (document.getElementById('h-user')||{}).textContent  = usr.nome+' · '+(usr.setor||'');
   (document.getElementById('h-store')||{}).textContent = _lojaNome;
   await permsCarregarMenu();
@@ -6413,7 +6474,7 @@ function trocarLoja(btn,nome,id) {
   document.querySelectorAll('.loja-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); lojaAtual=id;
   _lojaConsolidado = (String(nome||'').toLowerCase().indexOf('consolidado')>=0);  // marca o modo "tudo" sem mexer no lojaAtual
-  (document.getElementById('h-store')||{}).textContent=nome;
+  (document.getElementById('h-store')||{}).textContent = _lojaConsolidado ? nome : lojaNome(id);
   dreLoja = id;            // o seletor de cima agora comanda a DRE também
   renderizarPainel(); filtrar(); renderDRE();
   if(typeof dreCarregarAvarias==='function') dreCarregarAvarias().then(function(ok){ if(ok) renderDRE(); });
@@ -7157,7 +7218,7 @@ function exportarContasPDF(){
   var _stTxt=function(b){ var st=statusB(b); return st==='pago'?'Pago':st==='vencido'?'Vencido':st==='hoje'?'Vence hoje':'Pendente'; };
   var _linha=function(b){ return '<tr><td>'+_precoEsc(b.forn||'')+'</td><td>'+_precoEsc(b.doc||'')+'</td><td class="c">'+_precoEsc(b.venc||'')+'</td><td class="r">'+brlC(b.valor||0)+'</td><td class="c">'+_stTxt(b)+'</td></tr>'; };
   var _cab='<thead><tr><th>Fornecedor</th><th>Documento</th><th class="c">Vencimento</th><th class="r">Valor</th><th class="c">Status</th></tr></thead>';
-  var _nomeLojaPDF=function(c){ return c==='l1'?'Loja 1 — Areal QS11':c==='l2'?'Loja 2 — Melhor QS8':c==='bolos'?'Ideal Bolos — Restaurante':'Sem loja'; };
+  var _nomeLojaPDF=function(c){ return lojaNome(c, 'Sem loja', 'Sem loja'); };
   var tabelaHtml='';
   if(lojaAtual==='all'){
     // D2: no Consolidado, agrupa os boletos por loja — subtotal de cada loja + total geral.
@@ -8550,7 +8611,7 @@ function renderSaidasGrafico(D){
 // Puxa os MESMOS números da tela; respeita loja e período selecionados.
 // ══════════════════════════════════════════════════════
 function dreExportarPDF(){
-  const nomeLoja = ({l1:'Loja 1 — Areal QS11', l2:'Loja 2 — Melhor QS8', all:'Todas as lojas (consolidado)'})[dreLoja] || 'Loja 2 — Melhor QS8';
+  const nomeLoja = lojaNome(dreLoja, 'Todas as lojas (consolidado)', 'Loja 2 — Melhor QS8');
   const periodo  = dreLabelPeriodo();
   const agora    = new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
