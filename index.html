@@ -2083,6 +2083,7 @@ function aplicarLojas(arr){
     }
     montarSelectLojas();
     montarCardsLojasConfig();
+    montarSwitcherLojas();
   } catch(_e){ /* lojas são cosméticas no front: nunca derrubam o login */ }
 }
 // Monta as opções do <select id="usr-loja"> a partir de BRAND.lojasArr (+ "Todas as lojas").
@@ -2094,6 +2095,20 @@ function montarSelectLojas(){
   html += '<option value="all">Todas as lojas</option>';
   sel.innerHTML = html;
   if(atual){ sel.value = atual; } // preserva a seleção se ainda existir
+}
+// Monta o seletor de loja do TOPO a partir de BRAND.lojasArr (dinâmico por cliente).
+function montarSwitcherLojas(){
+  var sel = document.getElementById('loja-sel'); if(!sel) return;
+  var arr = (window.BRAND && window.BRAND.lojasArr) || [];
+  if(!arr.length){ sel.innerHTML=''; sel.style.display='none'; return; }
+  sel.style.display='';
+  function e(s){ return String(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var html = arr.map(function(l){
+    var nm = l.nome||l.codigo; var lbl = (nm.split('—')[0]||nm).trim()||nm;
+    return '<button class="loja-btn" data-loja="'+e(l.codigo)+'" onclick="trocarLoja(this,&#39;'+e(nm)+'&#39;,&#39;'+e(l.codigo)+'&#39;)">'+e(lbl)+'</button>';
+  }).join('');
+  if(arr.length>1){ html += '<button class="loja-btn" data-loja="all" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;'+e(arr[0].codigo)+'&#39;)">Consolidado</button>'; }
+  sel.innerHTML = html;
 }
 // Monta os cards de status de loja na Config a partir de BRAND.lojasArr (status = ativo).
 function montarCardsLojasConfig(){
@@ -6477,7 +6492,7 @@ async function supaMeuPerfil(){
     const r = arr[0];
     const lojas = Array.isArray(r.lojas) ? r.lojas : [];
     const loja = lojas.indexOf('all')>=0 ? 'all' : (lojas[0] || 'l2');
-    return { nome:r.nome, nivel:r.papel, loja:loja, ativo:r.ativo };
+    return { nome:r.nome, nivel:r.papel, loja:loja, ativo:r.ativo, cliente_id:r.cliente_id };
   } catch(e){ return null; }
 }
 
@@ -6518,7 +6533,7 @@ async function fazerLogin() {
     if (await supaLogin(u, p)) {
       const perfil = await supaMeuPerfil();
       if (perfil && perfil.ativo !== false && perfil.nivel) {
-        _supaUsr = { nome:(perfil.nome||u), nivel:perfil.nivel, loja:perfil.loja, setor:perfil.nivel, usuario:u, telefone:'', email:_supaEmail(u) };
+        _supaUsr = { nome:(perfil.nome||u), nivel:perfil.nivel, loja:perfil.loja, setor:perfil.nivel, usuario:u, telefone:'', email:_supaEmail(u), cliente_id:perfil.cliente_id };
         console.info('[supa] perfil pela nuvem:', perfil.nivel, perfil.loja);
       }
     }
@@ -6558,13 +6573,34 @@ async function fazerLogin() {
   const l = usr.loja || 'l2';   // loja vem do cadastro do usuário; 'all' = master => Consolidado
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
+  // ── ISOLAMENTO MULTI-TENANT ──
+  // Cliente que NÃO é o Grupo Ideal roda 100% nuvem: sem Sheets/Apps Script (que é do Ideal)
+  // e sem defaults de loja do Ideal. Login pelo Sheets (só o Ideal tem) => EH_IDEAL=true.
+  window.EH_IDEAL = (!usr.cliente_id) ? true : (usr.cliente_id === CLIENTE_ID);
+  if(!window.EH_IDEAL){
+    _SHEETS_OFF = true;
+    window.BRAND.lojas = {};
+    window.BRAND.lojasArr = [];
+  }
+  // O cache local de produtos/estrutura (IndexedDB 'ideal_preco') é por-NAVEGADOR,
+  // não por-cliente. Se o tenant logado mudou, zera o cache pra não vazar dados
+  // de outro cliente (ex.: ver os 42k do Ideal logado como cliente novo).
+  try{
+    var _cliTag = String(usr.cliente_id || CLIENTE_ID);
+    if(localStorage.getItem('ideal_preco_tenant') !== _cliTag){
+      try{ indexedDB.deleteDatabase('ideal_preco'); }catch(_e){}
+      PRODUTOS = [];
+      localStorage.setItem('ideal_preco_tenant', _cliTag);
+    }
+  }catch(_e){}
   // BRANDING: aplica a marca do cliente (nome/logo) se a nuvem tiver dados. Não bloqueia.
   try { aplicarBranding(await supaMeuBranding()); } catch(_e){ /* marca opcional */ }
   try { aplicarLojas(await supaMeuLojas()); } catch(_e){ /* lojas opcionais */ }
   try { MODULOS_CLIENTE = await supaMeusModulos(); } catch(_e){ MODULOS_CLIENTE = null; }
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
-  const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
-  document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
+  // destaca o botão de loja ativo pelo data-loja (seletor agora é dinâmico)
+  var _lAlvo = (l==='all') ? 'all' : l;
+  document.querySelectorAll('.loja-btn').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-loja')===_lAlvo); });
   dreLoja = lojaAtual;
   const _lojaNome = lojaNome(l, 'Consolidado');
   (document.getElementById('h-user')||{}).textContent  = usr.nome+' · '+(usr.setor||'');
@@ -7922,6 +7958,7 @@ async function carregarUsuarios(){
   const box = document.getElementById('cfg-users-list');
   if(!box) return;
   box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando usuários…</div>';
+  if(_SHEETS_OFF){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Gestão de usuários pela nuvem chega em breve.</div>'; return; }
   try{
     const res = await fetch(_urlApps(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -10173,7 +10210,7 @@ async function precoSync(force){
     var arr = null, src = 'planilha';
     try{ arr = await _precoSyncSupa(); if(arr && arr.length) src = 'nuvem'; }
     catch(e){ console.warn('preco: nuvem falhou, caindo no Sheets', e); arr = null; }
-    if(!arr || !arr.length){ arr = await _precoSyncSheets(); src = 'planilha'; }
+    if((!arr || !arr.length) && !_SHEETS_OFF){ arr = await _precoSyncSheets(); src = 'planilha'; }
     if(arr && arr.length){
       PRODUTOS = arr;
       await _precoSet('all', arr).catch(function(){});
