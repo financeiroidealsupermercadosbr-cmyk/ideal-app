@@ -685,8 +685,8 @@ body:has(#s-login.active) .app{max-width:none}
       </div>
 
       <!-- FATURAMENTO POR EMPRESA (mês) -->
-      <div class="section-label"><i class="ti ti-building-store"></i> Faturamento por empresa · mês</div>
-      <div class="v-card">
+      <div class="section-label" id="p-emp-label"><i class="ti ti-building-store"></i> Faturamento por empresa · mês</div>
+      <div class="v-card" id="p-emp-card">
         <div class="e-chart" id="p-emp" role="img" aria-label="Faturamento do mês por empresa"></div>
         <div class="ec-note"><i class="ti ti-info-circle"></i><span id="p-emp-note">Loja 1 e Bolos: em implantação</span></div>
       </div>
@@ -974,7 +974,7 @@ body:has(#s-login.active) .app{max-width:none}
   <div class="modal-card">
     <div class="modal-title" id="modal-usuario-title">Novo usuário</div>
     <div class="field-group"><label>Usuário (login)</label><input type="text" id="usr-login" placeholder="ex.: joao" autocomplete="off"></div>
-    <div class="field-group"><label>Senha</label><input type="text" id="usr-senha" placeholder="defina uma senha" autocomplete="off"></div>
+    <div class="field-group" id="usr-fg-senha"><label>Senha</label><input type="text" id="usr-senha" placeholder="defina uma senha" autocomplete="off"></div>
     <div id="usr-senha-hint" style="display:none;font-size:11px;color:#888780;margin:-8px 0 12px"><i class="ti ti-info-circle" style="vertical-align:-1px;margin-right:3px"></i>Deixe em branco para manter a senha atual.</div>
     <div class="field-group"><label>Nome completo</label><input type="text" id="usr-nome" placeholder="ex.: João da Silva"></div>
     <div class="field-group"><label>Setor</label>
@@ -983,8 +983,8 @@ body:has(#s-login.active) .app{max-width:none}
     <div class="field-group"><label>Loja</label>
       <select id="usr-loja"><option value="l2">Loja 2 — Melhor QS8</option><option value="l1">Loja 1 — Areal QS11</option><option value="bolos">Ideal Bolos</option><option value="all">Todas as lojas</option></select>
     </div>
-    <div class="field-group"><label>Telefone</label><input type="text" id="usr-tel" placeholder="(61) 9...."></div>
-    <div class="field-group"><label>E-mail (opcional)</label><input type="text" id="usr-email" placeholder="email@..."></div>
+    <div class="field-group" id="usr-fg-tel"><label>Telefone</label><input type="text" id="usr-tel" placeholder="(61) 9...."></div>
+    <div class="field-group" id="usr-fg-email"><label>E-mail (opcional)</label><input type="text" id="usr-email" placeholder="email@..."></div>
     <div class="field-group"><label>Status</label>
       <select id="usr-status"><option>Ativo</option><option>Inativo</option></select>
     </div>
@@ -7122,21 +7122,45 @@ function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
 function renderEmpresas() {
   const chart = document.getElementById('p-emp');
   if (!chart) return;
-  const ag = new Date();
-  const mm = ag.getMonth(), yy = ag.getFullYear();
-  // Faturamento do mês atual da Loja 2 (única com fonte de dados hoje)
-  let totL2 = 0;
-  dadosVendas.forEach(function (r) {
-    const d = parseDataBR(r.data);
-    if (d && d.getMonth() === mm && d.getFullYear() === yy) totL2 += Number(r.total) || 0;
-  });
-  // Loja 1 e Bolos ficam zerados até conectar a fonte de cada um.
-  // Bolos usa amarelo (outro segmento) quando tiver dados.
-  const emp = [
-    { nome: 'Loja 1', val: 0,     cor: '#1B3A9E', dados: false },
-    { nome: 'Loja 2', val: totL2, cor: '#1B3A9E', dados: true  },
-    { nome: 'Bolos',  val: 0,     cor: '#FFC400', dados: false }
-  ];
+  const card   = document.getElementById('p-emp-card');
+  const label  = document.getElementById('p-emp-label');
+  const noteEl = document.getElementById('p-emp-note');
+  var lojasArr = (window.BRAND && window.BRAND.lojasArr) || [];
+  var emp, noteText;
+
+  if (window.EH_IDEAL !== false) {
+    // GRUPO IDEAL: Loja 2 é a única com fonte de dados hoje (comportamento original)
+    const ag = new Date();
+    const mm = ag.getMonth(), yy = ag.getFullYear();
+    let totL2 = 0;
+    dadosVendas.forEach(function (r) {
+      const d = parseDataBR(r.data);
+      if (d && d.getMonth() === mm && d.getFullYear() === yy) totL2 += Number(r.total) || 0;
+    });
+    emp = [
+      { nome: 'Loja 1', val: 0,     cor: '#1B3A9E', dados: false },
+      { nome: 'Loja 2', val: totL2, cor: '#1B3A9E', dados: true  },
+      { nome: 'Bolos',  val: 0,     cor: '#FFC400', dados: false }
+    ];
+    noteText = 'Loja 1 e Bolos: em implantação';
+  } else {
+    // CLIENTE: usa as lojas dele. Sem loja => esconde o cartão inteiro.
+    if (!lojasArr.length) {
+      if (card)  card.style.display  = 'none';
+      if (label) label.style.display = 'none';
+      return;
+    }
+    // Fonte de faturamento por loja ainda não está separada no cliente: começa zerado.
+    emp = lojasArr.map(function (l) {
+      var nm = (l.nome || l.codigo);
+      return { nome: (nm.split('—')[0] || nm).trim() || nm, val: 0, cor: '#1B3A9E', dados: false };
+    });
+    noteText = '';
+  }
+  if (card)  card.style.display  = '';
+  if (label) label.style.display = '';
+  if (noteEl){ noteEl.textContent = noteText; if(noteEl.parentElement) noteEl.parentElement.style.display = noteText ? '' : 'none'; }
+
   const maxv = Math.max.apply(null, emp.map(function (e) { return e.val; }));
   const topo = niceCeil(maxv > 0 ? maxv : 1);
   const lines = [[20, topo], [53, topo * 0.75], [85, topo * 0.5], [118, topo * 0.25], [150, 0]];
@@ -7956,11 +7980,47 @@ function _iniUsr(nome){
 }
 function _escUsr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
+// Mapeia o rótulo de setor (UI) para o papel (banco) — usado na nuvem.
+function _setorToPapel(label){
+  var s = String(label||'').toLowerCase();
+  if(s.indexOf('gestor')>=0 || s.indexOf('master')>=0) return 'gestor';
+  if(s.indexOf('dono')>=0 || s.indexOf('propriet')>=0) return 'dono';
+  if(s.indexOf('financ')>=0) return 'financeiro';
+  if(s.indexOf('cadastro')>=0) return 'cadastro';
+  if(s.indexOf('fiscal')>=0) return 'fiscal';
+  return 'gerente';
+}
+
 async function carregarUsuarios(){
   const box = document.getElementById('cfg-users-list');
   if(!box) return;
   box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando usuários…</div>';
-  if(_SHEETS_OFF){ box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Gestão de usuários pela nuvem chega em breve.</div>'; return; }
+  // ── NUVEM (cliente): lista escopada por cliente_id via RPC meus_usuarios ──
+  if(!window.EH_IDEAL){
+    try{
+      const tk = await supaToken(); if(!tk) throw new Error('sem sessão');
+      const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meus_usuarios`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
+        body:'{}'
+      }, 8000);
+      const arr = await res.json().catch(function(){ return null; });
+      if(!res.ok || !Array.isArray(arr)) throw new Error('resposta inválida');
+      const mapped = arr.map(function(u){
+        var lojas = Array.isArray(u.lojas) ? u.lojas : [];
+        var loja = lojas.indexOf('all')>=0 ? 'all' : (lojas[0] || '');
+        return { uid:u.uid, usuario:u.usuario, nome:u.nome, setor:u.papel, loja:loja, lojas:lojas,
+                 telefone:'', email:'', status:(u.ativo===false?'Inativo':'Ativo') };
+      });
+      usuariosCache = mapped;
+      renderUsuarios(mapped);
+    }catch(e){
+      console.error('carregarUsuarios (nuvem):', e);
+      box.innerHTML = '<div class="row-sub" style="padding:6px 2px;color:#A32D2D">Não consegui carregar a lista agora. Toque no atualizar (↻) no topo e abra a Config de novo.</div>';
+    }
+    return;
+  }
+  // ── IDEAL: Apps Script (Sheets), como antes ──
   try{
     const res = await fetch(_urlApps(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -8037,6 +8097,12 @@ function abrirModalUsuario(login){
     (document.getElementById('usr-status')||{}).value='Ativo';
   }
   document.getElementById('modal-usuario').classList.add('open');
+  // Nuvem (cliente): tel/email não são guardados; senha só na criação (troca de senha vem depois).
+  var _cloudU = !window.EH_IDEAL;
+  var _fgTel=document.getElementById('usr-fg-tel'), _fgEmail=document.getElementById('usr-fg-email'), _fgSenha=document.getElementById('usr-fg-senha');
+  if(_fgTel)   _fgTel.style.display   = _cloudU ? 'none' : '';
+  if(_fgEmail) _fgEmail.style.display = _cloudU ? 'none' : '';
+  if(_fgSenha) _fgSenha.style.display = (_cloudU && login) ? 'none' : '';
 }
 
 function fecharModalUsuario(){ document.getElementById('modal-usuario').classList.remove('open'); usrEditando=null; }
@@ -8056,6 +8122,36 @@ async function salvarUsuario(){
   if(!usrEditando && !senha){ toast('⚠ Defina uma senha'); return; }
   const btn = document.getElementById('usr-btn-salvar');
   const txt = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
+  // ── NUVEM (cliente): cria via Edge Function, edita via RPC gestor_usuario_set ──
+  if(!window.EH_IDEAL){
+    const papel = _setorToPapel(setor);
+    const lojasArr = (loja==='all') ? ['all'] : (loja ? [loja] : ['all']);
+    try{
+      const tk = await supaToken(); if(!tk) throw new Error('sem sessão');
+      if(usrEditando){
+        const alvo = usuariosCache.find(function(x){ return String(x.usuario)===String(usrEditando); }) || {};
+        if(!alvo.uid) throw new Error('usuário não localizado');
+        const r = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/gestor_usuario_set`, {
+          method:'POST', headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
+          body: JSON.stringify({ p_uid:alvo.uid, p_nome:nome, p_papel:papel, p_lojas:lojasArr, p_ativo:(status!=='Inativo') })
+        }, 8000);
+        if(!r.ok){ const t=await r.text().catch(function(){return '';}); throw new Error(t||('HTTP '+r.status)); }
+      } else {
+        if(!senha){ toast('⚠ Defina uma senha'); btn.disabled=false; btn.textContent=txt; return; }
+        const r = await fetch(`${SUPA_URL}/functions/v1/gestor-criar-usuario`, {
+          method:'POST', headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
+          body: JSON.stringify({ usuario:login, senha:senha, nome:nome, papel:papel, lojas:lojasArr })
+        });
+        const d = await r.json().catch(function(){ return {ok:false, erro:'resposta inválida'}; });
+        if(!d.ok) throw new Error(d.erro||'falha');
+      }
+      toast('✓ Usuário salvo'); fecharModalUsuario(); carregarUsuarios();
+    }catch(e){
+      console.error('salvarUsuario (nuvem):', e); toast('⚠ '+(e.message||'Não consegui salvar.'));
+    }
+    btn.disabled=false; btn.textContent=txt;
+    return;
+  }
   try{
     const res = await fetch(_urlApps(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -8077,6 +8173,21 @@ async function removerUsuario(login, nome){
     toast('⚠ Você não pode remover o seu próprio usuário'); return;
   }
   appConfirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)', async function(){
+    // ── NUVEM (cliente): desativa via RPC (ativo=false), não apaga ──
+    if(!window.EH_IDEAL){
+      try{
+        const alvo = usuariosCache.find(function(x){ return String(x.usuario)===String(login); }) || {};
+        if(!alvo.uid) throw new Error('usuário não localizado');
+        const tk = await supaToken(); if(!tk) throw new Error('sem sessão');
+        const r = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/gestor_usuario_set`, {
+          method:'POST', headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
+          body: JSON.stringify({ p_uid:alvo.uid, p_ativo:false })
+        }, 8000);
+        if(!r.ok){ const t=await r.text().catch(function(){return '';}); throw new Error(t||('HTTP '+r.status)); }
+        toast('✓ Acesso removido'); carregarUsuarios();
+      }catch(e){ console.error('removerUsuario (nuvem):', e); toast('⚠ '+(e.message||'Não consegui remover.')); }
+      return;
+    }
     try{
       const res = await fetch(_urlApps(), {
         method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
