@@ -113,7 +113,7 @@
         <div id="pontesMini"></div></div>
     </div>
     <div id="t-clientes" class="hide">
-      <div class="card-b"><h2>Clientes <span class="sub" id="cliCount">—</span></h2>
+      <div class="card-b"><h2>Clientes <span class="sub" id="cliCount">—</span> <span style="float:right"><button class="btn amar mini" id="btnNovo">+ Novo cliente</button></span></h2>
         <div id="listaCli"><div class="vazio">Carregando…</div></div></div>
     </div>
     <div id="t-financeiro" class="hide">
@@ -125,6 +125,7 @@
 </div>
 <div id="modal" class="modal-bg hide"><div class="modal">
   <h3 id="mTit">Cliente</h3><div class="mc" id="mId"></div>
+  <button class="btn ghost mini" id="mUser" style="margin-bottom:8px">+ Criar login pra este cliente</button>
   <label>Nome (exibição)</label><input id="m_nome">
   <div class="grid2"><div><label>Loja</label><input id="m_loja"></div>
     <div><label>Modelo</label><input id="m_modelo" placeholder="Supermercado..."></div></div>
@@ -151,6 +152,36 @@
   </div>
   <div class="modal-foot"><button class="btn ghost" id="mCancel">Cancelar</button>
     <button class="btn amar" id="mSalvar">Salvar</button></div>
+</div></div>
+
+<div id="modal-novo" class="modal-bg hide"><div class="modal">
+  <h3>Novo cliente</h3><div class="mc">Cria o cliente e gera o token da Ponte.</div>
+  <label>Nome (exibição)</label><input id="n_nome">
+  <div class="grid2"><div><label>Mensalidade (R$)</label><input id="n_mens" type="number" step="0.01" value="0"></div>
+    <div><label>Dia vencimento</label><input id="n_dia" type="number" min="1" max="28" value="10"></div></div>
+  <div class="grid2"><div><label>Loja</label><input id="n_loja"></div>
+    <div><label>Cidade</label><input id="n_cidade"></div></div>
+  <label>UF</label><input id="n_uf" maxlength="2" style="max-width:120px">
+  <div id="n_result" class="hide" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,196,0,.08)">
+    <div style="font-size:12px;color:var(--mut);margin-bottom:4px">Token da Ponte — copie agora, só aparece desta vez:</div>
+    <div id="n_token" style="font-family:monospace;font-size:12px;word-break:break-all;margin-bottom:8px"></div>
+    <button class="btn ghost mini" id="n_copy">Copiar token</button>
+    <button class="btn amar mini" id="n_user">Criar login deste cliente</button>
+  </div>
+  <div class="modal-foot"><button class="btn ghost" id="nCancel">Fechar</button>
+    <button class="btn amar" id="nCriar">Criar cliente</button></div>
+</div></div>
+
+<div id="modal-user" class="modal-bg hide"><div class="modal">
+  <h3>Novo usuário</h3><div class="mc" id="u_cli">—</div>
+  <div class="grid2"><div><label>Usuário (login)</label><input id="u_user" placeholder="gestor"></div>
+    <div><label>Senha</label><input id="u_pass"></div></div>
+  <label>Nome completo</label><input id="u_nome">
+  <div class="grid2"><div><label>Papel</label><select id="u_papel"><option>gestor</option><option>financeiro</option><option>gerente</option></select></div>
+    <div><label>Lojas (vírgula, ou all)</label><input id="u_lojas" value="all"></div></div>
+  <div id="u_msg" class="mc" style="margin-top:8px"></div>
+  <div class="modal-foot"><button class="btn ghost" id="uCancel">Fechar</button>
+    <button class="btn amar" id="uCriar">Criar login</button></div>
 </div></div>
 <script>
 const SUPA_URL='https://jnupgembzivsiowdkacc.supabase.co';
@@ -313,6 +344,54 @@ $('mSalvar').onclick=async()=>{
   await rpc('admin_modulos_set',{p_id:editId,p_modulos:lerMods()});
   await rpc('admin_branding_set',{p_id:editId,p_cor_principal:$('m_cor1').value,p_cor_destaque:$('m_cor2').value,p_logo_url:($('m_logo').value||'').trim()});
   $('modal').classList.add('hide'); carregar();
+};
+// ── Novo cliente (cria cliente + token) ──
+$('btnNovo').onclick=()=>{
+  ['n_nome','n_loja','n_cidade','n_uf'].forEach(k=>$(k).value=''); $('n_mens').value=0; $('n_dia').value=10;
+  $('n_result').classList.add('hide'); $('nCriar').disabled=false; $('modal-novo').classList.remove('hide');
+};
+$('nCancel').onclick=()=>$('modal-novo').classList.add('hide');
+let novoCliId=null, novoCliNome='';
+$('nCriar').onclick=async()=>{
+  const nome=$('n_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  $('nCriar').disabled=true;
+  try{
+    const r=await rpc('admin_novo_cliente',{p_nome:nome,p_mensalidade:Number($('n_mens').value)||0,p_dia:Number($('n_dia').value)||10,
+      p_loja:$('n_loja').value.trim()||null,p_cidade:$('n_cidade').value.trim()||null,p_uf:$('n_uf').value.trim()||null});
+    const row=Array.isArray(r)?r[0]:r;
+    novoCliId=row.cliente_id; novoCliNome=nome;
+    $('n_token').textContent=row.token; $('n_result').classList.remove('hide');
+    carregar();
+  }catch(e){ alert('Erro ao criar: '+e.message); $('nCriar').disabled=false; }
+};
+$('n_copy').onclick=()=>{ navigator.clipboard.writeText($('n_token').textContent).then(()=>{ $('n_copy').textContent='Copiado!'; setTimeout(()=>$('n_copy').textContent='Copiar token',1500); }); };
+$('n_user').onclick=()=>{ abrirUser(novoCliId, novoCliNome); };
+// botão "criar login" dentro do modal de edição
+$('mUser').onclick=()=>{ abrirUser(editId, $('m_nome').value); };
+// ── Novo usuário (Edge Function admin-criar-usuario, gateada pelo JWT do operador) ──
+let userCliId=null;
+function abrirUser(id,nome){
+  if(!id){ alert('Sem cliente selecionado.'); return; }
+  userCliId=id; $('u_cli').textContent='Cliente: '+(nome||id);
+  $('u_user').value=''; $('u_pass').value=''; $('u_nome').value=''; $('u_papel').value='gestor'; $('u_lojas').value='all'; $('u_msg').textContent='';
+  $('uCriar').disabled=false; $('modal-user').classList.remove('hide');
+}
+$('uCancel').onclick=()=>$('modal-user').classList.add('hide');
+$('uCriar').onclick=async()=>{
+  if(!userCliId){ alert('Sem cliente.'); return; }
+  const usuario=$('u_user').value.trim().toLowerCase(), senha=$('u_pass').value;
+  if(!usuario||!senha){ $('u_msg').textContent='Preencha usuário e senha.'; return; }
+  $('uCriar').disabled=true; $('u_msg').textContent='Criando…';
+  try{
+    const tk=await token();
+    const lojas=$('u_lojas').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const r=await fetch(SUPA_URL+'/functions/v1/admin-criar-usuario',{method:'POST',
+      headers:{'Authorization':'Bearer '+tk,'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({cliente_id:userCliId,usuario,senha,nome:$('u_nome').value.trim(),papel:$('u_papel').value,lojas:lojas.length?lojas:['all']})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok){ $('u_msg').textContent='OK! Login "'+usuario+'" criado. O cliente entra com esse usuário e a senha definida.'; }
+    else{ $('u_msg').textContent='Erro: '+(d.erro||('HTTP '+r.status)); $('uCriar').disabled=false; }
+  }catch(e){ $('u_msg').textContent='Erro: '+e.message; $('uCriar').disabled=false; }
 };
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
