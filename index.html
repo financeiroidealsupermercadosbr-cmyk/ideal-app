@@ -2106,6 +2106,40 @@ function montarCardsLojasConfig(){
     return '<div class="row-card"'+mt+'><div><div class="row-label">'+(l.nome||l.codigo)+'</div><div class="row-sub">'+(on?'Ativa':'Inativa')+'</div></div>'+badge+'</div>';
   }).join('');
 }
+// ── META 3: módulos por cliente ──
+// MODULOS_CLIENTE: null/[] = TODOS os módulos liberados (Ideal e clientes sem restrição).
+// Array preenchido = whitelist; só esses cards do Menu aparecem (gate "duro", vale até pro gestor).
+var MODULOS_CLIENTE = null;
+// Espelho dos demais supaMeu*: chama a RPC meus_modulos() e devolve o array (ou null = todos).
+async function supaMeusModulos(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.access_token) return null;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meus_modulos`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body: '{}'
+    }, 8000);
+    const arr = await res.json().catch(function(){ return null; });
+    if(!res.ok) return null;
+    // RPC retorna table(modulos text[]) => [{modulos:[...]}] ou [{modulos:null}]
+    if(Array.isArray(arr) && arr.length && Array.isArray(arr[0].modulos)) return arr[0].modulos;
+    return null; // sem coluna preenchida => todos liberados
+  } catch(e){ return null; }
+}
+// Esconde no Menu os cards fora do plano do cliente. Idempotente; pode rodar várias vezes.
+function aplicarModulosCliente(){
+  try {
+    var set = (Array.isArray(MODULOS_CLIENTE) && MODULOS_CLIENTE.length) ? MODULOS_CLIENTE : null;
+    document.querySelectorAll('#tab-menu [data-menu]').forEach(function(card){
+      var off = set && set.indexOf(card.getAttribute('data-menu')) < 0;
+      card.classList.toggle('mod-off', !!off);
+      if(off) card.style.display = 'none';
+    });
+    if(typeof _menuRecalcSecoes==='function') _menuRecalcSecoes();
+  } catch(_e){ /* gate é cosmético: nunca derruba o app */ }
+}
 // Injeta a versão (única) no rodapé do login e na Config.
 (function _aplicarVersao_(){
   function set(){
@@ -6527,6 +6561,7 @@ async function fazerLogin() {
   // BRANDING: aplica a marca do cliente (nome/logo) se a nuvem tiver dados. Não bloqueia.
   try { aplicarBranding(await supaMeuBranding()); } catch(_e){ /* marca opcional */ }
   try { aplicarLojas(await supaMeuLojas()); } catch(_e){ /* lojas opcionais */ }
+  try { MODULOS_CLIENTE = await supaMeusModulos(); } catch(_e){ MODULOS_CLIENTE = null; }
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
   document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
@@ -7667,6 +7702,7 @@ function menuFiltrar(q){
   for(var i=0;i<grids.length;i++){
     var g=grids[i], cards=g.querySelectorAll('.qcard'), vis=0;
     for(var j=0;j<cards.length;j++){
+      if(cards[j].classList.contains('mod-off')){ cards[j].style.display='none'; continue; } // META 3: fora do plano
       var el=cards[j].querySelector('.qnm');
       var nm=((el?el.textContent:'')+'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
       var oculto=(ocultar && cards[j].classList.contains('locked'));
@@ -7689,7 +7725,9 @@ function aplicarPermsMenu(){
   const k = _setorKey(userAtual.setor);
   const gestor = (k==='gestor');
   const ocultar = (localStorage.getItem('ideal_menu_ocultar')==='1');
+  aplicarModulosCliente(); // META 3: esconde os módulos fora do plano do cliente
   document.querySelectorAll('#tab-menu [data-menu]').forEach(function(card){
+    if(card.classList.contains('mod-off')){ card.style.display='none'; return; } // fora do plano: nem aparece
     const item = card.getAttribute('data-menu');
     const bloqueado = (!gestor && !_menuItemPermitido(k, item));
     const ehSoon = card.classList.contains('soon'); // "em breve" já fica apagado sozinho
