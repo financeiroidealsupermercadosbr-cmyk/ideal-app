@@ -888,9 +888,11 @@ body:has(#s-login.active) .app{max-width:none}
       <div class="row-card" style="cursor:pointer" onclick="abrirPermsMenu()"><div><div class="row-label">Permissões do Menu</div><div class="row-sub">Escolher, por setor, o que cada um pode abrir no Menu</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-building-store"></i> Lojas</div>
+      <div id="cfg-lojas-list">
       <div class="row-card"><div><div class="row-label">Loja 2 — Melhor QS8</div><div class="row-sub">Ativa · Google Sheets conectado</div></div><span class="badge ok">OK</span></div>
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Loja 1 — Areal QS11</div><div class="row-sub">Em implantação</div></div><span class="badge warn">Em breve</span></div>
       <div class="row-card" style="margin-top:6px"><div><div class="row-label">Ideal Bolos — Restaurante</div><div class="row-sub">Restaurante · em implantação</div></div><span class="badge warn">Em breve</span></div>
+      </div>
       <div class="divider"></div>
       <div class="section-label"><i class="ti ti-info-circle"></i> Versão</div>
       <div class="row-card"><div class="row-label">App versão</div><div class="row-sub" id="ver-config">v…</div></div>
@@ -1987,7 +1989,9 @@ window.BRAND = window.BRAND || {
   logo_url: '',
   cor_principal: '',
   cor_destaque: '',
-  lojas: { l1:'Loja 1 — Areal QS11', l2:'Loja 2 — Melhor QS8', bolos:'Ideal Bolos — Restaurante' }
+  lojas: { l1:'Loja 1 — Areal QS11', l2:'Loja 2 — Melhor QS8', bolos:'Ideal Bolos — Restaurante' },
+  // Lista ordenada (código+nome+ativo). Default = Ideal (fallback). Populada pela nuvem em aplicarLojas().
+  lojasArr: [ {codigo:'l1',nome:'Loja 1 — Areal QS11',ativo:true}, {codigo:'l2',nome:'Loja 2 — Melhor QS8',ativo:true}, {codigo:'bolos',nome:'Ideal Bolos — Restaurante',ativo:true} ]
 };
 // Resolvedor ÚNICO de nome de loja. Substitui os ~9 ternários espalhados.
 // allLabel: o que mostrar p/ 'all'/consolidado. unknownLabel: p/ código desconhecido.
@@ -2049,6 +2053,58 @@ function aplicarBranding(b){
     if(b.cor_destaque)  window.BRAND.cor_destaque  = b.cor_destaque;
     aplicarCores(window.BRAND.cor_principal, window.BRAND.cor_destaque);
   } catch(_e){ /* marca é cosmética: nunca derruba o login */ }
+}
+// ── META 2: lojas pela nuvem ──
+// Espelho do supaMeuBranding: chama a RPC meu_lojas() e devolve a lista ordenada.
+async function supaMeuLojas(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.access_token) return null;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meu_lojas`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body: '{}'
+    }, 8000);
+    const arr = await res.json().catch(function(){ return null; });
+    if(!res.ok || !Array.isArray(arr) || !arr.length) return null;
+    return arr; // [{codigo,nome,ativo}]
+  } catch(e){ return null; }
+}
+// Aplica as lojas do cliente: atualiza BRAND.lojasArr + BRAND.lojas (mapa que o lojaNome lê)
+// e re-renderiza o select de usuário e os cards de status. Tudo opcional; Ideal nunca quebra.
+function aplicarLojas(arr){
+  try {
+    if(Array.isArray(arr) && arr.length){
+      window.BRAND.lojasArr = arr;
+      var mapa = {};
+      arr.forEach(function(l){ if(l && l.codigo) mapa[l.codigo] = l.nome || l.codigo; });
+      window.BRAND.lojas = mapa; // lojaNome() passa a ler os nomes da nuvem
+    }
+    montarSelectLojas();
+    montarCardsLojasConfig();
+  } catch(_e){ /* lojas são cosméticas no front: nunca derrubam o login */ }
+}
+// Monta as opções do <select id="usr-loja"> a partir de BRAND.lojasArr (+ "Todas as lojas").
+function montarSelectLojas(){
+  var sel = document.getElementById('usr-loja'); if(!sel) return;
+  var atual = sel.value;
+  var arr = (window.BRAND && window.BRAND.lojasArr) || [];
+  var html = arr.map(function(l){ return '<option value="'+l.codigo+'">'+ (l.nome||l.codigo) +'</option>'; }).join('');
+  html += '<option value="all">Todas as lojas</option>';
+  sel.innerHTML = html;
+  if(atual){ sel.value = atual; } // preserva a seleção se ainda existir
+}
+// Monta os cards de status de loja na Config a partir de BRAND.lojasArr (status = ativo).
+function montarCardsLojasConfig(){
+  var box = document.getElementById('cfg-lojas-list'); if(!box) return;
+  var arr = (window.BRAND && window.BRAND.lojasArr) || [];
+  box.innerHTML = arr.map(function(l,i){
+    var on = (l.ativo!==false);
+    var mt = i ? ' style="margin-top:6px"' : '';
+    var badge = on ? '<span class="badge ok">Ativa</span>' : '<span class="badge warn">Inativa</span>';
+    return '<div class="row-card"'+mt+'><div><div class="row-label">'+(l.nome||l.codigo)+'</div><div class="row-sub">'+(on?'Ativa':'Inativa')+'</div></div>'+badge+'</div>';
+  }).join('');
 }
 // Injeta a versão (única) no rodapé do login e na Config.
 (function _aplicarVersao_(){
@@ -6470,6 +6526,7 @@ async function fazerLogin() {
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
   // BRANDING: aplica a marca do cliente (nome/logo) se a nuvem tiver dados. Não bloqueia.
   try { aplicarBranding(await supaMeuBranding()); } catch(_e){ /* marca opcional */ }
+  try { aplicarLojas(await supaMeuLojas()); } catch(_e){ /* lojas opcionais */ }
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   const _idxLoja = {l1:0, l2:1, bolos:2, all:3}[l];
   document.querySelectorAll('.loja-btn').forEach((b,i)=>b.classList.toggle('active', i===_idxLoja));
@@ -7365,7 +7422,7 @@ function filtrar() {
 
   if(!items.length){
     if(!lojaTemDados()){
-      lista.innerHTML=_vazio({ico:'ti-building-store',tit:'Sem Contas a Pagar nesta loja',sub:'O Contas a Pagar só tem dados da Loja 2 — Melhor QS8. Troque a loja no seletor de cima.'});
+      lista.innerHTML=_vazio({ico:'ti-building-store',tit:'Sem Contas a Pagar nesta loja',sub:'Esta loja ainda não tem Contas a Pagar conectado. Troque a loja no seletor de cima.'});
     } else {
       lista.innerHTML=_vazio({ico:'ti-file-invoice',tit:'Nenhum boleto encontrado',sub:'Ajuste os filtros acima — ou aguarde a próxima atualização da ponte.'});
     }
@@ -7773,7 +7830,7 @@ async function salvarPermsMenu(){
 // ══════════════════════════════════════════════════════
 function abrirMeuPerfil(){
   if(!userAtual) return;
-  const lj = LOJA_NOMES[userAtual.loja] || userAtual.loja || '';
+  const lj = lojaNome(userAtual.loja, 'Todas', userAtual.loja);
   (document.getElementById('perfil-setor-loja')||{}).textContent = (userAtual.setor||'—') + (lj?(' · '+lj):'');
   (document.getElementById('perfil-login')||{}).textContent = 'Usuário: ' + (userAtual.usuario||'');
   (document.getElementById('perfil-nome')||{}).value = userAtual.nome||'';
@@ -7815,7 +7872,7 @@ function _urlApps(){ return APPS_SCRIPT_URL || 'https://script.google.com/macros
 
 let usuariosCache = [];
 let usrEditando = null;
-const LOJA_NOMES = {all:'Todas', l2:'Loja 2', l1:'Loja 1', bolos:'Ideal Bolos'};
+// LOJA_NOMES removido: nomes de loja agora saem do resolvedor único lojaNome() (BRAND.lojas, nuvem).
 
 function _iniUsr(nome){
   const p = String(nome||'').trim().split(/\s+/);
@@ -7848,7 +7905,7 @@ function renderUsuarios(arr){
   const ativos = (arr||[]).filter(u=>String(u.status||'').toLowerCase()!=='inativo');
   if(!ativos.length){ box.innerHTML = _vazio({ico:'ti-users',tit:'Nenhum usuário ainda',sub:'Cadastre o primeiro usuário pra liberar o acesso.'}); return; }
   box.innerHTML = ativos.map(function(u){
-    const lj = LOJA_NOMES[u.loja] || u.loja || '';
+    const lj = lojaNome(u.loja, 'Todas', u.loja);
     const sub = _escUsr(u.setor||'') + (lj?(' · '+_escUsr(lj)):'');
     return '<div class="row-card" style="gap:8px">'
       + '<div style="width:34px;height:34px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0">'+_escUsr(_iniUsr(u.nome||u.usuario))+'</div>'
