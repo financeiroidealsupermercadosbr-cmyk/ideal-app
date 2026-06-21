@@ -7051,6 +7051,8 @@ async function carregarSheets() {
     const dataMostrar = dataSync || dataBanco;
     if(dataMostrar){
       setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Atualizado em ${dataMostrar} às ${horaMostrar}`);
+    } else if(!window.EH_IDEAL){
+      setSyncBar('offline',`<i class="ti ti-cloud"></i>Sem dados ainda`);
     } else {
       setSyncBar('ok',`<i class="ti ti-cloud-check"></i>Última atualização ${fmtSync(ult)} <span style="opacity:.65">(a cada 1h)</span>`);
     }
@@ -7636,7 +7638,7 @@ function aplicarPermissoes(usr, l){
   showTab(alvo[0], document.getElementById(alvo[1]));
   // seletor de loja: aparece pra qualquer usuário com acesso a todas as lojas (mesmo quem só vê o Menu),
   // pra poder trocar de loja e lançar em qualquer uma. Antes exigia Painel/DRE — agora não.
-  const mostrarSel = usr.loja==='all';
+  const mostrarSel = usr.loja==='all' && (((window.BRAND&&window.BRAND.lojasArr)||[]).length>0);
   const sel = document.getElementById('loja-sel');
   if(sel) sel.style.display = mostrarSel ? 'flex' : 'none';
   aplicarPermsMenu();
