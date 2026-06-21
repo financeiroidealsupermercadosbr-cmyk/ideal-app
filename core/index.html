@@ -136,6 +136,14 @@
     <div><label>&nbsp;</label><div style="font-size:12px;color:var(--mut);padding-top:12px" id="m_ponte">—</div></div></div>
   <label>Observações</label><input id="m_obs">
   <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:2px">Marca (aparece no app do cliente)</div>
+    <div class="mc" style="margin-bottom:8px">Cores e logo entram no app do cliente no próximo login dele.</div>
+    <div class="grid2">
+      <div><label>Cor principal</label><input id="m_cor1" type="color" style="height:38px;padding:2px;width:100%;cursor:pointer"></div>
+      <div><label>Cor destaque</label><input id="m_cor2" type="color" style="height:38px;padding:2px;width:100%;cursor:pointer"></div></div>
+    <label>Logo (URL da imagem)</label><input id="m_logo" placeholder="https://...">
+  </div>
+  <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px">
       <input type="checkbox" id="m_mod_all"> Liberar todos os módulos (sem restrição)</label>
     <div class="mc" style="margin:4px 0 8px">Desmarque pra escolher quais telas o cliente vê no Menu.</div>
@@ -291,6 +299,7 @@ function abrirModal(id){
   $('m_cidade').value=c.cidade||''; $('m_uf').value=c.uf||''; $('m_mens').value=c.mensalidade||0;
   $('m_dia').value=c.dia_vencimento||10; $('m_ativo').value=String(c.ativo); $('m_obs').value=c.obs||'';
   $('m_ponte').textContent='Ponte: '+(ROT[c.ponte_status]||c.ponte_status||'—');
+  $('m_cor1').value=c.cor_principal||'#16267A'; $('m_cor2').value=c.cor_destaque||'#FFC400'; $('m_logo').value=c.logo_url||'';
   renderMods(c.modulos); // estado provisório (caso admin_clientes já traga modulos)
   rpc('admin_modulos_get',{p_id:id}).then(function(m){ renderMods(m); }).catch(function(){ /* mantém o provisório */ });
   $('modal').classList.remove('hide');
@@ -302,6 +311,7 @@ $('mSalvar').onclick=async()=>{
     p_mensalidade:Number($('m_mens').value)||0,p_dia:Number($('m_dia').value)||10,
     p_ativo:$('m_ativo').value==='true',p_obs:$('m_obs').value});
   await rpc('admin_modulos_set',{p_id:editId,p_modulos:lerMods()});
+  await rpc('admin_branding_set',{p_id:editId,p_cor_principal:$('m_cor1').value,p_cor_destaque:$('m_cor2').value,p_logo_url:($('m_logo').value||'').trim()});
   $('modal').classList.add('hide'); carregar();
 };
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
