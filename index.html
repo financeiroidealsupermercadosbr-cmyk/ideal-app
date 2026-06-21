@@ -6291,6 +6291,27 @@ async function _supaPaged(path){
   return all;
 }
 
+// LEVA 5: le o perfil do usuario logado da public.usuarios (RPC meu_perfil()).
+// Mapeia papel->nivel e lojas[]->loja ('all' ou a primeira loja). null se falhar.
+async function supaMeuPerfil(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.access_token) return null;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meu_perfil`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body: '{}'
+    }, 8000);
+    const arr = await res.json().catch(function(){ return null; });
+    if(!res.ok || !Array.isArray(arr) || !arr.length) return null;
+    const r = arr[0];
+    const lojas = Array.isArray(r.lojas) ? r.lojas : [];
+    const loja = lojas.indexOf('all')>=0 ? 'all' : (lojas[0] || 'l2');
+    return { nome:r.nome, nivel:r.papel, loja:loja, ativo:r.ativo };
+  } catch(e){ return null; }
+}
+
 async function fazerLogin() {
   const u   = document.getElementById('login-user').value.trim().toLowerCase();
   const p   = document.getElementById('login-pass').value;
@@ -6301,32 +6322,49 @@ async function fazerLogin() {
   const btnHTML = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
   err.style.display='none';
-  // O login é conferido pela planilha (Apps Script). A senha não fica mais dentro do app.
+  // LEVA 5: tenta o Supabase primeiro (cliente novo nao tem Sheets).
+  // Se nao montar perfil pela nuvem, cai no login da planilha (Grupo Ideal).
   let usr;
+  let _supaUsr = null;
   try {
-    const urlLogin = APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
-    const res = await fetch(urlLogin, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({acao:'login', usuario:u, senha:p, sheetId:SHEET_ID})
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    if(!data.ok){
-      if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-      err.style.display='flex'; etx.textContent = data.erro || 'Usuário ou senha incorretos.'; return;
+    if (await supaLogin(u, p)) {
+      const perfil = await supaMeuPerfil();
+      if (perfil && perfil.ativo !== false && perfil.nivel) {
+        _supaUsr = { nome:(perfil.nome||u), nivel:perfil.nivel, loja:perfil.loja, setor:'', usuario:u, telefone:'', email:_supaEmail(u) };
+        console.info('[supa] perfil pela nuvem:', perfil.nivel, perfil.loja);
+      }
     }
-    if(!data.nome || !data.nivel){
+  } catch(_e){ _supaUsr = null; }
+
+  if (_supaUsr) {
+    usr = _supaUsr;
+  } else {
+    // FALLBACK: login pela planilha (Apps Script). A senha nao fica no app.
+    try {
+      const urlLogin = APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+      const res = await fetch(urlLogin, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({acao:'login', usuario:u, senha:p, sheetId:SHEET_ID})
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      if(!data.ok){
+        if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
+        err.style.display='flex'; etx.textContent = data.erro || 'Usuário ou senha incorretos.'; return;
+      }
+      if(!data.nome || !data.nivel){
+        if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
+        err.style.display='flex'; etx.textContent = 'Não consegui confirmar seu acesso agora. Tente de novo em instantes.'; return;
+      }
+      usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u, telefone:data.telefone||'', email:data.email||'' };
+      // Login no Supabase POR TRÁS (pega o JWT pras telas sensíveis). Não bloqueia: se falhar, segue no Sheets.
+      try { await supaLogin(u, p); } catch(_e){ /* nuvem opcional nesta fase */ }
+    } catch(e){
+      console.error('Falha no login:', e);
       if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-      err.style.display='flex'; etx.textContent = 'Não consegui confirmar seu acesso agora. Tente de novo em instantes.'; return;
+      err.style.display='flex'; etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; return;
     }
-    usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u, telefone:data.telefone||'', email:data.email||'' };
-    // Login no Supabase POR TRÁS (pega o JWT pras telas sensíveis). Não bloqueia: se falhar, segue no Sheets.
-    try { await supaLogin(u, p); } catch(_e){ /* nuvem opcional nesta fase */ }
-  } catch(e){
-    console.error('Falha no login:', e);
-    if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-    err.style.display='flex'; etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; return;
   }
   if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
   const l = usr.loja || 'l2';   // loja vem do cadastro do usuário; 'all' = master => Consolidado
