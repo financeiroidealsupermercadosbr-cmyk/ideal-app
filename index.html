@@ -13,12 +13,18 @@
 <link rel="apple-touch-icon" href="icon-192-3.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
+:root{
+  --azul:#16267A;
+  --azul-mid:#1B3A9E;
+  --amarelo:#FFC400;
+  --azul-rgb:22,38,122;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-height:100vh}
 .app{max-width:380px;width:100%;font-family:Arial,sans-serif;padding-bottom:0}
 .screen{display:none}.screen.active{display:block}
 
-.splash{background:#1B3A9E;min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.splash{background:var(--azul-mid);min-height:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
 .splash-logo{width:72px;height:72px;background:rgba(255,255,255,0.2);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
 .splash-logo i{font-size:36px;color:#fff}
 .splash-title{font-size:22px;font-weight:500;color:#fff;margin-bottom:6px}
@@ -28,26 +34,26 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 
 .login-wrap{background:#fff;border-radius:16px;padding:24px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
 .login-header{text-align:center;margin-bottom:28px}
-.login-logo{width:52px;height:52px;background:#1B3A9E;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.login-logo{width:52px;height:52px;background:var(--azul-mid);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
 .login-logo i{font-size:26px;color:#fff}
 .login-title{font-size:18px;font-weight:500;color:#1a1a1a}
 .login-sub{font-size:13px;color:#888;margin-top:4px}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:12px;color:#666;margin-bottom:5px}
 .field input,.field select{width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:14px;font-family:Arial,sans-serif}
-.btn-login{width:100%;padding:12px;background:#1B3A9E;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif}
+.btn-login{width:100%;padding:12px;background:var(--azul-mid);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif}
 .login-error{background:#FCEBEB;color:#A32D2D;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px;display:none;align-items:center;gap:6px}
 
 .app-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
 #s-app .app-wrap{min-height:calc(100vh - 40px);display:flex;flex-direction:column;padding-bottom:60px}
-.header{background:#1B3A9E;border-bottom:3px solid #FFC400;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.header{background:var(--azul-mid);border-bottom:3px solid var(--amarelo);padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .header-left{display:flex;align-items:center;gap:10px}
-.header-icon{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}.header-icon .hi-text{color:#1B3A9E;font-size:11.5px;font-weight:600;font-style:italic;letter-spacing:-0.4px;line-height:1}
+.header-icon{width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}.header-icon .hi-text{color:var(--azul-mid);font-size:11.5px;font-weight:600;font-style:italic;letter-spacing:-0.4px;line-height:1}
 .pay-today{background:#fff;border:1px solid rgba(226,30,30,0.25);border-radius:12px;padding:13px 14px;display:flex;align-items:center;gap:11px;margin-bottom:10px}
 .pay-today .pt-ico{width:38px;height:38px;border-radius:10px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .pay-today .pt-ico i{font-size:20px;color:#E21E1E}
 .pay-today .pt-mid{flex:1;min-width:0}
-.pay-today .pt-ttl{font-size:13px;font-weight:600;color:#16267A;line-height:1.2}
+.pay-today .pt-ttl{font-size:13px;font-weight:600;color:var(--azul);line-height:1.2}
 .pay-today .pt-sub{font-size:11.5px;color:#888780;margin-top:2px}
 .pay-today .pt-val{font-size:17px;font-weight:700;color:#E21E1E;flex-shrink:0}
 .pay-7d{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
@@ -55,32 +61,32 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .pay-7d .p7-val{font-size:15px;font-weight:600;color:#BA7517}
 .verlink{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 2px 2px;cursor:pointer;color:#185FA5;font-size:13px;font-weight:500}
 .verlink i{font-size:16px}
-.cart-head{background:#1B3A9E;border-bottom:3px solid #FFC400;padding:13px 14px;display:flex;align-items:center;gap:10px;margin:-14px -14px 14px}
+.cart-head{background:var(--azul-mid);border-bottom:3px solid var(--amarelo);padding:13px 14px;display:flex;align-items:center;gap:10px;margin:-14px -14px 14px}
 .cart-head i{color:#fff;font-size:19px;cursor:pointer}
 .cart-head .ch-t{flex:1;color:#fff;font-size:14px;font-weight:600}
-.cart-total{background:#1B3A9E;border-radius:12px;padding:14px;margin-bottom:12px}
+.cart-total{background:var(--azul-mid);border-radius:12px;padding:14px;margin-bottom:12px}
 .cart-total .ct-lab{font-size:12px;color:#B5D4F4}
 .cart-total .ct-val{font-size:24px;font-weight:700;color:#fff;margin-top:3px}
-.cart-list{background:#fff;border-radius:12px;border:1px solid rgba(22,38,122,0.12);padding:2px 13px 6px}
+.cart-list{background:#fff;border-radius:12px;border:1px solid rgba(var(--azul-rgb),0.12);padding:2px 13px 6px}
 .cart-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(0,0,0,0.07)}
 .cart-row:first-child{border-top:none}
-.cart-row i{font-size:20px;color:#1B3A9E}
+.cart-row i{font-size:20px;color:var(--azul-mid)}
 .cart-row .cr-mid{flex:1}
-.cart-row .cr-nm{font-size:13px;color:#16267A;font-weight:600}
+.cart-row .cr-nm{font-size:13px;color:var(--azul);font-weight:600}
 .cart-row .cr-val{font-size:14px;font-weight:600}
 .cart-tag{font-size:11px;background:#E6F1FB;color:#185FA5;padding:1px 7px;border-radius:6px;display:inline-block;margin-top:2px}
 .cart-tag.hoje{background:#E1F5EE;color:#0F6E56}
 .cart-extrato{display:flex;align-items:center;gap:7px;background:#E6F1FB;color:#185FA5;border-radius:8px;padding:8px 11px;font-size:11px;margin-bottom:11px}
 .cart-extrato i{font-size:15px;margin-right:0}
-.cart-loja{display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:10px 12px;border:1px solid rgba(22,38,122,0.12);margin-bottom:12px}
-.cart-loja .cl-nm{flex:1;font-size:13px;color:#16267A;font-weight:600}
-.cart-loja i{color:#1B3A9E;font-size:19px}
-.cart-agenda{background:#fff;border-radius:12px;border:1px solid rgba(22,38,122,0.12);padding:12px 14px;margin-top:12px}
+.cart-loja{display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:10px 12px;border:1px solid rgba(var(--azul-rgb),0.12);margin-bottom:12px}
+.cart-loja .cl-nm{flex:1;font-size:13px;color:var(--azul);font-weight:600}
+.cart-loja i{color:var(--azul-mid);font-size:19px}
+.cart-agenda{background:#fff;border-radius:12px;border:1px solid rgba(var(--azul-rgb),0.12);padding:12px 14px;margin-top:12px}
 .cart-agenda .ag-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0}
 .cart-agenda .ag-row+.ag-row{border-top:1px solid rgba(0,0,0,0.06)}
-.cart-agenda .ag-d{font-size:12px;color:#16267A;font-weight:600}
+.cart-agenda .ag-d{font-size:12px;color:var(--azul);font-weight:600}
 .cart-agenda .ag-s{font-size:11px;color:#888780;margin-top:1px}
-.cart-agenda .ag-v{font-size:13px;font-weight:600;color:#16267A}
+.cart-agenda .ag-v{font-size:13px;font-weight:600;color:var(--azul)}
 .cart-agenda .ag-rule{font-size:11px;color:#854F0B;background:#FAEEDA;padding:1px 6px;border-radius:6px;display:inline-block;margin-top:2px}
 .header-icon i{font-size:18px;color:#fff}
 .header-store{font-size:14px;font-weight:500;color:#fff}
@@ -92,23 +98,23 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .sync-bar i{font-size:13px;vertical-align:-2px;margin-right:4px}
 .sync-bar.ok{background:#E6F1FB;color:#185FA5}
 .sync-bar.erro{background:#FEF3F2;color:#A32D2D}
-.sync-bar.carregando{background:#EEF2FC;color:#1B3A9E}
+.sync-bar.carregando{background:#EEF2FC;color:var(--azul-mid)}
 .sync-bar.offline{background:#f8f8f8;color:#888}
-.sync-bar button{flex:0 0 auto;font-size:14px;line-height:1;padding:5px 8px;background:#1B3A9E;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.sync-bar button{flex:0 0 auto;font-size:14px;line-height:1;padding:5px 8px;background:var(--azul-mid);color:#fff;border:none;border-radius:6px;cursor:pointer}
 .sync-bar button i{margin:0;font-size:14px;vertical-align:-2px}
 
 .loja-sel{display:flex;gap:8px;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #eee}
 .loja-btn{flex:1;padding:8px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#666;font-size:12px;cursor:pointer;text-align:center;font-family:Arial,sans-serif}
-.loja-btn.active{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.loja-btn.active{background:var(--azul-mid);color:#fff;border-color:var(--azul-mid)}
 
 .nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:380px;display:flex;justify-content:space-around;background:#fff;border-top:1px solid rgba(0,0,0,0.10);padding:9px 4px 11px;z-index:60}
 .nav-btn{flex:1;padding:0;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:#9aa0b0;font-size:11px;font-family:Arial,sans-serif}
-.nav-btn.active{color:#1B3A9E;font-weight:600}
+.nav-btn.active{color:var(--azul-mid);font-weight:600}
 .nav-btn i{font-size:21px}
 .qgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 6px 4px}
-.qcard{position:relative;background:#fff;border-radius:12px;padding:22px 3px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(22,38,122,0.10);cursor:pointer}
-.qcard i{font-size:28px;color:#1B3A9E}
-.qcard .qnm{font-size:11.5px;color:#16267A;text-align:center;line-height:1.2;font-weight:600}
+.qcard{position:relative;background:#fff;border-radius:12px;padding:22px 3px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid rgba(var(--azul-rgb),0.10);cursor:pointer}
+.qcard i{font-size:28px;color:var(--azul-mid)}
+.qcard .qnm{font-size:11.5px;color:var(--azul);text-align:center;line-height:1.2;font-weight:600}
 .qcard .qsoon{font-size:10px;color:#888780}
 .qcard.soon{opacity:0.55;cursor:default}
 .qcard.locked{opacity:0.5;cursor:default;pointer-events:none}
@@ -122,10 +128,10 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .menu-obar .mob-sw.off::after{left:2px}
 .lanc-tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #e7e7e0}
 .lanc-tab{padding:9px 16px;font-size:13.5px;font-weight:600;color:#888780;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:Arial,sans-serif}
-.lanc-tab.on{color:#16267A;border-bottom-color:#16267A}
+.lanc-tab.on{color:var(--azul);border-bottom-color:var(--azul)}
 .sd-seg{display:flex;gap:6px;background:#f1f3f7;border-radius:10px;padding:4px;margin-bottom:12px}
 .sd-seg-btn{flex:1;text-align:center;padding:7px;border-radius:7px;font-size:12.5px;font-weight:600;color:#6a7686;cursor:pointer;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;gap:5px}
-.sd-seg-btn.on{background:#fff;color:#16267A;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.sd-seg-btn.on{background:#fff;color:var(--azul);box-shadow:0 1px 3px rgba(0,0,0,.1)}
 .sd-line{display:flex;align-items:center;justify-content:space-between;padding:11px 2px;border-bottom:1px solid #f0efe9}
 .sd-line .sd-nm{font-size:13.5px;color:#1a1a1a}
 .sd-line .sd-vl{font-size:13.5px;font-weight:600;color:#A32D2D;white-space:nowrap;display:flex;align-items:center;gap:7px}
@@ -141,15 +147,15 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .sd-tag.bol{background:#E6F1FB;color:#0C447C}
 .sd-tag.aj{background:#FAEEDA;color:#854F0B}
 .qsearchwrap{padding:8px 6px 4px}
-.qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(22,38,122,0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:#16267A;background:#fff;outline:none}
+.qsearch{width:100%;box-sizing:border-box;border:1px solid rgba(var(--azul-rgb),0.18);border-radius:12px;padding:11px 14px;font-size:14px;color:var(--azul);background:#fff;outline:none}
 .qsearch::placeholder{color:#9aa0b4}
-.qsearch:focus{border-color:#1B3A9E}
+.qsearch:focus{border-color:var(--azul-mid)}
 .qsec{display:flex;align-items:center;gap:9px;padding:11px 8px 4px}
 .qsec .qbar{width:4px;height:16px;border-radius:2px}
 .qsec b{font-size:12.5px;font-weight:700;letter-spacing:.02em}
 .qsec em{font-size:11px;color:#9aa0b4;font-style:normal;font-weight:600}
 .qcard{transition:transform .12s,border-color .12s;animation:qrise .38s ease both}
-.qcard:hover{border-color:rgba(22,38,122,0.25);transform:translateY(-2px)}
+.qcard:hover{border-color:rgba(var(--azul-rgb),0.25);transform:translateY(-2px)}
 .qcard:active{transform:scale(.96)}
 @keyframes qrise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .qgrid .qcard:nth-child(2){animation-delay:.03s}
@@ -166,32 +172,32 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .qsec-op .qbar{background:#D85A30}.qsec-op b{color:#993C1D}
 @keyframes skelSh{0%{background-position:-160px 0}100%{background-position:calc(160px + 100%) 0}}
 .skel{background:#eceef3;background-image:linear-gradient(90deg,#eceef3 0,#f6f7fa 70px,#eceef3 140px);background-size:160px 100%;border-radius:7px;animation:skelSh 1.15s ease-in-out infinite}
-.skel-card{border:1px solid rgba(22,38,122,0.07);border-radius:10px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.skel-card{border:1px solid rgba(var(--azul-rgb),0.07);border-radius:10px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
 .skel-dot{width:34px;height:34px;border-radius:50%;flex-shrink:0}
 .skel-l1{height:12px;width:58%;margin-bottom:8px}
 .skel-l2{height:10px;width:38%}
 .vazio{text-align:center;padding:40px 18px;animation:qrise .42s ease both}
 /* D-Polimento P2.3: ilustração simples nos estados vazios — halo + badge atrás do ícone (vale p/ todos os usos do _vazio) */
-.vazio>i{font-size:34px;color:#16267A;width:84px;height:84px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 14px;background:radial-gradient(circle at 50% 38%,#EEF1FB,#E2E7F5);box-shadow:inset 0 0 0 1px rgba(22,38,122,.07),0 0 0 8px rgba(22,38,122,.035),0 8px 18px rgba(22,38,122,.08)}
-.vazio .vt{font-size:14px;font-weight:600;color:#16267A;margin-bottom:4px}
+.vazio>i{font-size:34px;color:var(--azul);width:84px;height:84px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 14px;background:radial-gradient(circle at 50% 38%,#EEF1FB,#E2E7F5);box-shadow:inset 0 0 0 1px rgba(var(--azul-rgb),.07),0 0 0 8px rgba(var(--azul-rgb),.035),0 8px 18px rgba(var(--azul-rgb),.08)}
+.vazio .vt{font-size:14px;font-weight:600;color:var(--azul);margin-bottom:4px}
 .vazio .vs{font-size:12px;color:#888780;line-height:1.5;margin-bottom:13px}
-.vazio button{background:#16267A;color:#fff;border:none;border-radius:9px;padding:9px 17px;font-size:12.5px;font-weight:600;cursor:pointer}
+.vazio button{background:var(--azul);color:#fff;border:none;border-radius:9px;padding:9px 17px;font-size:12.5px;font-weight:600;cursor:pointer}
 .dre-aj-edit{color:#888780;font-size:14px;cursor:pointer;margin-left:6px;vertical-align:-1px}
 .dre-tag-aj{display:inline-block;background:#FAEEDA;color:#854F0B;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;margin-left:5px;vertical-align:1px}
-.dre-soon{background:#fff;border:1px solid rgba(22,38,122,0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
-.dre-soon i{font-size:34px;color:#1B3A9E;display:block;margin-bottom:10px}
+.dre-soon{background:#fff;border:1px solid rgba(var(--azul-rgb),0.12);border-radius:12px;padding:30px 18px;margin:14px 12px;text-align:center;color:#5F5E5A;font-size:13px;line-height:1.6}
+.dre-soon i{font-size:34px;color:var(--azul-mid);display:block;margin-bottom:10px}
 
 /* ===== DRE (fatia 1) ===== */
 .dre-lojas{display:flex;gap:6px;margin-bottom:10px}
-.dre-loja{flex:1;text-align:center;font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:8px;padding:7px 0;cursor:pointer;font-weight:500}
-.dre-loja.on{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
-.dre-per{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(22,38,122,0.15);border-radius:10px;padding:10px 11px;margin-bottom:8px;cursor:pointer}
-.dre-per i{color:#1B3A9E}.dre-per .dp-lbl{flex:1;font-size:12.5px;color:#16267A;font-weight:500}.dre-per .dp-hint{font-size:10px;color:#888780}
-.dre-perpanel{display:none;background:#fff;border:1px solid rgba(22,38,122,0.15);border-radius:10px;padding:10px;margin-bottom:8px}
+.dre-loja{flex:1;text-align:center;font-size:11px;color:var(--azul);border:1px solid rgba(var(--azul-rgb),0.25);border-radius:8px;padding:7px 0;cursor:pointer;font-weight:500}
+.dre-loja.on{background:var(--azul-mid);color:#fff;border-color:var(--azul-mid)}
+.dre-per{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(var(--azul-rgb),0.15);border-radius:10px;padding:10px 11px;margin-bottom:8px;cursor:pointer}
+.dre-per i{color:var(--azul-mid)}.dre-per .dp-lbl{flex:1;font-size:12.5px;color:var(--azul);font-weight:500}.dre-per .dp-hint{font-size:10px;color:#888780}
+.dre-perpanel{display:none;background:#fff;border:1px solid rgba(var(--azul-rgb),0.15);border-radius:10px;padding:10px;margin-bottom:8px}
 .dre-perpanel.open{display:block}
 .dre-chiprow{display:flex;flex-wrap:wrap;gap:6px}
-.dre-chip{font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:20px;padding:6px 12px;cursor:pointer}
-.dre-chip.on{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.dre-chip{font-size:11px;color:var(--azul);border:1px solid rgba(var(--azul-rgb),0.25);border-radius:20px;padding:6px 12px;cursor:pointer}
+.dre-chip.on{background:var(--azul-mid);color:#fff;border-color:var(--azul-mid)}
 .dre-toggle{display:flex;gap:6px;margin-bottom:12px}
 .dre-tg{flex:1;text-align:center;font-size:11px;color:#185FA5;background:#E6F1FB;border-radius:8px;padding:7px 0;cursor:pointer}
 .dre-tg.on{color:#fff;background:#185FA5}
@@ -199,69 +205,69 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .dre-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:0.5px solid #eee}
 .dre-row .dr-lbl{font-size:11px;color:#5F5E5A}
 .dre-row .dr-sub{font-size:9.5px;color:#888780;margin-top:1px}
-.dre-row .dr-val{font-size:12px;color:#16267A;text-align:right}
+.dre-row .dr-val{font-size:12px;color:var(--azul);text-align:right}
 .dre-row.head{background:#E1F5EE;border-radius:10px;border-bottom:none;margin-bottom:4px;padding:11px 12px}
 .dre-row.head .dr-lbl,.dre-row.head .dr-sub{color:#0F6E56}
 .dre-row.head .dr-val{font-size:16px;font-weight:500;color:#0F6E56}
 .dre-row.sub{padding:6px 12px 6px 22px}
 .dre-row.sub .dr-lbl{font-size:10.5px}.dre-row.sub .dr-val{font-size:11px;color:#5F5E5A}
-.dre-row.total{background:#fafbfc}.dre-row.total .dr-lbl{color:#16267A;font-weight:500}.dre-row.total .dr-val{font-size:13px;color:#16267A;font-weight:500}
+.dre-row.total{background:#fafbfc}.dre-row.total .dr-lbl{color:var(--azul);font-weight:500}.dre-row.total .dr-val{font-size:13px;color:var(--azul);font-weight:500}
 .dre-row.pend{opacity:.55}
 .dre-tag{font-size:10px;color:#888780;background:#F1EFE8;padding:2px 7px;border-radius:6px}
-.dre-result{display:flex;justify-content:space-between;align-items:center;background:#1B3A9E;border-radius:10px;padding:12px;margin-top:6px}
-.dre-result .dr-lbl{font-size:12.5px;color:#fff;font-weight:500}.dre-result .dr-note{font-size:11px;color:#FFC400}.dre-result .dr-val{font-size:16px;color:#fff;font-weight:500}
+.dre-result{display:flex;justify-content:space-between;align-items:center;background:var(--azul-mid);border-radius:10px;padding:12px;margin-top:6px}
+.dre-result .dr-lbl{font-size:12.5px;color:#fff;font-weight:500}.dre-result .dr-note{font-size:11px;color:var(--amarelo)}.dre-result .dr-val{font-size:16px;color:#fff;font-weight:500}
 .dre-foot{display:flex;gap:8px;margin-top:12px}
-.dre-fbtn{flex:1;text-align:center;font-size:11.5px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:9px;padding:9px 0;font-weight:500;cursor:pointer}
+.dre-fbtn{flex:1;text-align:center;font-size:11.5px;color:var(--azul);border:1px solid rgba(var(--azul-rgb),0.25);border-radius:9px;padding:9px 0;font-weight:500;cursor:pointer}
 .dre-fbtn i{font-size:13px;vertical-align:-2px;margin-right:3px}
 .dre-bars{display:flex;align-items:flex-end;gap:14px;height:190px;padding:12px 8px 0;justify-content:center;margin-top:6px}
 .dre-bcol{display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
-.dre-bval{font-size:10.5px;color:#16267A;font-weight:500;margin-bottom:4px;white-space:nowrap}
-.dre-bar{width:46px;border-radius:5px 5px 0 0;background:#1B3A9E;min-height:4px;transition:height .7s cubic-bezier(.22,1,.36,1)}
+.dre-bval{font-size:10.5px;color:var(--azul);font-weight:500;margin-bottom:4px;white-space:nowrap}
+.dre-bar{width:46px;border-radius:5px 5px 0 0;background:var(--azul-mid);min-height:4px;transition:height .7s cubic-bezier(.22,1,.36,1)}
 .dre-bsub{font-size:10px;color:#888780;margin-top:2px;text-align:center}
 .dre-bx{font-size:10.5px;color:#888780;margin-top:6px;text-align:center}
 .dre-hbars{display:flex;flex-direction:column;gap:10px;padding:12px 2px 4px;margin-top:6px}
 .dre-hrow{display:grid;grid-template-columns:70px 1fr 76px;align-items:center;gap:8px}
 .dre-hlbl{font-size:11px;color:#555;text-align:right;line-height:1.12;word-break:break-word}
 .dre-htrack{background:#EDEEF3;border-radius:7px;height:22px;overflow:hidden;min-width:0}
-.dre-hfill{height:100%;background:#1B3A9E;border-radius:7px;width:0;min-width:3px;transition:width .7s cubic-bezier(.22,1,.36,1)}
-.dre-htxt{font-size:10.5px;color:#16267A;font-weight:500;text-align:right;line-height:1.25;white-space:nowrap}
+.dre-hfill{height:100%;background:var(--azul-mid);border-radius:7px;width:0;min-width:3px;transition:width .7s cubic-bezier(.22,1,.36,1)}
+.dre-htxt{font-size:10.5px;color:var(--azul);font-weight:500;text-align:right;line-height:1.25;white-space:nowrap}
 .dre-hpct{font-size:9.5px;color:#888780;font-weight:400}
 /* navegador de mês */
 .dre-mesnav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.dre-seta{width:40px;height:40px;flex:0 0 auto;border:1px solid rgba(22,38,122,0.2);background:#fff;border-radius:10px;color:#1B3A9E;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.dre-mesmid{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid rgba(22,38,122,0.15);border-radius:10px;padding:10px}
-.dre-mesmid i{color:#1B3A9E;font-size:17px}.dre-mesmid .dp-lbl{font-size:13.5px;color:#16267A;font-weight:500;text-transform:capitalize}
+.dre-seta{width:40px;height:40px;flex:0 0 auto;border:1px solid rgba(var(--azul-rgb),0.2);background:#fff;border-radius:10px;color:var(--azul-mid);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.dre-mesmid{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid rgba(var(--azul-rgb),0.15);border-radius:10px;padding:10px}
+.dre-mesmid i{color:var(--azul-mid);font-size:17px}.dre-mesmid .dp-lbl{font-size:13.5px;color:var(--azul);font-weight:500;text-transform:capitalize}
 /* grupos manuais */
 .dre-grp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:0.5px solid #eee}
-.dre-grp-row .gr-nm{font-size:11.5px;color:#16267A}
+.dre-grp-row .gr-nm{font-size:11.5px;color:var(--azul)}
 .dre-grp-row .gr-rt{display:flex;align-items:center;gap:10px}
 .dre-grp-row .gr-val{font-size:12px;font-weight:500}
 .dre-grp-row .gr-x{color:#A32D2D;font-size:16px;cursor:pointer;opacity:.7}
-.dre-grp-lbl{font-size:11px;font-weight:600;color:#16267A;margin:10px 12px 2px;display:flex;align-items:center;gap:5px}
+.dre-grp-lbl{font-size:11px;font-weight:600;color:var(--azul);margin:10px 12px 2px;display:flex;align-items:center;gap:5px}
 /* lançamentos do caixa por grupo (destrincha na DRE) */
 .dre-lanc-sec{margin:6px 12px 2px}
 .dre-lanc-hint{font-size:10.5px;color:#888780;padding:8px 0 6px;display:flex;align-items:center;gap:5px}
-.dre-lanc-hint i{font-size:14px;color:#1B3A9E}
-.dre-lanc-grp{margin-top:8px;border:1px solid rgba(22,38,122,0.12);border-radius:10px;overflow:hidden}
+.dre-lanc-hint i{font-size:14px;color:var(--azul-mid)}
+.dre-lanc-grp{margin-top:8px;border:1px solid rgba(var(--azul-rgb),0.12);border-radius:10px;overflow:hidden}
 .dlg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px;cursor:pointer;background:#fff}
 .dlg-left{display:flex;align-items:center;gap:8px;min-width:0}
-.dlg-chev{color:#1B3A9E;font-size:16px;flex:0 0 auto;transition:transform .15s}
-.dlg-nm{font-size:12.5px;color:#16267A;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlg-chev{color:var(--azul-mid);font-size:16px;flex:0 0 auto;transition:transform .15s}
+.dlg-nm{font-size:12.5px;color:var(--azul);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dlg-badge{font-size:10px;color:#185FA5;background:#E6F1FB;padding:1px 7px;border-radius:6px;white-space:nowrap;flex:0 0 auto}
-.dlg-val{font-size:13px;color:#16267A;font-weight:600;white-space:nowrap;flex:0 0 auto}
-.dlg-list{display:none;border-top:1px solid rgba(22,38,122,0.12);padding:0 11px 4px}
+.dlg-val{font-size:13px;color:var(--azul);font-weight:600;white-space:nowrap;flex:0 0 auto}
+.dlg-list{display:none;border-top:1px solid rgba(var(--azul-rgb),0.12);padding:0 11px 4px}
 .dlg-item{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid rgba(0,0,0,0.06)}
 .dlg-item:first-child{border-top:none}
 .dli-mid{min-width:0}
-.dli-nm{font-size:12px;color:#16267A}
+.dli-nm{font-size:12px;color:var(--azul)}
 .dli-meta{font-size:10.5px;color:#888780;margin-top:2px}
 .dli-meta i{font-size:12px;vertical-align:-1px;margin-right:3px}
-.dli-val{font-size:12.5px;color:#16267A;font-weight:600;white-space:nowrap}
-.dre-lanc-grp.open .dlg-head{background:#1B3A9E}
+.dli-val{font-size:12.5px;color:var(--azul);font-weight:600;white-space:nowrap}
+.dre-lanc-grp.open .dlg-head{background:var(--azul-mid)}
 .dre-lanc-grp.open .dlg-nm{color:#fff}
 .dre-lanc-grp.open .dlg-chev{color:#fff;transform:rotate(90deg)}
 .dre-lanc-grp.open .dlg-val{color:#fff}
-.dre-lanc-grp.open .dlg-badge{background:#FFC400;color:#16267A}
+.dre-lanc-grp.open .dlg-badge{background:var(--amarelo);color:var(--azul)}
 .dre-lanc-grp.open .dlg-list{display:block}
 /* toggle + / - no modal */
 .grp-sinal{display:flex;gap:8px}
@@ -270,16 +276,16 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .grp-op.plus.on{background:#E1F5EE;border-color:#0F6E56;color:#0F6E56;font-weight:500}
 
 .content{padding:14px}
-.section-label{font-size:12px;font-weight:600;color:#16267A;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.section-label{font-size:12px;font-weight:600;color:var(--azul);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .v-card{background:#fff;border:1px solid #ececec;border-radius:12px;padding:13px 14px}
 .v-top{display:flex;justify-content:space-between;align-items:flex-start}
 .v-lbl{font-size:12px;color:#888}
-.v-num{font-size:26px;font-weight:500;color:#16267A;line-height:1.1}
+.v-num{font-size:26px;font-weight:500;color:var(--azul);line-height:1.1}
 .v-cmp{font-size:11px;font-weight:500;padding:4px 9px;border-radius:20px;white-space:nowrap;align-items:center;gap:3px}
 .v-cmp.up{background:#E1F5EE;color:#0F6E56}
 .v-cmp.down{background:#FCEBEB;color:#A32D2D}
 .v-bars{display:flex;align-items:flex-end;gap:7px;height:90px;margin-top:12px}
-.v-bars div{flex:1;border-radius:4px 4px 0 0;min-height:6px;background:#1B3A9E}
+.v-bars div{flex:1;border-radius:4px 4px 0 0;min-height:6px;background:var(--azul-mid)}
 .v-xl{display:flex;gap:7px;font-size:11px;color:#999;margin-top:5px;text-align:center}
 .v-xl span{flex:1}
 .v-chart{position:relative;height:140px;margin-top:14px}
@@ -287,58 +293,58 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .vc-lbl{position:absolute;left:0;font-size:11px;color:#aaa;transform:translateY(-50%)}
 .vc-bars{position:absolute;left:30px;right:8px;top:0;bottom:10px;display:flex;align-items:flex-end;justify-content:space-between;gap:5px}
 .vc-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;cursor:pointer}
-.vc-val{font-size:11px;font-weight:500;color:#1B3A9E;margin-bottom:4px;visibility:hidden;white-space:nowrap}
-.vc-bar{width:13px;border-radius:4px 4px 0 0;background:#1B3A9E;transition:height .7s ease;height:0}
+.vc-val{font-size:11px;font-weight:500;color:var(--azul-mid);margin-bottom:4px;visibility:hidden;white-space:nowrap}
+.vc-bar{width:13px;border-radius:4px 4px 0 0;background:var(--azul-mid);transition:height .7s ease;height:0}
 .vc-x{font-size:11px;color:#999;margin-top:5px}
-.vc-x.on{color:#16267A;font-weight:500}
+.vc-x.on{color:var(--azul);font-weight:500}
 .e-chart{position:relative;height:165px;margin-top:10px}
 .ec-line{position:absolute;left:34px;right:6px;border-top:1px dashed #e6e6e6}
 .ec-lbl{position:absolute;left:0;font-size:11px;color:#aaa;transform:translateY(-50%)}
 .ec-bars{position:absolute;left:34px;right:6px;top:0;bottom:15px;display:flex;align-items:flex-end;justify-content:space-around}
 .ec-col{display:flex;flex-direction:column;align-items:center;cursor:pointer}
-.ec-val{font-size:11px;font-weight:500;color:#16267A;margin-bottom:4px;white-space:nowrap}
+.ec-val{font-size:11px;font-weight:500;color:var(--azul);margin-bottom:4px;white-space:nowrap}
 .ec-val.off{color:#b8b6ae;font-weight:400}
-.ec-bar{width:32px;border-radius:4px 4px 0 0;background:#1B3A9E;transition:height .7s ease;height:0}
+.ec-bar{width:32px;border-radius:4px 4px 0 0;background:var(--azul-mid);transition:height .7s ease;height:0}
 .ec-lab{font-size:11px;color:#888780;margin-top:6px}
 .ec-note{display:flex;align-items:center;gap:6px;margin-top:4px;padding-left:34px;font-size:11px;color:#b8b6ae}
-.flt-periodo{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:11px 12px;border:1px solid rgba(22,38,122,0.15);cursor:pointer;margin-bottom:14px}
-.flt-periodo i{font-size:18px;color:#1B3A9E}
-.flt-periodo .flt-lbl{flex:1;font-size:13px;color:#16267A;font-weight:500}
+.flt-periodo{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:11px 12px;border:1px solid rgba(var(--azul-rgb),0.15);cursor:pointer;margin-bottom:14px}
+.flt-periodo i{font-size:18px;color:var(--azul-mid)}
+.flt-periodo .flt-lbl{flex:1;font-size:13px;color:var(--azul);font-weight:500}
 .flt-periodo .flt-hint{font-size:11px;color:#888780}
-.flt-panel{display:none;background:#fff;border-radius:12px;border:1px solid rgba(22,38,122,0.15);padding:14px;margin-bottom:14px}
+.flt-panel{display:none;background:#fff;border-radius:12px;border:1px solid rgba(var(--azul-rgb),0.15);padding:14px;margin-bottom:14px}
 .flt-panel.open{display:block}
 .flt-label{font-size:12px;color:#5F5E5A}
 .flt-lojarow{display:flex;gap:6px;margin:6px 0 12px}
-.flt-pill{flex:1;text-align:center;font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:8px;padding:7px 0;cursor:pointer;font-weight:500}
+.flt-pill{flex:1;text-align:center;font-size:11px;color:var(--azul);border:1px solid rgba(var(--azul-rgb),0.25);border-radius:8px;padding:7px 0;cursor:pointer;font-weight:500}
 .flt-chiprow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
-.flt-chip{font-size:11px;color:#16267A;border:1px solid rgba(22,38,122,0.25);border-radius:20px;padding:6px 12px;cursor:pointer}
-.flt-chip.on,.flt-pill.on{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.flt-chip{font-size:11px;color:var(--azul);border:1px solid rgba(var(--azul-rgb),0.25);border-radius:20px;padding:6px 12px;cursor:pointer}
+.flt-chip.on,.flt-pill.on{background:var(--azul-mid);color:#fff;border-color:var(--azul-mid)}
 .flt-cal-wrap{background:#f7f8fa;border-radius:12px;padding:12px;margin-bottom:12px}
 .flt-datas{display:flex;gap:10px;margin-bottom:12px}
 .flt-datas .flt-d{flex:1}
 .flt-datas .flt-k{font-size:11px;color:#888780}
-.flt-datas .flt-v{font-size:13px;color:#1B3A9E;font-weight:500;margin-top:2px}
+.flt-datas .flt-v{font-size:13px;color:var(--azul-mid);font-weight:500;margin-top:2px}
 .flt-calnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.flt-calnav i{font-size:18px;color:#1B3A9E}
-.flt-calnav span{font-size:13px;color:#16267A;font-weight:500}
+.flt-calnav i{font-size:18px;color:var(--azul-mid)}
+.flt-calnav span{font-size:13px;color:var(--azul);font-weight:500}
 .flt-calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .flt-wd{text-align:center;font-size:11px;color:#888780;font-weight:500}
-.flt-day{text-align:center;font-size:12px;color:#16267A;padding:8px 0;border-radius:8px;cursor:pointer}
-.flt-day.sel{background:#1B3A9E;color:#fff;font-weight:500}
+.flt-day{text-align:center;font-size:12px;color:var(--azul);padding:8px 0;border-radius:8px;cursor:pointer}
+.flt-day.sel{background:var(--azul-mid);color:#fff;font-weight:500}
 .flt-day.rng{background:#E6F1FB}
-.flt-apply{text-align:center;font-size:13px;color:#fff;background:#1B3A9E;border-radius:10px;padding:11px 0;cursor:pointer;font-weight:500;margin-top:8px}
+.flt-apply{text-align:center;font-size:13px;color:#fff;background:var(--azul-mid);border-radius:10px;padding:11px 0;cursor:pointer;font-weight:500;margin-top:8px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
 .metric{background:#f8f8f8;border-radius:10px;padding:12px}
 .metric-label{font-size:11px;color:#999;margin-bottom:3px}
 .metric-value{font-size:17px;font-weight:500;color:#1a1a1a}
-.metric-value.green{color:#0F6E56}.metric-value.red{color:#A32D2D}.metric-value.orange{color:#1B3A9E}
+.metric-value.green{color:#0F6E56}.metric-value.red{color:#A32D2D}.metric-value.orange{color:var(--azul-mid)}
 .metric-sub{font-size:10px;color:#999;margin-top:2px}
 
 .row-card{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f8f8f8;border-radius:10px;margin-bottom:6px}
 .row-label{font-size:13px;color:#1a1a1a}
 .row-sub{font-size:12px;color:#6b6b6b}
 .row-value{font-size:13px;font-weight:500}
-.row-value.green{color:#0F6E56}.row-value.red{color:#A32D2D}.row-value.orange{color:#1B3A9E}
+.row-value.green{color:#0F6E56}.row-value.red{color:#A32D2D}.row-value.orange{color:var(--azul-mid)}
 
 .total-bar{border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .total-bar.green{background:#E1F5EE}.total-bar.red{background:#FCEBEB}
@@ -365,7 +371,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .boleto-valor{font-size:13px;font-weight:500;color:#1a1a1a;white-space:nowrap;margin-left:8px}
 .boleto-bot{display:flex;justify-content:space-between;align-items:center}
 .boleto-data{font-size:11px;color:#999}
-.btn-baixa{font-size:10px;padding:3px 9px;background:#1B3A9E;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif}
+.btn-baixa{font-size:10px;padding:3px 9px;background:var(--azul-mid);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif}
 .btn-baixa:disabled{background:#ddd;color:#aaa;cursor:default}
 
 .search-row{display:flex;gap:8px;margin-bottom:10px}
@@ -375,23 +381,23 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 /* Barra de ações em massa */
 .bulk-bar{background:#FFF8F0;border:1px solid #fdd8b0;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .bulk-bar label{display:flex;align-items:center;gap:6px;font-size:12px;color:#633806;cursor:pointer}
-.bulk-bar input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#1B3A9E}
-.btn-bulk{font-size:11px;padding:5px 10px;background:#1B3A9E;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap}
+.bulk-bar input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--azul-mid)}
+.btn-bulk{font-size:11px;padding:5px 10px;background:var(--azul-mid);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap}
 .btn-bulk:disabled{background:#ddd;color:#aaa;cursor:default}
 
 .resumo-row{display:flex;justify-content:space-between;padding:9px 12px;background:#f8f8f8;border-radius:10px;margin-bottom:6px}
 .resumo-lbl{font-size:13px;color:#1a1a1a}
 .resumo-val{font-size:13px;font-weight:500}
-.resumo-val.orange{color:#1B3A9E}.resumo-val.red{color:#A32D2D}.resumo-val.green{color:#0F6E56}
+.resumo-val.orange{color:var(--azul-mid)}.resumo-val.red{color:#A32D2D}.resumo-val.green{color:#0F6E56}
 .divider{height:1px;background:#eee;margin:12px 0}
 
 .tab-row{display:flex;gap:6px;margin-bottom:14px}
 .tab{padding:7px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #e0e0e0;background:#f8f8f8;color:#666;font-family:Arial,sans-serif}
-.tab.active{background:#1B3A9E;color:#fff;border-color:#1B3A9E}
+.tab.active{background:var(--azul-mid);color:#fff;border-color:var(--azul-mid)}
 .field-group{margin-bottom:12px}
 .field-group label{display:block;font-size:12px;color:#666;margin-bottom:4px}
 .field-group input,.field-group select,.field-group textarea{width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:10px;background:#f8f8f8;color:#1a1a1a;font-size:13px;font-family:Arial,sans-serif}
-.btn-primary{width:100%;padding:11px;background:#1B3A9E;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif}
+.btn-primary{width:100%;padding:11px;background:var(--azul-mid);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:4px;font-family:Arial,sans-serif}
 .btn-primary:disabled{background:#ddd;color:#aaa;cursor:default}
 .btn-sec{width:100%;padding:11px;background:#f8f8f8;color:#1a1a1a;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px;font-family:Arial,sans-serif}
 
@@ -424,22 +430,22 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .logo-circle img{width:100%;height:100%;object-fit:cover;transform:scale(1.06)}
 .splash-logo-wrap{width:96px;height:96px;margin-bottom:20px}
 .login2{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-.login2-photo{position:relative;background:#16267A;overflow:hidden}
+.login2-photo{position:relative;background:var(--azul);overflow:hidden}
 .login2-photo img{width:100%;height:auto;display:block}
-.login2-photo-tint{position:absolute;inset:0;background:rgba(22,38,122,0.40);border-bottom:6px solid #FFC400}
+.login2-photo-tint{position:absolute;inset:0;background:rgba(var(--azul-rgb),0.40);border-bottom:6px solid var(--amarelo)}
 .login2-card{padding:0 20px 18px;position:relative}
 .login2-logo{width:84px;height:84px;margin:-42px auto 8px;border:4px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.18)}
-.login2-welcome{text-align:center;font-size:24px;font-weight:500;color:#16267A}
-.login2-sub{text-align:center;font-size:14px;color:#1B3A9E;margin-bottom:20px}
-.login2-lbl{display:block;font-size:13px;font-weight:500;color:#16267A;margin-bottom:5px}
+.login2-welcome{text-align:center;font-size:24px;font-weight:500;color:var(--azul)}
+.login2-sub{text-align:center;font-size:14px;color:var(--azul-mid);margin-bottom:20px}
+.login2-lbl{display:block;font-size:13px;font-weight:500;color:var(--azul);margin-bottom:5px}
 .login2-field{display:flex;align-items:center;gap:9px;border:1px solid #d8d8d8;border-radius:12px;padding:0 12px;margin-bottom:14px}
-.login2-field i{font-size:18px;color:#1B3A9E}
+.login2-field i{font-size:18px;color:var(--azul-mid)}
 .login2-field .login2-eye{color:#999;cursor:pointer}
 .login2-field input,.login2-field select{flex:1;border:none;background:none;padding:13px 0;font-size:16px;color:#1a1a1a;font-family:Arial,sans-serif;outline:none}
 .login2-trust{display:flex;justify-content:space-between;text-align:center;border-top:1px solid #eee;padding-top:14px;margin-top:18px}
 .login2-trust>div{flex:1}
-.login2-trust i{font-size:19px;color:#1B3A9E}
-.login2-trust span{display:block;font-size:11px;font-weight:500;color:#16267A;margin-top:3px}
+.login2-trust i{font-size:19px;color:var(--azul-mid)}
+.login2-trust span{display:block;font-size:11px;font-weight:500;color:var(--azul);margin-top:3px}
 .login2-foot{text-align:center;font-size:11px;color:#aaa;margin-top:14px}
 #s-login.active{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
 #s-login.active .login2{flex:1;display:flex;flex-direction:column;border-radius:0;box-shadow:none}
@@ -462,7 +468,7 @@ body:has(#s-login.active) .app{max-width:none}
 .chip-lbl{font-size:11px;color:#999;display:flex;align-items:center;gap:4px}
 .chip-val{font-size:18px;font-weight:500;margin-top:3px}
 .chip-val.green{color:#0F6E56}.chip-val.red{color:#A32D2D}
-.spin{width:16px;height:16px;border:2px solid rgba(22,38,122,0.2);border-top-color:#16267A;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle}
+.spin{width:16px;height:16px;border:2px solid rgba(var(--azul-rgb),0.2);border-top-color:var(--azul);border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle}
 .spin-sm{width:12px;height:12px;border-width:2px;border-color:rgba(136,135,128,0.3);border-top-color:#888780}
 .loadrow{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 2px;color:#888780;font-size:13px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -471,9 +477,9 @@ body:has(#s-login.active) .app{max-width:none}
 .tab-anim{animation:tabIn .26s ease both}
 @keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* P2.2 — indicador do pull-to-refresh (criado on-demand pelo JS) */
-#ptr-ind{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-46px);z-index:70;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 3px 12px rgba(22,38,122,.18);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
-#ptr-ind .ptr-ic{width:18px;height:18px;border:2px solid rgba(22,38,122,0.2);border-top-color:#16267A;border-radius:50%}
-#ptr-ind.ptr-ready{box-shadow:0 4px 16px rgba(22,38,122,.32)}
+#ptr-ind{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-46px);z-index:70;width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 3px 12px rgba(var(--azul-rgb),.18);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+#ptr-ind .ptr-ic{width:18px;height:18px;border:2px solid rgba(var(--azul-rgb),0.2);border-top-color:var(--azul);border-radius:50%}
+#ptr-ind.ptr-ready{box-shadow:0 4px 16px rgba(var(--azul-rgb),.32)}
 #ptr-ind.ptr-spin .ptr-ic{animation:spin .7s linear infinite}
 /* P2.4 — marca/splash (asset reaproveitável no PWA da D11) */
 .brand-mark{line-height:0;margin-bottom:15px;filter:drop-shadow(0 8px 22px rgba(0,0,0,.28));animation:qrise .5s ease both}
@@ -487,10 +493,10 @@ body:has(#s-login.active) .app{max-width:none}
 /* Busca de preço — animação do estado vazio */
 .preco-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 18px 30px;text-align:center}
 .pe-stage{position:relative;width:150px;height:104px;margin-bottom:16px}
-.pe-barcode{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:112px;height:60px;border-radius:8px;background:repeating-linear-gradient(90deg,#16267A 0 3px,transparent 3px 6px,#16267A 6px 8px,transparent 8px 13px,#16267A 13px 15px,transparent 15px 20px);opacity:.9}
+.pe-barcode{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:112px;height:60px;border-radius:8px;background:repeating-linear-gradient(90deg,var(--azul) 0 3px,transparent 3px 6px,var(--azul) 6px 8px,transparent 8px 13px,var(--azul) 13px 15px,transparent 15px 20px);opacity:.9}
 .pe-scan{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:126px;height:3px;border-radius:3px;background:#D32B2B;box-shadow:0 0 10px rgba(211,43,43,.7);animation:peScan 2.4s ease-in-out infinite}
 @keyframes peScan{0%,100%{top:10px}50%{top:64px}}
-.pe-cart{position:absolute;right:-4px;bottom:-6px;font-size:30px;color:#1B3A9E;background:#fff;border-radius:50%;padding:7px;box-shadow:0 4px 14px rgba(22,38,122,.20);animation:peBob 2.4s ease-in-out infinite}
+.pe-cart{position:absolute;right:-4px;bottom:-6px;font-size:30px;color:var(--azul-mid);background:#fff;border-radius:50%;padding:7px;box-shadow:0 4px 14px rgba(var(--azul-rgb),.20);animation:peBob 2.4s ease-in-out infinite}
 @keyframes peBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .pe-hint{font-size:13px;color:#888780;line-height:1.55;max-width:280px}
 </style>
@@ -636,7 +642,7 @@ body:has(#s-login.active) .app{max-width:none}
 
     <!-- PAINEL -->
     <div id="tab-painel" class="content">
-      <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirRelatorios()"><i class="ti ti-chart-bar" style="font-size:22px;color:#16267A;margin-right:10px"></i><div style="flex:1"><div class="row-label">Vendas por setor</div><div class="row-sub">Faturamento de cada setor · toque para ver</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
+      <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="abrirRelatorios()"><i class="ti ti-chart-bar" style="font-size:22px;color:var(--azul);margin-right:10px"></i><div style="flex:1"><div class="row-label">Vendas por setor</div><div class="row-sub">Faturamento de cada setor · toque para ver</div></div><i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>
       <!-- BARRA DE PERÍODO + FILTRO (fatia 3) -->
       <div class="flt-periodo" id="flt-periodBtn">
         <i class="ti ti-filter"></i>
@@ -757,7 +763,7 @@ body:has(#s-login.active) .app{max-width:none}
         <div class="field-group"><label>Data</label><input type="date" id="desp-data"></div>
         <div class="field-group">
           <label style="display:flex;align-items:center;justify-content:space-between">Categoria
-            <span onclick="despCatsGerenciar()" style="font-size:11px;color:#16267A;font-weight:600;cursor:pointer"><i class="ti ti-settings" style="font-size:13px;vertical-align:-2px;margin-right:2px"></i>Gerenciar</span>
+            <span onclick="despCatsGerenciar()" style="font-size:11px;color:var(--azul);font-weight:600;cursor:pointer"><i class="ti ti-settings" style="font-size:13px;vertical-align:-2px;margin-right:2px"></i>Gerenciar</span>
           </label>
           <select id="desp-cat" onchange="document.getElementById(&#39;desp-novacat&#39;).style.display=this.value===&#39;nova&#39;?&#39;block&#39;:&#39;none&#39;">
             <option value="nova">+ Nova categoria...</option>
@@ -784,9 +790,9 @@ body:has(#s-login.active) .app{max-width:none}
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <i class="ti ti-chevron-left" style="font-size:20px;cursor:pointer;color:#16267A;padding:4px" onclick="saidasMes(-1)"></i>
+          <i class="ti ti-chevron-left" style="font-size:20px;cursor:pointer;color:var(--azul);padding:4px" onclick="saidasMes(-1)"></i>
           <button onclick="saidasHoje()" style="flex:1;padding:7px;border:1px solid #cdd7e3;border-radius:9px;background:#fff;color:#3a5a86;font-size:12.5px;font-family:Arial,sans-serif;cursor:pointer">Mês atual</button>
-          <i class="ti ti-chevron-right" style="font-size:20px;cursor:pointer;color:#16267A;padding:4px" onclick="saidasMes(1)"></i>
+          <i class="ti ti-chevron-right" style="font-size:20px;cursor:pointer;color:var(--azul);padding:4px" onclick="saidasMes(1)"></i>
         </div>
 
         <div class="sd-seg">
@@ -840,7 +846,7 @@ body:has(#s-login.active) .app{max-width:none}
       </div>
       <div id="contas-resumo-filtro" style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:8px 12px;margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-          <span style="font-size:12px;color:#16267A;font-weight:600"><span id="cf-rotulo">Contas a pagar hoje</span> · <span id="cf-qtd">0</span> boleto(s)</span>
+          <span style="font-size:12px;color:var(--azul);font-weight:600"><span id="cf-rotulo">Contas a pagar hoje</span> · <span id="cf-qtd">0</span> boleto(s)</span>
           <button onclick="exportarContasPDF()" style="padding:7px 12px;border:none;border-radius:9px;background:#B23C3C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" style="font-size:15px"></i>PDF</button>
         </div>
       </div>
@@ -874,7 +880,7 @@ body:has(#s-login.active) .app{max-width:none}
       <div class="divider"></div>
       <div class="section-label" style="justify-content:space-between">
         <span><i class="ti ti-users"></i> Usuários</span>
-        <button onclick="abrirModalUsuario()" style="font-size:11px;padding:3px 9px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:#1B3A9E;display:inline-flex;align-items:center;gap:3px"><i class="ti ti-plus" style="font-size:13px"></i> Novo</button>
+        <button onclick="abrirModalUsuario()" style="font-size:11px;padding:3px 9px;border:1px solid #e0e0e0;border-radius:6px;background:#f8f8f8;cursor:pointer;color:var(--azul-mid);display:inline-flex;align-items:center;gap:3px"><i class="ti ti-plus" style="font-size:13px"></i> Novo</button>
       </div>
       <div id="cfg-users-list"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
       <div class="divider"></div>
@@ -1022,13 +1028,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Estrutura mercadológica (Bloco 3 · só gestor) -->
 <div class="screen" id="s-estrutura">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
-    <i class="ti ti-category" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
+    <i class="ti ti-category" style="font-size:20px;color:var(--azul);flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Estrutura mercadológica</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Estrutura mercadológica</div>
       <div style="font-size:11.5px;color:#888780" id="est-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="estAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="estAtualizar()" title="Atualizar"></i>
   </div>
 
   <!-- VISÃO 1: resumo -->
@@ -1053,7 +1059,7 @@ body:has(#s-login.active) .app{max-width:none}
 
   <!-- VISÃO 2: dentro de um setor -->
   <div id="est-setor-view" style="display:none;padding:0 14px 90px">
-    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="estVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div><div class="row-label" id="est-setor-nome">Setor</div><div class="row-sub" id="est-setor-cont">—</div></div></div>
     <div id="est-itens"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 </div>
@@ -1061,13 +1067,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Relatórios por setor (Bloco 2) -->
 <div class="screen" id="s-relatorios">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
-    <i class="ti ti-chart-pie" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
+    <i class="ti ti-chart-pie" style="font-size:20px;color:var(--azul);flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Vendas por setor</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Vendas por setor</div>
       <div style="font-size:11.5px;color:#888780" id="rel-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="relAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="relAtualizar()" title="Atualizar"></i>
   </div>
 
   <div id="rel-lista-view" style="padding:0 14px 90px">
@@ -1085,13 +1091,13 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
     <div style="background:#F1F4FB;border-radius:10px;padding:12px;margin:12px 0">
       <div style="font-size:11.5px;color:#888780" id="rel-total-lbl">Faturamento total</div>
-      <div style="font-size:22px;font-weight:600;color:#16267A" id="rel-total">—</div>
+      <div style="font-size:22px;font-weight:600;color:var(--azul)" id="rel-total">—</div>
     </div>
     <div id="rel-setores"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 
   <div id="rel-setor-view" style="display:none;padding:0 14px 90px">
-    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="relVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div><div class="row-label" id="rel-setor-nome">Setor</div><div class="row-sub" id="rel-setor-cont">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="relVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div><div class="row-label" id="rel-setor-nome">Setor</div><div class="row-sub" id="rel-setor-cont">—</div></div></div>
     <div id="rel-itens"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
   </div>
 </div>
@@ -1099,13 +1105,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Busca de Preço (chat 19) -->
 <div class="screen" id="s-preco">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-barcode" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Busca de preço</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Busca de preço</div>
       <div style="font-size:11.5px;color:#888780" id="preco-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="precoAtualizar()" title="Atualizar preços"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="precoAtualizar()" title="Atualizar preços"></i>
   </div>
 
   <div style="padding:0 14px 90px">
@@ -1120,13 +1126,13 @@ body:has(#s-login.active) .app{max-width:none}
 
 <!-- leitor de código de barras (câmera) — fora das telas, funciona de qualquer módulo -->
 <div id="preco-scan" style="display:none;position:fixed;inset:0;background:#000;z-index:70;flex-direction:column">
-  <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#16267A;color:#fff">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--azul);color:#fff">
     <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer" onclick="precoScanFechar()"></i>
     <span style="flex:1;font-size:15px;font-weight:500">Ler código de barras</span>
   </div>
   <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">
     <video id="preco-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
-    <div style="position:absolute;width:80%;max-width:320px;height:120px;border:3px solid #FFC400;border-radius:14px"></div>
+    <div style="position:absolute;width:80%;max-width:320px;height:120px;border:3px solid var(--amarelo);border-radius:14px"></div>
   </div>
   <div id="preco-scan-msg" style="padding:14px 16px;background:#000;color:#fff;font-size:13px;text-align:center;min-height:20px"></div>
 </div>
@@ -1134,23 +1140,23 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Calculadora de Preço de Venda / Margem (chat 22) -->
 <div class="screen" id="s-calc">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-calculator" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Calculadora de preço</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Calculadora de preço</div>
       <div style="font-size:11.5px;color:#888780">Custo + margem = preço de venda</div>
     </div>
-    <i class="ti ti-calculator" style="font-size:20px;color:#16267A"></i>
+    <i class="ti ti-calculator" style="font-size:20px;color:var(--azul)"></i>
   </div>
 
   <div style="padding:0 14px 90px">
-    <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:#16267A">Preço de custo</div>
+    <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--azul)">Preço de custo</div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:15px;color:#888780">R$</span>
       <input id="calc-custo" type="text" inputmode="decimal" placeholder="0,00" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
     </div>
 
-    <div style="margin:16px 0 6px;font-size:12px;font-weight:600;color:#16267A">Margem desejada (sobre o custo)</div>
+    <div style="margin:16px 0 6px;font-size:12px;font-weight:600;color:var(--azul)">Margem desejada (sobre o custo)</div>
     <div id="calc-chips" style="display:flex;gap:8px;margin-bottom:8px">
       <div class="dre-chip" data-m="25" onclick="calcChip(25)" style="flex:1;text-align:center">25%</div>
       <div class="dre-chip" data-m="50" onclick="calcChip(50)" style="flex:1;text-align:center">50%</div>
@@ -1163,19 +1169,19 @@ body:has(#s-login.active) .app{max-width:none}
       <span style="font-size:15px;color:#888780">%</span>
     </div>
 
-    <div style="margin-top:18px;background:#f8f8f8;border:1px solid rgba(22,38,122,0.10);border-radius:14px;padding:16px">
+    <div style="margin-top:18px;background:#f8f8f8;border:1px solid rgba(var(--azul-rgb),0.10);border-radius:14px;padding:16px">
       <div style="font-size:12px;color:#888780;margin-bottom:4px">Preço de venda</div>
-      <div id="calc-pv" style="font-size:30px;font-weight:600;color:#1B3A9E;line-height:1.1">R$ 0,00</div>
+      <div id="calc-pv" style="font-size:30px;font-weight:600;color:var(--azul-mid);line-height:1.1">R$ 0,00</div>
     </div>
 
     <div style="display:flex;gap:10px;margin-top:10px">
       <div style="flex:1;background:#f8f8f8;border-radius:10px;padding:12px">
         <div style="font-size:11px;color:#888780;margin-bottom:3px">Lucro por unidade</div>
-        <div id="calc-lucro" style="font-size:18px;font-weight:600;color:#16267A">R$ 0,00</div>
+        <div id="calc-lucro" style="font-size:18px;font-weight:600;color:var(--azul)">R$ 0,00</div>
       </div>
       <div style="flex:1;background:#f8f8f8;border-radius:10px;padding:12px">
         <div style="font-size:11px;color:#888780;margin-bottom:3px">Margem sobre a venda</div>
-        <div id="calc-msv" style="font-size:18px;font-weight:600;color:#16267A">0,0%</div>
+        <div id="calc-msv" style="font-size:18px;font-weight:600;color:var(--azul)">0,0%</div>
       </div>
     </div>
 
@@ -1189,13 +1195,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Lucratividade (chat 22) -->
 <div class="screen" id="s-lucro">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-coin" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Lucratividade</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Lucratividade</div>
       <div style="font-size:11.5px;color:#888780" id="luc-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="lucAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="lucAtualizar()" title="Atualizar"></i>
   </div>
 
   <div style="padding:0 14px 90px">
@@ -1210,14 +1216,14 @@ body:has(#s-login.active) .app{max-width:none}
     <!-- VISÃO GERAL -->
     <div id="luc-geral-view">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
-        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Faturamento</div><div id="luc-fat" style="font-size:18px;font-weight:600;color:#16267A">—</div></div>
-        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Custo (CMV)</div><div id="luc-cmv" style="font-size:18px;font-weight:600;color:#16267A">—</div></div>
-        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Lucro bruto</div><div id="luc-lucro" style="font-size:18px;font-weight:600;color:#1B3A9E">—</div></div>
-        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Margem</div><div id="luc-margem" style="font-size:18px;font-weight:600;color:#1B3A9E">—</div></div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Faturamento</div><div id="luc-fat" style="font-size:18px;font-weight:600;color:var(--azul)">—</div></div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Custo (CMV)</div><div id="luc-cmv" style="font-size:18px;font-weight:600;color:var(--azul)">—</div></div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Lucro bruto</div><div id="luc-lucro" style="font-size:18px;font-weight:600;color:var(--azul-mid)">—</div></div>
+        <div style="background:#f8f8f8;border-radius:10px;padding:12px"><div style="font-size:11px;color:#888780;margin-bottom:3px">Margem</div><div id="luc-margem" style="font-size:18px;font-weight:600;color:var(--azul-mid)">—</div></div>
       </div>
       <div id="luc-cob" style="font-size:11px;color:#888780;margin:8px 2px 4px;line-height:1.5"></div>
 
-      <div style="font-size:12px;font-weight:600;color:#16267A;margin:14px 0 8px">Por setor (maior lucro primeiro)</div>
+      <div style="font-size:12px;font-weight:600;color:var(--azul);margin:14px 0 8px">Por setor (maior lucro primeiro)</div>
       <div id="luc-setores"></div>
 
       <div id="luc-arrumar-banner" style="display:none;align-items:center;gap:10px;background:#FFF3D6;border-radius:10px;padding:12px;margin-top:10px;cursor:pointer" onclick="lucAbrirArrumar()">
@@ -1232,16 +1238,16 @@ body:has(#s-login.active) .app{max-width:none}
 
     <!-- DRILL-DOWN POR SETOR -->
     <div id="luc-setor-view" style="display:none">
-      <div onclick="lucVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:#16267A;font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
-      <div id="luc-setor-nome" style="font-size:16px;font-weight:600;color:#16267A"></div>
+      <div onclick="lucVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:var(--azul);font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
+      <div id="luc-setor-nome" style="font-size:16px;font-weight:600;color:var(--azul)"></div>
       <div id="luc-setor-sub" style="font-size:11.5px;color:#888780;margin-bottom:8px"></div>
       <div id="luc-itens"></div>
     </div>
 
     <!-- LISTA "PRECISA ARRUMAR" -->
     <div id="luc-arrumar-view" style="display:none">
-      <div onclick="lucVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:#16267A;font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
-      <div style="font-size:16px;font-weight:600;color:#16267A">Produtos a revisar</div>
+      <div onclick="lucVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:var(--azul);font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Produtos a revisar</div>
       <div id="luc-arrumar-sub" style="font-size:11.5px;color:#888780;margin-bottom:4px"></div>
       <div style="font-size:11px;color:#888780;margin-bottom:8px;line-height:1.5">Tiveram venda no período mas estão <b>sem custo cadastrado</b> ou com <b>custo acima do preço de venda</b>. Pode ser cadastro para arrumar — ou promoção (que eu ainda não tenho como identificar sozinho).</div>
       <div id="luc-arrumar-lista"></div>
@@ -1252,18 +1258,18 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Curva ABC (chat 22) -->
 <div class="screen" id="s-maisvendidos">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-trophy" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Mais vendidos</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Mais vendidos</div>
       <div style="font-size:11.5px;color:#888780" id="mv-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="mvAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="mvAtualizar()" title="Atualizar"></i>
   </div>
   <div style="padding:0 14px 90px">
     <div style="display:flex;gap:8px;margin:12px 0 4px">
-      <button id="mv-tabbtn-rank" onclick="mvSetTab('rank')" style="flex:1;border-radius:10px;height:38px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Mais vendidos</button>
-      <button id="mv-tabbtn-hora" onclick="mvSetTab('hora')" style="flex:1;border-radius:10px;height:38px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por horário</button>
+      <button id="mv-tabbtn-rank" onclick="mvSetTab('rank')" style="flex:1;border-radius:10px;height:38px;font-size:13px;font-weight:600;border:1px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer">Mais vendidos</button>
+      <button id="mv-tabbtn-hora" onclick="mvSetTab('hora')" style="flex:1;border-radius:10px;height:38px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:var(--azul);cursor:pointer">Por horário</button>
     </div>
     <div id="mv-chips" style="display:flex;gap:7px;overflow-x:auto;padding:10px 0 2px;-webkit-overflow-scrolling:touch"></div>
     <div id="mv-custom" style="display:none;gap:7px;align-items:center;margin-top:8px;flex-wrap:wrap">
@@ -1275,8 +1281,8 @@ body:has(#s-login.active) .app{max-width:none}
 
     <div id="mv-tab-rank">
       <div style="display:flex;gap:8px;margin-top:12px">
-        <button id="mv-mt-fat" onclick="mvSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Por faturamento</button>
-        <button id="mv-mt-qtd" onclick="mvSetMetric('qtd')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por quantidade</button>
+        <button id="mv-mt-fat" onclick="mvSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer">Por faturamento</button>
+        <button id="mv-mt-qtd" onclick="mvSetMetric('qtd')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:var(--azul);cursor:pointer">Por quantidade</button>
       </div>
       <div id="mv-lista" style="margin-top:14px"></div>
       <div style="font-size:11px;color:#888780;margin-top:10px;line-height:1.5">Top 50 produtos do período. O histórico cobre ~60 dias.</div>
@@ -1291,13 +1297,13 @@ body:has(#s-login.active) .app{max-width:none}
 
 <div class="screen" id="s-abc">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-chart-bar" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Curva ABC</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Curva ABC</div>
       <div style="font-size:11.5px;color:#888780" id="abc-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="abcAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="abcAtualizar()" title="Atualizar"></i>
   </div>
 
   <div style="padding:0 14px 90px">
@@ -1310,8 +1316,8 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
 
     <div style="display:flex;gap:8px;margin-top:12px">
-      <button id="abc-mt-fat" onclick="abcSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #16267A;background:#16267A;color:#fff;cursor:pointer">Por faturamento</button>
-      <button id="abc-mt-lucro" onclick="abcSetMetric('lucro')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:#16267A;cursor:pointer">Por lucro</button>
+      <button id="abc-mt-fat" onclick="abcSetMetric('fat')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer">Por faturamento</button>
+      <button id="abc-mt-lucro" onclick="abcSetMetric('lucro')" style="flex:1;border-radius:999px;height:34px;font-size:13px;font-weight:600;border:1px solid #D3D1C7;background:#fff;color:var(--azul);cursor:pointer">Por lucro</button>
     </div>
 
     <div id="abc-geral-view">
@@ -1321,8 +1327,8 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
 
     <div id="abc-classe-view" style="display:none">
-      <div onclick="abcVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:#16267A;font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
-      <div id="abc-classe-nome" style="font-size:16px;font-weight:600;color:#16267A"></div>
+      <div onclick="abcVoltarGeral()" style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:12px 0 8px;color:var(--azul);font-size:13px"><i class="ti ti-arrow-left" style="font-size:18px"></i> Voltar</div>
+      <div id="abc-classe-nome" style="font-size:16px;font-weight:600;color:var(--azul)"></div>
       <div id="abc-classe-sub" style="font-size:11.5px;color:#888780;margin-bottom:8px"></div>
       <div id="abc-classe-lista"></div>
     </div>
@@ -1332,21 +1338,21 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Lista de Cotação (chat 20) -->
 <div class="screen" id="s-cotacao">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-shopping-cart" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Lista de cotação</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Lista de cotação</div>
       <div style="font-size:11.5px;color:#888780" id="cot-sub">Coleta em andamento</div>
     </div>
-    <i class="ti ti-world" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirCotacoesWeb()" title="Cotações Web"></i>
-    <i class="ti ti-building-store" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirFornecedores()" title="Fornecedores"></i>
-    <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:#16267A" onclick="abrirColetas()" title="Coletas salvas"></i>
+    <i class="ti ti-world" style="font-size:20px;cursor:pointer;color:var(--azul)" onclick="abrirCotacoesWeb()" title="Cotações Web"></i>
+    <i class="ti ti-building-store" style="font-size:20px;cursor:pointer;color:var(--azul)" onclick="abrirFornecedores()" title="Fornecedores"></i>
+    <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:var(--azul)" onclick="abrirColetas()" title="Coletas salvas"></i>
   </div>
 
   <div style="padding:0 14px 90px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px">
-      <span style="font-size:13px;font-weight:600;color:#16267A">Coleta em andamento</span>
-      <span style="font-size:12px;color:#16267A;cursor:pointer" onclick="cotNova()"><i class="ti ti-plus" style="vertical-align:-2px"></i> Nova coleta</span>
+      <span style="font-size:13px;font-weight:600;color:var(--azul)">Coleta em andamento</span>
+      <span style="font-size:12px;color:var(--azul);cursor:pointer" onclick="cotNova()"><i class="ti ti-plus" style="vertical-align:-2px"></i> Nova coleta</span>
     </div>
     <div style="display:flex;gap:8px">
       <input id="cot-busca" type="text" inputmode="search" autocomplete="off" placeholder="Buscar produto pra adicionar" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box" oninput="cotBuscarDebounce()">
@@ -1363,29 +1369,29 @@ body:has(#s-login.active) .app{max-width:none}
 
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn-primary" style="flex:1;margin-top:0" id="cot-btn-salvar" onclick="cotSalvar()"><i class="ti ti-device-floppy"></i> Salvar coleta</button>
-      <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:#16267A;border:1px solid #16267A" onclick="cotPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+      <button class="btn-primary" style="flex:1;margin-top:0;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="cotPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
     </div>
-    <div style="text-align:center;margin-top:14px;cursor:pointer" onclick="abrirColetas()"><span style="font-size:13px;color:#16267A"><i class="ti ti-folder" style="vertical-align:-2px"></i> Ver coletas salvas (todos)</span></div>
+    <div style="text-align:center;margin-top:14px;cursor:pointer" onclick="abrirColetas()"><span style="font-size:13px;color:var(--azul)"><i class="ti ti-folder" style="vertical-align:-2px"></i> Ver coletas salvas (todos)</span></div>
   </div>
 </div>
 
 <!-- TELA: Coletas salvas (Lista de Cotação · parte 2) -->
 <div class="screen" id="s-coletas">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
-    <i class="ti ti-bookmark" style="font-size:20px;color:#16267A;flex-shrink:0"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-cotacao')"></i>
+    <i class="ti ti-bookmark" style="font-size:20px;color:var(--azul);flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Coletas salvas</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Coletas salvas</div>
       <div style="font-size:11.5px;color:#888780" id="col-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="colAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="colAtualizar()" title="Atualizar"></i>
   </div>
   <div id="col-lista-view" style="padding:0 14px 90px">
     <button class="btn-primary" style="margin-top:12px;background:#0F6E56" onclick="colCruzar()"><i class="ti ti-arrows-right-left"></i> Cruzar coletas (achar repetidos)</button>
     <div id="col-lista" style="margin-top:10px"><div class="loadrow"><span class="spin"></span> Carregando coletas…</div></div>
   </div>
   <div id="col-detalhe-view" style="display:none;padding:0 14px 90px">
-    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div></div>
     <div id="col-det-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#BA7517" onclick="cwAbrirCriar()"><i class="ti ti-world"></i> Mandar pra Cotação Web</button>
     <div style="display:flex;gap:8px;margin-top:10px">
@@ -1394,22 +1400,22 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
   </div>
   <div id="col-cruza-view" style="display:none;padding:0 14px 90px">
-    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
-    <button class="btn-primary" style="margin-top:14px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+    <button class="btn-primary" style="margin-top:14px;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
   </div>
 </div>
 
 <!-- TELA: Compras (espelhos) -->
 <div class="screen" id="s-compras">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-truck-delivery" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Compras</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Compras</div>
       <div style="font-size:11.5px;color:#888780" id="cp-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cpCarregar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="cpCarregar()" title="Atualizar"></i>
   </div>
   <div style="padding:12px 14px 100px">
     <div id="cp-lembretes" style="margin-bottom:14px"></div>
@@ -1427,21 +1433,21 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Cotação Web (gestor) -->
 <div class="screen" id="s-cotweb">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-cotacao')"></i>
     <i class="ti ti-world" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Cotações Web</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Cotações Web</div>
       <div style="font-size:11.5px;color:#888780" id="cw-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="cwCarregar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="cwCarregar()" title="Atualizar"></i>
   </div>
   <div id="cw-lista-view" style="padding:12px 14px 100px">
     <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px">
       <div style="flex:1"><label style="font-size:10.5px;color:#888780">De</label><input id="cw-fdata-de" type="date" oninput="cwRenderLista()" style="width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
       <div style="flex:1"><label style="font-size:10.5px;color:#888780">Até</label><input id="cw-fdata-ate" type="date" oninput="cwRenderLista()" style="width:100%;padding:8px;border:1px solid #e0e0e0;border-radius:9px;font-size:13px;box-sizing:border-box"></div>
-      <button onclick="cwLimparData()" style="padding:8px 10px;border:1px solid #c9d3e6;background:#fff;color:#16267A;border-radius:9px;font-size:12px;cursor:pointer;white-space:nowrap">Limpar</button>
+      <button onclick="cwLimparData()" style="padding:8px 10px;border:1px solid #c9d3e6;background:#fff;color:var(--azul);border-radius:9px;font-size:12px;cursor:pointer;white-space:nowrap">Limpar</button>
     </div>
-    <button class="btn-primary" style="margin-top:0;background:#1B3A9E" onclick="cwAbrirResumo()"><i class="ti ti-chart-bar"></i> Ranking dos fornecedores</button>
+    <button class="btn-primary" style="margin-top:0;background:var(--azul-mid)" onclick="cwAbrirResumo()"><i class="ti ti-chart-bar"></i> Ranking dos fornecedores</button>
     <div style="height:12px"></div>
     <div id="cw-lista"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>
   </div>
@@ -1453,10 +1459,10 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Ranking dos fornecedores (resumo) -->
 <div class="screen" id="s-cwresumo">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="abrirCotacoesWeb()"></i>
-    <i class="ti ti-chart-bar" style="font-size:20px;color:#1B3A9E;flex-shrink:0"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="abrirCotacoesWeb()"></i>
+    <i class="ti ti-chart-bar" style="font-size:20px;color:var(--azul-mid);flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Ranking dos fornecedores</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Ranking dos fornecedores</div>
       <div style="font-size:11.5px;color:#888780" id="cwres-sub">—</div>
     </div>
   </div>
@@ -1466,10 +1472,10 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Resultado da Cotação Web -->
 <div class="screen" id="s-cwresult">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="cwVoltarResultado()"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="cwVoltarResultado()"></i>
     <i class="ti ti-table" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Resultado da cotação</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Resultado da cotação</div>
       <div style="font-size:11.5px;color:#888780" id="cwr-sub">—</div>
     </div>
   </div>
@@ -1479,13 +1485,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Fornecedores (Cotação Web) -->
 <div class="screen" id="s-fornec">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-cotacao')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-cotacao')"></i>
     <i class="ti ti-building-store" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Fornecedores</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Fornecedores</div>
       <div style="font-size:11.5px;color:#888780" id="fn-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fnCarregar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="fnCarregar()" title="Atualizar"></i>
   </div>
   <div style="padding:12px 14px 100px">
     <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="fnEditar('')"><i class="ti ti-plus"></i> Novo fornecedor</button>
@@ -1496,19 +1502,19 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Controle de avarias -->
 <div class="screen" id="s-avarias">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-alert-triangle" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Controle de avarias</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Controle de avarias</div>
       <div style="font-size:11.5px;color:#888780" id="av-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="avCarregar()" title="Atualizar"></i>
-    <i class="ti ti-dots-vertical" id="av-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="avConfigMenu()" title="Motivos"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="avCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="av-cfg-btn" style="font-size:20px;cursor:pointer;color:var(--azul);margin-left:2px;display:none" onclick="avConfigMenu()" title="Motivos"></i>
   </div>
 
   <div style="display:flex;gap:6px;padding:10px 14px 0">
-    <button id="av-tabbtn-lancar" onclick="avTab('lancar')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lançar</button>
-    <button id="av-tabbtn-salvos" onclick="avTab('salvos')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Salvos</button>
+    <button id="av-tabbtn-lancar" onclick="avTab('lancar')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Lançar</button>
+    <button id="av-tabbtn-salvos" onclick="avTab('salvos')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Salvos</button>
   </div>
 
   <div id="av-tab-lancar" style="padding:12px 14px 100px">
@@ -1521,7 +1527,7 @@ body:has(#s-login.active) .app{max-width:none}
     <div id="av-prod-sel" style="display:none;margin-top:6px"></div>
     <div id="av-busca-row" style="display:flex;gap:8px;margin-top:6px">
       <input id="av-prod-busca" placeholder="Buscar por nome ou código…" oninput="avBuscarProduto()" autocomplete="off" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box">
-      <button onclick="avAbrirScanner()" title="Ler código de barras" style="flex:0 0 auto;width:48px;border:none;background:#16267A;color:#fff;border-radius:10px;cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center"><i class="ti ti-barcode"></i></button>
+      <button onclick="avAbrirScanner()" title="Ler código de barras" style="flex:0 0 auto;width:48px;border:none;background:var(--azul);color:#fff;border-radius:10px;cursor:pointer;font-size:21px;display:flex;align-items:center;justify-content:center"><i class="ti ti-barcode"></i></button>
     </div>
     <div id="av-prod-res" style="margin-top:4px"></div>
 
@@ -1550,7 +1556,7 @@ body:has(#s-login.active) .app{max-width:none}
     <input id="av-obs" placeholder="Ex.: lote, validade, detalhe" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;box-sizing:border-box;margin-top:5px">
 
     <input type="file" id="av-foto-input" accept="image/*" capture="environment" onchange="avFotoEscolhida(this)" style="display:none">
-    <button class="btn-primary" style="margin-top:12px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="document.getElementById('av-foto-input').click()"><i class="ti ti-camera"></i> Tirar / anexar foto</button>
+    <button class="btn-primary" style="margin-top:12px;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="document.getElementById('av-foto-input').click()"><i class="ti ti-camera"></i> Tirar / anexar foto</button>
     <div id="av-foto-preview" style="margin-top:10px"></div>
 
     <button class="btn-primary" id="av-salvar-btn" style="margin-top:14px;background:#A32D2D" onclick="avSalvar()"><i class="ti ti-device-floppy"></i> Registrar avaria</button>
@@ -1563,7 +1569,7 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <select id="av-mes" onchange="avFiltroMes()" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff"></select>
-      <button onclick="avToggleIntervalo()" title="Intervalo" style="padding:9px 11px;border:1px solid #16267A;border-radius:9px;background:#fff;color:#16267A;font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
+      <button onclick="avToggleIntervalo()" title="Intervalo" style="padding:9px 11px;border:1px solid var(--azul);border-radius:9px;background:#fff;color:var(--azul);font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
     </div>
     <div id="av-intervalo" style="display:none;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:12px;color:#5F5E5A">De</span>
@@ -1573,15 +1579,15 @@ body:has(#s-login.active) .app{max-width:none}
       <button class="btn-primary" style="margin-top:0;flex:1;min-width:120px" onclick="avAplicarIntervalo()">Aplicar intervalo</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button id="av-vbtn-lista" onclick="avVerPor('lista')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lista</button>
-      <button id="av-vbtn-resumo" onclick="avVerPor('resumo')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Resumo por motivo</button>
+      <button id="av-vbtn-lista" onclick="avVerPor('lista')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Lista</button>
+      <button id="av-vbtn-resumo" onclick="avVerPor('resumo')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Resumo por motivo</button>
     </div>
     <div id="av-salvos-lista"></div>
     <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="avPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
   </div>
 
   <div id="av-detalhe" style="display:none;padding:14px 14px 100px">
-    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="avVoltarSalvos()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="av-det-nome">Avaria</div><div class="row-sub" id="av-det-sub">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="avVoltarSalvos()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="av-det-nome">Avaria</div><div class="row-sub" id="av-det-sub">—</div></div></div>
     <div id="av-det-corpo"></div>
   </div>
 </div>
@@ -1597,18 +1603,18 @@ body:has(#s-login.active) .app{max-width:none}
     #s-contas #co-cal-dia>div{animation:coFade .22s ease}
   </style>
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-calendar-dollar" style="font-size:20px;color:#0F6E56;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Contas mensais fixas</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Contas mensais fixas</div>
       <div style="font-size:11.5px;color:#888780" id="co-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="coCarregar()" title="Atualizar"></i>
-    <i class="ti ti-dots-vertical" id="co-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="coConfigMenu()" title="Configurar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="coCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="co-cfg-btn" style="font-size:20px;cursor:pointer;color:var(--azul);margin-left:2px;display:none" onclick="coConfigMenu()" title="Configurar"></i>
   </div>
 
   <div style="padding:12px 14px 0">
-    <div style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+    <div style="background:linear-gradient(135deg,var(--azul),var(--azul-mid));color:#fff;border-radius:13px;padding:13px 15px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total do mês</div><div id="co-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
         <div id="co-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 contas</div>
@@ -1618,14 +1624,14 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px 14px 0">
-    <i class="ti ti-chevron-left" style="font-size:22px;color:#16267A;cursor:pointer" onclick="coMesNav(-1)"></i>
-    <div id="co-mes-titulo" style="font-size:14px;font-weight:600;color:#16267A;min-width:140px;text-align:center">—</div>
-    <i class="ti ti-chevron-right" style="font-size:22px;color:#16267A;cursor:pointer" onclick="coMesNav(1)"></i>
+    <i class="ti ti-chevron-left" style="font-size:22px;color:var(--azul);cursor:pointer" onclick="coMesNav(-1)"></i>
+    <div id="co-mes-titulo" style="font-size:14px;font-weight:600;color:var(--azul);min-width:140px;text-align:center">—</div>
+    <i class="ti ti-chevron-right" style="font-size:22px;color:var(--azul);cursor:pointer" onclick="coMesNav(1)"></i>
   </div>
 
   <div style="display:flex;gap:6px;padding:10px 14px 0">
-    <button id="co-tabbtn-lista" onclick="coTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lista</button>
-    <button id="co-tabbtn-cal" onclick="coTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Calendário</button>
+    <button id="co-tabbtn-lista" onclick="coTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Lista</button>
+    <button id="co-tabbtn-cal" onclick="coTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Calendário</button>
   </div>
 
   <div id="co-tab-lista" style="padding:12px 14px 100px">
@@ -1650,22 +1656,22 @@ body:has(#s-login.active) .app{max-width:none}
     #s-folha #fo-cal-dia>div{animation:foFade .22s ease}
     @keyframes foCardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
     #s-folha .fo-fcard{animation:foCardIn .25s ease both}
-    #s-folha .fo-chip{display:inline-block;font-size:11px;color:#16267A;background:#E6E9F5;padding:3px 9px;border-radius:7px;white-space:nowrap}
+    #s-folha .fo-chip{display:inline-block;font-size:11px;color:var(--azul);background:#E6E9F5;padding:3px 9px;border-radius:7px;white-space:nowrap}
     #s-folha .fo-chip-amber{color:#7a5a00;background:#FFF1C2}
   </style>
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-report-money" style="font-size:20px;color:#534AB7;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Folha de pagamento</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Folha de pagamento</div>
       <div style="font-size:11.5px;color:#888780" id="fo-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="foCarregar()" title="Atualizar"></i>
-    <i class="ti ti-dots-vertical" id="fo-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="foConfigMenu()" title="Configurar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="foCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="fo-cfg-btn" style="font-size:20px;cursor:pointer;color:var(--azul);margin-left:2px;display:none" onclick="foConfigMenu()" title="Configurar"></i>
   </div>
 
   <div style="padding:12px 14px 0">
-    <div style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+    <div style="background:linear-gradient(135deg,var(--azul),var(--azul-mid));color:#fff;border-radius:13px;padding:13px 15px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">Total do mês</div><div id="fo-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
         <div id="fo-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 pessoas</div>
@@ -1675,14 +1681,14 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px 14px 0">
-    <i class="ti ti-chevron-left" style="font-size:22px;color:#16267A;cursor:pointer" onclick="foMesNav(-1)"></i>
-    <div id="fo-mes-titulo" style="font-size:14px;font-weight:600;color:#16267A;min-width:140px;text-align:center">—</div>
-    <i class="ti ti-chevron-right" style="font-size:22px;color:#16267A;cursor:pointer" onclick="foMesNav(1)"></i>
+    <i class="ti ti-chevron-left" style="font-size:22px;color:var(--azul);cursor:pointer" onclick="foMesNav(-1)"></i>
+    <div id="fo-mes-titulo" style="font-size:14px;font-weight:600;color:var(--azul);min-width:140px;text-align:center">—</div>
+    <i class="ti ti-chevron-right" style="font-size:22px;color:var(--azul);cursor:pointer" onclick="foMesNav(1)"></i>
   </div>
 
   <div style="display:flex;gap:6px;padding:10px 14px 0">
-    <button id="fo-tabbtn-lista" onclick="foTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lista</button>
-    <button id="fo-tabbtn-cal" onclick="foTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Calendário</button>
+    <button id="fo-tabbtn-lista" onclick="foTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Lista</button>
+    <button id="fo-tabbtn-cal" onclick="foTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Calendário</button>
   </div>
 
   <div id="fo-tab-lista" style="padding:12px 14px 100px">
@@ -1710,17 +1716,17 @@ body:has(#s-login.active) .app{max-width:none}
     #s-vale .va-fcard{animation:foCardIn .25s ease both}
   </style>
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-receipt" style="font-size:20px;color:#534AB7;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Vale / Convênio</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Vale / Convênio</div>
       <div style="font-size:11.5px;color:#888780" id="va-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="vaCarregar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="vaCarregar()" title="Atualizar"></i>
   </div>
 
   <div style="padding:12px 14px 0">
-    <div id="va-totcard" style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+    <div id="va-totcard" style="background:linear-gradient(135deg,var(--azul),var(--azul-mid));color:#fff;border-radius:13px;padding:13px 15px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">A descontar no mês</div><div id="va-total" style="font-size:21px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
         <div id="va-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 pessoas</div>
@@ -1730,14 +1736,14 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:10px 14px 0">
-    <i class="ti ti-chevron-left" style="font-size:22px;color:#16267A;cursor:pointer" onclick="vaMesNav(-1)"></i>
-    <div id="va-mes-titulo" style="font-size:14px;font-weight:600;color:#16267A;min-width:140px;text-align:center">—</div>
-    <i class="ti ti-chevron-right" style="font-size:22px;color:#16267A;cursor:pointer" onclick="vaMesNav(1)"></i>
+    <i class="ti ti-chevron-left" style="font-size:22px;color:var(--azul);cursor:pointer" onclick="vaMesNav(-1)"></i>
+    <div id="va-mes-titulo" style="font-size:14px;font-weight:600;color:var(--azul);min-width:140px;text-align:center">—</div>
+    <i class="ti ti-chevron-right" style="font-size:22px;color:var(--azul);cursor:pointer" onclick="vaMesNav(1)"></i>
   </div>
 
   <div style="display:flex;gap:6px;padding:10px 14px 0">
-    <button id="va-tabbtn-lista" onclick="vaTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lista</button>
-    <button id="va-tabbtn-cal" onclick="vaTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Calendário</button>
+    <button id="va-tabbtn-lista" onclick="vaTab('lista')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Lista</button>
+    <button id="va-tabbtn-cal" onclick="vaTab('cal')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Calendário</button>
   </div>
 
   <div id="va-tab-lista" style="padding:12px 14px 100px">
@@ -1760,17 +1766,17 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Sangrias / Cofre -->
 <div class="screen" id="s-sangrias">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-cash" style="font-size:20px;color:#0F6E56;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Sangrias / Cofre</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Sangrias / Cofre</div>
       <div style="font-size:11.5px;color:#888780" id="sa-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="saCarregar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="saCarregar()" title="Atualizar"></i>
   </div>
 
   <div style="padding:12px 14px 0">
-    <div id="sa-totcard" style="background:linear-gradient(135deg,#16267A,#1B3A9E);color:#fff;border-radius:13px;padding:13px 15px">
+    <div id="sa-totcard" style="background:linear-gradient(135deg,var(--azul),var(--azul-mid));color:#fff;border-radius:13px;padding:13px 15px">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div><div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.3px">No cofre agora</div><div id="sa-total" style="font-size:22px;font-weight:700;margin-top:2px">R$ 0,00</div></div>
         <div id="sa-qtd" style="text-align:right;font-size:11.5px;opacity:.9">0 sangrias</div>
@@ -1790,13 +1796,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Orçamento -->
 <div class="screen" id="s-orcamento">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-wallet" style="font-size:20px;color:#BA7517;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Orçamento</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Orçamento</div>
       <div style="font-size:11.5px;color:#888780" id="orc-sub">Monte a lista do cliente</div>
     </div>
-    <i class="ti ti-file-plus" style="font-size:20px;cursor:pointer;color:#16267A" onclick="orcNovo()" title="Novo orçamento"></i>
+    <i class="ti ti-file-plus" style="font-size:20px;cursor:pointer;color:var(--azul)" onclick="orcNovo()" title="Novo orçamento"></i>
   </div>
 
   <div style="padding:12px 14px 0">
@@ -1814,7 +1820,7 @@ body:has(#s-login.active) .app{max-width:none}
   <div style="position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:460px;background:#fff;border-top:1px solid #e6e6e6;padding:10px 14px 14px;box-shadow:0 -4px 18px rgba(0,0,0,.08);z-index:30">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="font-size:11.5px;color:#888780" id="orc-qtd">0 item(ns)</div>
-      <div><span style="font-size:12px;color:#888780;margin-right:6px">Total</span><span id="orc-total" style="font-size:19px;font-weight:700;color:#16267A">R$ 0,00</span></div>
+      <div><span style="font-size:12px;color:#888780;margin-right:6px">Total</span><span id="orc-total" style="font-size:19px;font-weight:700;color:var(--azul)">R$ 0,00</span></div>
     </div>
     <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="orcPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
   </div>
@@ -1823,19 +1829,19 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Checklist dos gerentes -->
 <div class="screen" id="s-checklist">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-clipboard-check" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Checklist dos gerentes</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Checklist dos gerentes</div>
       <div style="font-size:11.5px;color:#888780" id="ck-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="ckCarregar()" title="Atualizar"></i>
-    <i class="ti ti-dots-vertical" id="ck-cfg-btn" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px;display:none" onclick="ckConfigMenu()" title="Configurar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="ckCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" id="ck-cfg-btn" style="font-size:20px;cursor:pointer;color:var(--azul);margin-left:2px;display:none" onclick="ckConfigMenu()" title="Configurar"></i>
   </div>
 
   <div style="display:flex;gap:6px;padding:10px 14px 0">
-    <button id="ck-tabbtn-preencher" onclick="ckTab('preencher')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Preencher</button>
-    <button id="ck-tabbtn-salvos" onclick="ckTab('salvos')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Salvos</button>
+    <button id="ck-tabbtn-preencher" onclick="ckTab('preencher')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Preencher</button>
+    <button id="ck-tabbtn-salvos" onclick="ckTab('salvos')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Salvos</button>
   </div>
 
   <div id="ck-tab-preencher" style="padding:12px 14px 100px">
@@ -1845,13 +1851,13 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
     <div id="ck-lista"><div class="loadrow"><span class="spin"></span> Carregando tarefas…</div></div>
     <button class="btn-primary" id="ck-salvar-btn" style="margin-top:14px" onclick="ckSalvar()"><i class="ti ti-device-floppy"></i> Salvar checklist</button>
-    <button class="btn-primary" id="ck-nova-btn" style="margin-top:10px;background:#fff;color:#16267A;border:1px solid #16267A;display:none" onclick="ckNovaTarefa()"><i class="ti ti-plus"></i> Nova tarefa</button>
+    <button class="btn-primary" id="ck-nova-btn" style="margin-top:10px;background:#fff;color:var(--azul);border:1px solid var(--azul);display:none" onclick="ckNovaTarefa()"><i class="ti ti-plus"></i> Nova tarefa</button>
   </div>
 
   <div id="ck-tab-salvos" style="display:none;padding:12px 14px 100px">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <select id="ck-mes" onchange="ckFiltroMes()" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff"></select>
-      <button onclick="ckToggleIntervalo()" title="Filtrar por intervalo" style="padding:9px 11px;border:1px solid #16267A;border-radius:9px;background:#fff;color:#16267A;font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
+      <button onclick="ckToggleIntervalo()" title="Filtrar por intervalo" style="padding:9px 11px;border:1px solid var(--azul);border-radius:9px;background:#fff;color:var(--azul);font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
     </div>
     <div id="ck-intervalo" style="display:none;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:12px;color:#5F5E5A">De</span>
@@ -1865,7 +1871,7 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div id="ck-detalhe" style="display:none;padding:14px 14px 100px">
-    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="ckVoltarSalvos()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="ck-det-nome">Checklist</div><div class="row-sub" id="ck-det-sub">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="ckVoltarSalvos()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="ck-det-nome">Checklist</div><div class="row-sub" id="ck-det-sub">—</div></div></div>
     <div id="ck-det-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="ckPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
   </div>
@@ -1874,19 +1880,19 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Checklist temperatura dos freezers -->
 <div class="screen" id="s-freezers">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="show('s-app')"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="show('s-app')"></i>
     <i class="ti ti-temperature-snow" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Temperatura dos freezers</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Temperatura dos freezers</div>
       <div style="font-size:11.5px;color:#888780" id="fz-sub"><span class="spin spin-sm"></span></div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="fzCarregar()" title="Atualizar"></i>
-    <i class="ti ti-dots-vertical" style="font-size:20px;cursor:pointer;color:#16267A;margin-left:2px" onclick="fzConfigMenu()" title="Configurar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="fzCarregar()" title="Atualizar"></i>
+    <i class="ti ti-dots-vertical" style="font-size:20px;cursor:pointer;color:var(--azul);margin-left:2px" onclick="fzConfigMenu()" title="Configurar"></i>
   </div>
 
   <div style="display:flex;gap:6px;padding:10px 14px 0">
-    <button id="fz-tabbtn-lancar" onclick="fzTab('lancar')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Lançar</button>
-    <button id="fz-tabbtn-coletas" onclick="fzTab('coletas')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Coletas salvas</button>
+    <button id="fz-tabbtn-lancar" onclick="fzTab('lancar')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Lançar</button>
+    <button id="fz-tabbtn-coletas" onclick="fzTab('coletas')" style="flex:1;padding:9px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Coletas salvas</button>
   </div>
 
   <div id="fz-tab-lancar" style="padding:12px 14px 100px">
@@ -1896,13 +1902,13 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
     <div id="fz-lista"><div class="loadrow"><span class="spin"></span> Carregando freezers…</div></div>
     <button class="btn-primary" id="fz-salvar-btn" style="margin-top:14px" onclick="fzSalvarMedicao()"><i class="ti ti-device-floppy"></i> Salvar medição</button>
-    <button class="btn-primary" style="margin-top:10px;background:#fff;color:#16267A;border:1px solid #16267A" onclick="fzNovo()"><i class="ti ti-plus"></i> Novo freezer</button>
+    <button class="btn-primary" style="margin-top:10px;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="fzNovo()"><i class="ti ti-plus"></i> Novo freezer</button>
   </div>
 
   <div id="fz-tab-coletas" style="display:none;padding:12px 14px 100px">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <select id="fz-mes" onchange="fzFiltroMes()" style="flex:1;padding:9px;border:1px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fff"></select>
-      <button onclick="fzToggleIntervalo()" id="fz-int-btn" title="Filtrar por intervalo" style="padding:9px 11px;border:1px solid #16267A;border-radius:9px;background:#fff;color:#16267A;font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
+      <button onclick="fzToggleIntervalo()" id="fz-int-btn" title="Filtrar por intervalo" style="padding:9px 11px;border:1px solid var(--azul);border-radius:9px;background:#fff;color:var(--azul);font-size:15px;cursor:pointer"><i class="ti ti-calendar"></i></button>
     </div>
     <div id="fz-intervalo" style="display:none;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:12px;color:#5F5E5A">De</span>
@@ -1912,8 +1918,8 @@ body:has(#s-login.active) .app{max-width:none}
       <button class="btn-primary" style="margin-top:0;flex:1;min-width:120px" onclick="fzAplicarIntervalo()">Aplicar intervalo</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button id="fz-vbtn-freezer" onclick="fzVerPor('freezer')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#16267A;color:#fff;border:none">Por freezer</button>
-      <button id="fz-vbtn-data" onclick="fzVerPor('data')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;color:#16267A;border:1px solid #16267A">Por data</button>
+      <button id="fz-vbtn-freezer" onclick="fzVerPor('freezer')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:var(--azul);color:#fff;border:none">Por freezer</button>
+      <button id="fz-vbtn-data" onclick="fzVerPor('data')" style="flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;color:var(--azul);border:1px solid var(--azul)">Por data</button>
     </div>
     <div style="font-size:11.5px;color:#888780;margin:0 2px 8px">Período: <b id="fz-col-filtro">—</b></div>
     <div id="fz-col-lista"></div>
@@ -1921,7 +1927,7 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div id="fz-detalhe" style="display:none;padding:14px 14px 100px">
-    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="fzVoltarColetas()"><i class="ti ti-arrow-left" style="color:#16267A;font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="fz-det-nome">Detalhe</div><div class="row-sub" id="fz-det-sub">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="fzVoltarColetas()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="fz-det-nome">Detalhe</div><div class="row-sub" id="fz-det-sub">—</div></div></div>
     <div id="fz-det-itens"></div>
   </div>
 </div>
@@ -1929,13 +1935,13 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- TELA: Situação dos terminais (busca-preço) -->
 <div class="screen" id="s-terminais">
   <div style="display:flex;align-items:center;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,0,0,0.08)">
-    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:#16267A" onclick="terminaisFechar()"></i>
+    <i class="ti ti-arrow-left" style="font-size:21px;cursor:pointer;color:var(--azul)" onclick="terminaisFechar()"></i>
     <i class="ti ti-device-desktop" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
     <div style="flex:1">
-      <div style="font-size:16px;font-weight:600;color:#16267A">Situação dos terminais</div>
+      <div style="font-size:16px;font-weight:600;color:var(--azul)">Situação dos terminais</div>
       <div style="font-size:11.5px;color:#888780" id="term-sub">Busca-preço da loja</div>
     </div>
-    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:#16267A" onclick="terminaisAtualizar()" title="Atualizar"></i>
+    <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="terminaisAtualizar()" title="Atualizar"></i>
   </div>
   <div style="padding:14px 14px 90px" id="term-lista">
     <div class="row-sub" style="padding:6px 2px">Carregando…</div>
@@ -1943,7 +1949,7 @@ body:has(#s-login.active) .app{max-width:none}
 </div>
 
 <!-- Tela "Sincronizando dados" (offline-first) -->
-<div id="sync-splash" style="display:none;position:fixed;inset:0;background:#16267A;z-index:90;flex-direction:column;align-items:center;justify-content:center;color:#fff">
+<div id="sync-splash" style="display:none;position:fixed;inset:0;background:var(--azul);z-index:90;flex-direction:column;align-items:center;justify-content:center;color:#fff">
   <!-- Marca oficial do app. logo-splash.png = logo redonda com cantos transparentes (flutua no fundo navy). -->
   <div id="brand-mark" class="brand-mark">
     <img src="logo-splash-3.png" width="100" height="100" alt="Ideal" style="display:block">
@@ -1990,7 +1996,39 @@ function lojaNome(l, allLabel, unknownLabel){
   var m = (window.BRAND && window.BRAND.lojas) || {};
   return m[l] || unknownLabel || l;
 }
-// Aplica a marca do cliente (nome/logo). Cores ficam pra fase 2 (CSS vars).
+// ── FASE 2: cores por cliente via CSS vars (:root) ──
+var _AZUL_IDEAL = '#16267a'; // se a cor do cliente for esta, NÃO deriva o mid (Ideal fica idêntico)
+function _hex2rgb(h){
+  if(!h) return null;
+  h = String(h).trim().replace('#','');
+  if(h.length===3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if(h.length!==6 || /[^0-9a-fA-F]/.test(h)) return null;
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function _rgb2hex(c){
+  return '#'+c.map(function(v){ v=Math.max(0,Math.min(255,Math.round(v))); return ('0'+v.toString(16)).slice(-2); }).join('');
+}
+// Clareia rumo ao branco (t=0..1). Deriva o --azul-mid p/ clientes não-Ideal.
+function _clarear(rgb, t){ return [0,1,2].map(function(i){ return rgb[i] + (255-rgb[i])*t; }); }
+// Aplica cor_principal/cor_destaque nas CSS vars. Cada peça é opcional; Ideal nunca muda.
+function aplicarCores(principal, destaque){
+  try {
+    var root = document.documentElement;
+    var rgb = _hex2rgb(principal);
+    if(rgb){
+      root.style.setProperty('--azul', principal);
+      root.style.setProperty('--azul-rgb', rgb.join(','));
+      // mid: só deriva se NÃO for o azul do Ideal (mantém o #1B3A9E original)
+      if(String(principal).trim().toLowerCase() !== _AZUL_IDEAL){
+        root.style.setProperty('--azul-mid', _rgb2hex(_clarear(rgb, 0.18)));
+      }
+      var mt = document.querySelector('meta[name="theme-color"]'); // não aceita var()
+      if(mt) mt.setAttribute('content', principal);
+    }
+    if(_hex2rgb(destaque)) root.style.setProperty('--amarelo', destaque);
+  } catch(_e){ /* cor é cosmética: nunca derruba o login */ }
+}
+// Aplica a marca do cliente (nome/logo/cores).
 // Tudo é guardado: só sobrescreve o que vier preenchido — Ideal nunca quebra.
 function aplicarBranding(b){
   if(!b) return;
@@ -2006,9 +2044,10 @@ function aplicarBranding(b){
       window.BRAND.logo_url = b.logo_url;
       document.querySelectorAll('.splash-logo-wrap img, .login2-logo img, #sync-splash img').forEach(function(im){ im.src = b.logo_url; });
     }
-    // Cores: guardadas pra fase 2 (recolor por CSS var). Sem efeito visual ainda.
+    // Cores (FASE 2): deriva as CSS vars de cor_principal/cor_destaque.
     if(b.cor_principal) window.BRAND.cor_principal = b.cor_principal;
     if(b.cor_destaque)  window.BRAND.cor_destaque  = b.cor_destaque;
+    aplicarCores(window.BRAND.cor_principal, window.BRAND.cor_destaque);
   } catch(_e){ /* marca é cosmética: nunca derruba o login */ }
 }
 // Injeta a versão (única) no rodapé do login e na Config.
