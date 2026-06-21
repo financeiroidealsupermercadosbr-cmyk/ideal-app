@@ -6582,6 +6582,17 @@ async function fazerLogin() {
     window.BRAND.lojas = {};
     window.BRAND.lojasArr = [];
   }
+  // O cache local de produtos/estrutura (IndexedDB 'ideal_preco') é por-NAVEGADOR,
+  // não por-cliente. Se o tenant logado mudou, zera o cache pra não vazar dados
+  // de outro cliente (ex.: ver os 42k do Ideal logado como cliente novo).
+  try{
+    var _cliTag = String(usr.cliente_id || CLIENTE_ID);
+    if(localStorage.getItem('ideal_preco_tenant') !== _cliTag){
+      try{ indexedDB.deleteDatabase('ideal_preco'); }catch(_e){}
+      PRODUTOS = [];
+      localStorage.setItem('ideal_preco_tenant', _cliTag);
+    }
+  }catch(_e){}
   // BRANDING: aplica a marca do cliente (nome/logo) se a nuvem tiver dados. Não bloqueia.
   try { aplicarBranding(await supaMeuBranding()); } catch(_e){ /* marca opcional */ }
   try { aplicarLojas(await supaMeuLojas()); } catch(_e){ /* lojas opcionais */ }
