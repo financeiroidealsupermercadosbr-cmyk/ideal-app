@@ -6330,7 +6330,7 @@ async function fazerLogin() {
     if (await supaLogin(u, p)) {
       const perfil = await supaMeuPerfil();
       if (perfil && perfil.ativo !== false && perfil.nivel) {
-        _supaUsr = { nome:(perfil.nome||u), nivel:perfil.nivel, loja:perfil.loja, setor:'', usuario:u, telefone:'', email:_supaEmail(u) };
+        _supaUsr = { nome:(perfil.nome||u), nivel:perfil.nivel, loja:perfil.loja, setor:perfil.nivel, usuario:u, telefone:'', email:_supaEmail(u) };
         console.info('[supa] perfil pela nuvem:', perfil.nivel, perfil.loja);
       }
     }
