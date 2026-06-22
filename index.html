@@ -7964,6 +7964,32 @@ async function salvarMeuPerfil(){
   const senha= document.getElementById('perfil-senha').value;
   if(!nome){ toast('⚠ Informe o nome'); return; }
   const btn = document.getElementById('perfil-btn'); const t=btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
+  // ── NUVEM (cliente): nome via RPC meu_perfil_set; senha via GoTrue (auth/v1/user) ──
+  // OBS: telefone/email não têm coluna em public.usuarios — ficam só na sessão (não persistem na nuvem).
+  if(_supaAtivo()){
+    try{
+      const tk = await supaToken(); if(!tk) throw new Error('sem sessão');
+      const r1 = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meu_perfil_set`, {
+        method:'POST', headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
+        body: JSON.stringify({ p_nome:nome })
+      }, 8000);
+      if(!r1.ok){ const e1=await r1.text().catch(function(){return '';}); throw new Error(e1||('HTTP '+r1.status)); }
+      if(senha){
+        const r2 = await _supaFetchT(`${SUPA_URL}/auth/v1/user`, {
+          method:'PUT', headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
+          body: JSON.stringify({ password:senha })
+        }, 8000);
+        if(!r2.ok){ const e2=await r2.text().catch(function(){return '';}); throw new Error('senha: '+(e2||('HTTP '+r2.status))); }
+      }
+      userAtual.nome=nome; userAtual.telefone=tel; userAtual.email=email;
+      const hu = document.getElementById('h-user'); if(hu) hu.textContent = userAtual.nome+' · '+(userAtual.setor||'');
+      if(typeof carregarUsuarios==='function') carregarUsuarios();
+      toast(senha ? '✓ Perfil e senha atualizados' : '✓ Perfil atualizado');
+      fecharMeuPerfil();
+    }catch(e){ console.error('salvarMeuPerfil (nuvem):', e); toast('⚠ '+(e.message||'Não consegui salvar.')); }
+    btn.disabled=false; btn.textContent=t;
+    return;
+  }
   try{
     const res = await fetch(_urlApps(), {
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
