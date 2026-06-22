@@ -8138,7 +8138,7 @@ async function salvarUsuario(){
         if(!r.ok){ const t=await r.text().catch(function(){return '';}); throw new Error(t||('HTTP '+r.status)); }
       } else {
         if(!senha){ toast('⚠ Defina uma senha'); btn.disabled=false; btn.textContent=txt; return; }
-        const r = await fetch(`${SUPA_URL}/functions/v1/gestor-criar-usuario`, {
+        const r = await fetch(`${SUPA_URL}/functions/v1/estor-criar-usuario`, {
           method:'POST', headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+tk },
           body: JSON.stringify({ usuario:login, senha:senha, nome:nome, papel:papel, lojas:lojasArr })
         });
