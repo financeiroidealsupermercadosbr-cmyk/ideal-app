@@ -2291,18 +2291,42 @@ function terminaisFechar(){
 }
 function _termEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// Lista de terminais — cloud-first (tabela terminais via RLS) com fallback Sheets.
+// Devolve o MESMO formato que o Apps Script: { ok:true, terminais:[{id,idadeSeg,info}] }.
+async function _termListar(){
+  if(_supaAtivo()){
+    try{
+      var tk = await supaToken();
+      if(tk){
+        var r = await supaFetch('/rest/v1/terminais?select=codigo,info,ult_visto&order=codigo');
+        if(r.ok){
+          var rows = await r.json();
+          if(Array.isArray(rows)){
+            var agora = Date.now();
+            var terminais = rows.map(function(t){
+              var vt = t.ult_visto ? Date.parse(t.ult_visto) : NaN;
+              var seg = isNaN(vt) ? null : Math.max(0, Math.floor((agora - vt)/1000));
+              return { id:String(t.codigo||''), idadeSeg:seg, info:String(t.info||'') };
+            });
+            return { ok:true, terminais:terminais, fonte:'nuvem' };
+          }
+        }
+      }
+    }catch(e){ /* falha leve -> tenta Sheets abaixo */ }
+  }
+  if(_SHEETS_OFF) return { ok:false, erro:'sem-sheets' };
+  var res = await fetch(_urlApps(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ acao:'terminais_list', sheetId:SHEET_ID }) });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return await res.json();
+}
 async function terminaisAtualizar(){
   var sub = document.getElementById('term-sub');
   var box = document.getElementById('term-lista');
   if(!box) return;
   box.innerHTML=_skel(3);
   try{
-    var res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ acao:'terminais_list', sheetId:SHEET_ID })
-    });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    var j = await res.json();
+    var j = await _termListar();
     if(!j || !j.ok) throw new Error((j&&j.erro)||'falha');
     var lista = (j.terminais||[]).slice().sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
     if(!lista.length){
@@ -2369,12 +2393,7 @@ function _termHorarioFechado(){ var h=new Date().getHours(); return (h>=22 || h<
 async function terminaisCheckSilencioso(){
   if(_termHorarioFechado()){ _termBannerEsconder(); return; }   // loja fechada: silêncio
   try{
-    var res = await fetch(_urlApps(), {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ acao:'terminais_list', sheetId:SHEET_ID })
-    });
-    if(!res.ok) return;
-    var j = await res.json();
+    var j = await _termListar();
     if(!j || !j.ok) return;
     var lista = j.terminais || [];
     var offline = [];
