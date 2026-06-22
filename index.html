@@ -5288,13 +5288,17 @@ function orcRenderItens(){
     var cx = Number(it.cx)||0, undcx = Number(it.undcx)||0;
     // linha de preços de tabela (varejo/atacado) + etiqueta do que está valendo
     var temAtac = (Number(it.atacado)||0)>0;
-    var usandoAtac = !it.manual && !it.precoManual && (Number(it.qtd)||0)>=4 && temAtac;
+    var naFaixaAtac = !it.manual && (Number(it.qtd)||0)>=4 && temAtac;
     var precoLinha = '';
     if(!it.manual){
+      var statusTxt;
+      if(it.precoManual){ statusTxt = '<span style="color:#9A6B00">· preço editado</span>' + (naFaixaAtac?' <span style="color:#0F6E56">(faixa atacado)</span>':''); }
+      else if(naFaixaAtac){ statusTxt = '<span style="color:#0F6E56;font-weight:600">· aplicando atacado</span>'; }
+      else { statusTxt = '<span>· aplicando varejo</span>'; }
       precoLinha = '<div style="font-size:10.5px;color:#9a988f;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
         +'<span>Varejo '+_precoBRL(it.varejo)+'</span>'
         +(temAtac?'<span style="color:#0F6E56">Atacado '+_precoBRL(it.atacado)+' · 4+</span>':'')
-        +(it.precoManual?'<span style="color:#9A6B00">· preço editado</span>':(usandoAtac?'<span style="color:#0F6E56;font-weight:600">· aplicando atacado</span>':'<span>· aplicando varejo</span>'))
+        +statusTxt
         +'</div>';
     }
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
@@ -5349,7 +5353,7 @@ function orcPDF(){
   var linhas='', tot=0;
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var q=Number(it.qtd)||0; var v=Number(it.venda)||0; var sub=q*v; tot+=sub;
     var cxInfo = (ORC_CFG.mostrarCaixa && (Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0) ? (' <span style="color:#888780;font-size:10px">('+it.cx+' cx × '+it.undcx+')</span>') : '';
-    var atacAplic = !it.manual && !it.precoManual && q>=4 && (Number(it.atacado)||0)>0;
+    var atacAplic = !it.manual && q>=4 && (Number(it.atacado)||0)>0;
     var praticadoTag = (ORC_CFG.mostrarTagAtacado && atacAplic) ? ' <span style="color:#0F6E56;font-size:10px">(atacado)</span>' : '';
     var varejoTd = ORC_CFG.mostrarVarejo ? ('<td class="v">'+(it.manual?'—':_precoBRL(it.varejo))+'</td>') : '';
     var codHtml = (ORC_CFG.mostrarCodigo && !it.manual && (it.barras||it.cod)) ? ('<div style="font-size:10px;color:#888780;margin-top:2px">cód '+_precoEsc(it.barras||it.cod)+'</div>') : '';
