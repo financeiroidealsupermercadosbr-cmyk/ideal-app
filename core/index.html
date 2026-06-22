@@ -157,6 +157,16 @@
     <div class="mc" style="margin:4px 0 8px">Desmarque pra escolher quais telas o cliente vê no Menu.</div>
     <div id="m_mods" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px"></div>
   </div>
+  <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:2px">Lojas</div>
+    <div class="mc" style="margin-bottom:8px">O código (l1, l2…) é gerado automático. Renomeie no campo; o × remove.</div>
+    <div id="m_lojas"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="m_loja_nome" placeholder="Nome da nova loja" style="flex:1">
+      <button type="button" class="btn ghost mini" id="m_loja_add">Adicionar</button>
+    </div>
+    <span id="m_loja_msg" class="mc" style="margin:0"></span>
+  </div>
   <div class="modal-foot"><button class="btn ghost" id="mCancel">Cancelar</button>
     <button class="btn amar" id="mSalvar">Salvar</button></div>
 </div></div>
@@ -169,6 +179,9 @@
   <div class="grid2"><div><label>Loja</label><input id="n_loja"></div>
     <div><label>Cidade</label><input id="n_cidade"></div></div>
   <label>UF</label><input id="n_uf" maxlength="2" style="max-width:120px">
+  <label>Lojas (uma por linha)</label>
+  <textarea id="n_lojas" rows="3" placeholder="Loja Centro&#10;Loja Bairro" style="width:100%;resize:vertical;font-family:inherit"></textarea>
+  <div class="mc">Opcional agora — dá pra adicionar/editar depois no cliente. O código é gerado sozinho.</div>
   <div id="n_result" class="hide" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,196,0,.08)">
     <div style="font-size:12px;color:var(--mut);margin-bottom:4px">Token da Ponte — copie agora, só aparece desta vez:</div>
     <div id="n_token" style="font-family:monospace;font-size:12px;word-break:break-all;margin-bottom:8px"></div>
@@ -340,6 +353,7 @@ function abrirModal(id){
   $('m_cor1').value=c.cor_principal||'#16267A'; $('m_cor2').value=c.cor_destaque||'#FFC400'; $('m_logo').value=c.logo_url||'';
   _logoPrevSync();
   $('m_logo_msg').textContent='';
+  lojasRender(id); $('m_loja_nome').value=''; $('m_loja_msg').textContent='';
   renderMods(c.modulos); // estado provisório (caso admin_clientes já traga modulos)
   rpc('admin_modulos_get',{p_id:id}).then(function(m){ renderMods(m); }).catch(function(){ /* mantém o provisório */ });
   $('modal').classList.remove('hide');
@@ -380,6 +394,44 @@ $('m_logo_file').onchange=async function(){
   this.value='';
 };
 
+// ── Lojas do cliente (modal de editar) ──
+function _el(tag,attrs,kids){ var e=document.createElement(tag); attrs=attrs||{};
+  for(var k in attrs){ if(k==='style')e.style.cssText=attrs[k]; else if(k==='class')e.className=attrs[k]; else e.setAttribute(k,attrs[k]); }
+  (kids||[]).forEach(function(c){ e.appendChild(typeof c==='string'?document.createTextNode(c):c); }); return e; }
+
+async function lojasRender(cli){
+  var box=$('m_lojas'); box.textContent='Carregando…';
+  try{
+    var ls=await rpc('admin_lojas_get',{p_cliente:cli})||[];
+    box.textContent='';
+    if(!ls.length){ box.appendChild(_el('div',{class:'mc',style:'margin:0'},['Nenhuma loja ainda.'])); return; }
+    ls.forEach(function(l){
+      var inp=_el('input',{value:l.nome||'',style:'flex:1'});
+      inp.onchange=async function(){
+        try{ await rpc('admin_loja_set',{p_id:l.id,p_nome:inp.value.trim()}); $('m_loja_msg').textContent='Loja renomeada.'; }
+        catch(e){ $('m_loja_msg').textContent='Erro: '+e.message; }
+      };
+      var cod=_el('span',{class:'mc',style:'margin:0;min-width:34px;font-family:monospace'},[l.codigo||'']);
+      var del=_el('button',{type:'button',class:'btn ghost mini',title:'Remover'},['×']);
+      del.onclick=async function(){
+        if(!confirm('Remover a loja "'+(l.nome||l.codigo)+'"?')) return;
+        try{ await rpc('admin_loja_del',{p_id:l.id}); lojasRender(cli); }
+        catch(e){ $('m_loja_msg').textContent='Erro: '+e.message; }
+      };
+      box.appendChild(_el('div',{style:'display:flex;align-items:center;gap:8px;margin-bottom:6px'},[cod,inp,del]));
+    });
+  }catch(e){ box.textContent=''; box.appendChild(_el('div',{class:'mc',style:'margin:0'},['Não consegui carregar as lojas: '+e.message])); }
+}
+$('m_loja_add').onclick=async function(){
+  var nome=($('m_loja_nome').value||'').trim();
+  if(!nome){ $('m_loja_msg').textContent='Digite o nome da loja.'; return; }
+  if(!editId){ $('m_loja_msg').textContent='Salve o cliente antes.'; return; }
+  try{
+    await rpc('admin_loja_add',{p_cliente:editId,p_nome:nome});
+    $('m_loja_nome').value=''; $('m_loja_msg').textContent='Loja adicionada.'; lojasRender(editId);
+  }catch(e){ $('m_loja_msg').textContent='Erro: '+e.message; }
+};
+
 $('mSalvar').onclick=async()=>{
   await rpc('admin_salvar_cliente',{p_id:editId,p_nome:$('m_nome').value,p_loja:$('m_loja').value,
     p_modelo:$('m_modelo').value,p_cidade:$('m_cidade').value,p_uf:$('m_uf').value,
@@ -392,6 +444,7 @@ $('mSalvar').onclick=async()=>{
 // ── Novo cliente (cria cliente + token) ──
 $('btnNovo').onclick=()=>{
   ['n_nome','n_loja','n_cidade','n_uf'].forEach(k=>$(k).value=''); $('n_mens').value=0; $('n_dia').value=10;
+  $('n_lojas').value='';
   $('n_result').classList.add('hide'); $('nCriar').disabled=false; $('modal-novo').classList.remove('hide');
 };
 $('nCancel').onclick=()=>$('modal-novo').classList.add('hide');
@@ -404,7 +457,14 @@ $('nCriar').onclick=async()=>{
       p_loja:$('n_loja').value.trim()||null,p_cidade:$('n_cidade').value.trim()||null,p_uf:$('n_uf').value.trim()||null});
     const row=Array.isArray(r)?r[0]:r;
     novoCliId=row.cliente_id; novoCliNome=nome;
+    // cria as lojas digitadas (uma por linha), código gerado automático
+    var nomes=($('n_lojas').value||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    var feitas=0;
+    for(var i=0;i<nomes.length;i++){
+      try{ await rpc('admin_loja_add',{p_cliente:novoCliId,p_nome:nomes[i]}); feitas++; }catch(_e){ /* segue */ }
+    }
     $('n_token').textContent=row.token; $('n_result').classList.remove('hide');
+    if(nomes.length) $('n_token').setAttribute('title', feitas+' de '+nomes.length+' loja(s) criada(s)');
     carregar();
   }catch(e){ alert('Erro ao criar: '+e.message); $('nCriar').disabled=false; }
 };
