@@ -1148,7 +1148,7 @@ body:has(#s-login.active) .app{max-width:none}
       <div style="font-size:16px;font-weight:600;color:var(--azul)">Calculadora de preço</div>
       <div style="font-size:11.5px;color:#888780">Custo + margem = preço de venda</div>
     </div>
-    <i class="ti ti-calculator" style="font-size:20px;color:var(--azul)"></i>
+    <button onclick="calcLimpar()" style="display:flex;align-items:center;gap:5px;background:#f8f8f8;border:1px solid #e0e0e0;border-radius:9px;padding:7px 11px;font-size:12.5px;color:var(--azul);cursor:pointer"><i class="ti ti-eraser" style="font-size:15px"></i>Limpar</button>
   </div>
 
   <div style="padding:0 14px 90px">
@@ -5149,7 +5149,7 @@ function orcBuscar(){
   for(var j=0;j<res.length;j++){ var q=res[j]; var jaTem=ORC_ITENS.some(function(x){return x.cod===q.c;});
     h+='<div style="border:0.5px solid #B5D4F4;background:#F2F8FE;border-radius:10px;margin-bottom:6px;padding:8px 10px;display:flex;align-items:center;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.25">'+_precoEsc(q.d)+'</div>'
-      +'<div style="font-size:10.5px;color:#9a988f">cód '+_precoEsc(q.c)+' · '+_precoBRL(q.v)+'</div></div>'
+      +'<div style="font-size:10.5px;color:#9a988f">cód '+_precoEsc(q.b||q.c)+' · '+_precoBRL(q.v)+'</div></div>'
       +(jaTem?'<span style="font-size:12px;color:#0F6E56;white-space:nowrap"><i class="ti ti-check"></i> na lista</span>'
         :'<button onclick="orcAdd(\''+_precoEsc(q.c)+'\')" style="background:#0F6E56;color:#fff;border:none;border-radius:8px;height:32px;padding:0 12px;font-size:13px;white-space:nowrap"><i class="ti ti-plus"></i> Add</button>')
       +'</div>';
@@ -5203,6 +5203,26 @@ function orcQtdSet(cod, val){
   for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=n; break; } }
   orcRenderItens();
 }
+// Formata o valor de venda pro input (vírgula decimal, sem "R$").
+function _orcVal(v){ v=Number(v)||0; return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// Edita o valor de venda da unidade (aceita vírgula ou ponto).
+function orcVendaSet(cod, val){
+  var s=String(val||'').trim(); if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,'');
+  var v=parseFloat(s); if(isNaN(v)||v<0) v=0;
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].venda=v; break; } }
+  orcRenderItens();
+}
+// Caixas × unidades por caixa → preenche a quantidade em unidades (modo B).
+function orcCaixaSet(cod, cxVal, undVal){
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){
+    var it=ORC_ITENS[i];
+    if(cxVal!==null){ it.cx=Math.max(0,parseInt(String(cxVal).replace(/\D/g,''),10)||0); }
+    if(undVal!==null){ it.undcx=Math.max(0,parseInt(String(undVal).replace(/\D/g,''),10)||0); }
+    if((Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0){ it.qtd = it.cx*it.undcx; }
+    break;
+  } }
+  orcRenderItens();
+}
 function orcRemover(cod){
   ORC_ITENS=ORC_ITENS.filter(function(x){return x.cod!==String(cod);});
   orcRenderItens();
@@ -5217,18 +5237,37 @@ function orcRenderItens(){
   if(!ORC_ITENS.length){ el.innerHTML=_vazio({ico:'ti-wallet',tit:'Nenhum item ainda',sub:'Busque ou bipe um produto pra montar o orçamento.'}); return; }
   var h='';
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var cod=_precoEsc(it.cod); var sub=(Number(it.venda)||0)*(Number(it.qtd)||0);
+    var codTxt = it.manual ? '<span style="color:#9A6B00">manual</span>' : ('cód '+_precoEsc(it.barras||it.cod));
+    var cx = Number(it.cx)||0, undcx = Number(it.undcx)||0;
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
       +'<div style="display:flex;align-items:flex-start;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
-      +'<div style="font-size:10.5px;color:#9a988f;margin-top:2px">'+(it.manual?'<span style="color:#9A6B00">manual</span> · ':'cód '+cod+' · ')+_precoBRL(it.venda)+' un</div></div>'
+      +'<div style="font-size:10.5px;color:#9a988f;margin-top:2px">'+codTxt+'</div></div>'
       +'<i class="ti ti-trash" style="font-size:17px;color:#A32D2D;cursor:pointer" onclick="orcRemover(\''+cod+'\')"></i>'
       +'</div>'
+      // valor de venda editável
       +'<div style="display:flex;align-items:center;gap:7px;margin-top:9px">'
-      +'<button onclick="orcQtd(\''+cod+'\',-1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">−</button>'
-      +'<input type="tel" value="'+(it.qtd||1)+'" onchange="orcQtdSet(\''+cod+'\',this.value)" style="width:46px;text-align:center;font-size:15px;font-weight:500;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 0;box-sizing:border-box">'
-      +'<button onclick="orcQtd(\''+cod+'\',1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">+</button>'
+      +'<span style="font-size:11px;color:#888780">Venda un.</span>'
+      +'<span style="font-size:13px;color:#888780">R$</span>'
+      +'<input type="text" inputmode="decimal" value="'+_orcVal(it.venda)+'" onchange="orcVendaSet(\''+cod+'\',this.value)" style="width:78px;text-align:right;font-size:14px;font-weight:600;color:#16267A;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 8px;box-sizing:border-box">'
       +'<span style="flex:1"></span>'
       +'<span style="font-size:14px;font-weight:700;color:#16267A">'+_precoBRL(sub)+'</span>'
+      +'</div>'
+      // quantidade em unidades (+/−)
+      +'<div style="display:flex;align-items:center;gap:7px;margin-top:8px">'
+      +'<span style="font-size:11px;color:#888780;width:62px">Unidades</span>'
+      +'<button onclick="orcQtd(\''+cod+'\',-1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">−</button>'
+      +'<input type="tel" value="'+(it.qtd||1)+'" onchange="orcQtdSet(\''+cod+'\',this.value)" style="width:54px;text-align:center;font-size:15px;font-weight:500;border:0.5px solid #e0e0e0;border-radius:7px;padding:6px 0;box-sizing:border-box">'
+      +'<button onclick="orcQtd(\''+cod+'\',1)" style="width:30px;height:30px;border-radius:7px;border:0.5px solid #D3D1C7;background:#fff;font-size:17px;color:#16267A">+</button>'
+      +'</div>'
+      // por caixa/fardo (modo B: caixas × und/cx → preenche unidades, mostra equivalência)
+      +'<div style="display:flex;align-items:center;gap:6px;margin-top:8px;background:#f8f8f8;border-radius:8px;padding:7px 9px">'
+      +'<i class="ti ti-box" style="font-size:15px;color:#BA7517"></i>'
+      +'<input type="tel" placeholder="cx" value="'+(cx||'')+'" onchange="orcCaixaSet(\''+cod+'\',this.value,null)" style="width:46px;text-align:center;font-size:13px;border:0.5px solid #e0e0e0;border-radius:6px;padding:5px 0;box-sizing:border-box">'
+      +'<span style="font-size:12px;color:#888780">cx ×</span>'
+      +'<input type="tel" placeholder="un/cx" value="'+(undcx||'')+'" onchange="orcCaixaSet(\''+cod+'\',null,this.value)" style="width:54px;text-align:center;font-size:13px;border:0.5px solid #e0e0e0;border-radius:6px;padding:5px 0;box-sizing:border-box">'
+      +'<span style="font-size:12px;color:#888780">un</span>'
+      +((cx>0&&undcx>0)?'<span style="flex:1"></span><span style="font-size:11.5px;color:#0F6E56;font-weight:600">= '+(cx*undcx)+' un</span>':'<span style="flex:1"></span>')
       +'</div>'
       +'</div>';
   }
@@ -5251,7 +5290,8 @@ function orcPDF(){
   var quando=new Date().toLocaleString('pt-BR');
   var linhas='', tot=0;
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var q=Number(it.qtd)||0; var v=Number(it.venda)||0; var sub=q*v; tot+=sub;
-    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+'</td><td class="c">'+q+'</td><td class="v">'+_precoBRL(v)+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
+    var cxInfo = (Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0 ? (' <span style="color:#888780;font-size:10px">('+it.cx+' cx × '+it.undcx+')</span>') : '';
+    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+'</td><td class="c">'+q+'</td><td class="v">'+_precoBRL(v)+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
   }
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orçamento — Ideal</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -6261,6 +6301,16 @@ function cwMostrarLink(cotId){
 }
 
 var _calcModo='margem';   // 'margem' = custo+margem→PV · 'pv' = custo+PV→margem
+// Limpa todos os campos e volta a calculadora ao zero (pra próxima conta).
+function calcLimpar(){
+  ['calc-custo','calc-margem','calc-pv-in','nota-total','nota-st','nota-ipi','nota-qtd'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  (document.getElementById('nota-und')||{}).textContent='R$ 0,00';
+  _calcModo='margem';
+  calcRecalc();
+  var c=document.getElementById('calc-custo'); if(c) c.focus();
+}
 function calcNotaToggle(){
   var c=document.getElementById('calc-nota-corpo');
   var s=document.getElementById('calc-nota-seta');
