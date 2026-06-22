@@ -5159,16 +5159,29 @@ function orcBuscar(){
 function orcAdd(cod){
   cod=String(cod);
   var ex=null; for(var k=0;k<ORC_ITENS.length;k++){ if(ORC_ITENS[k].cod===cod) ex=ORC_ITENS[k]; }
-  if(ex){ ex.qtd=(ex.qtd||1)+1; }
+  if(ex){ ex.qtd=(ex.qtd||1)+1; orcReprecificar(ex); }
   else{
     var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
     if(!p) return;
-    ORC_ITENS.push({cod:p.c, desc:p.d, barras:p.b, qtd:1, venda:(Number(p.v)||0)});
+    var it={cod:p.c, desc:p.d, barras:p.b, qtd:1, varejo:(Number(p.v)||0), atacado:(Number(p.a)||0), precoManual:false};
+    it.venda = _orcPrecoRegra(it);
+    ORC_ITENS.push(it);
   }
   var bi=document.getElementById('orc-busca'); if(bi){ bi.value=''; bi.focus(); }
   (document.getElementById('orc-busca-res')||{}).innerHTML='';
   orcRenderItens();
   toast('Adicionado'+(ex?' (+1)':''));
+}
+// Preço pela regra da loja: 4+ unidades = atacado (se houver), senão varejo.
+function _orcPrecoRegra(it){
+  var atac=Number(it.atacado)||0, varj=Number(it.varejo)||0;
+  if((Number(it.qtd)||0) >= 4 && atac > 0) return atac;
+  return varj;
+}
+// Reaplica a regra de preço SE o usuário não tiver editado o valor na mão.
+function orcReprecificar(it){
+  if(it.precoManual || it.manual) return;
+  it.venda = _orcPrecoRegra(it);
 }
 function orcScanAbrir(){
   _scanOnHit = function(code){ orcScanHit(code); };
@@ -5195,21 +5208,21 @@ function orcAddManual(){
   });
 }
 function orcQtd(cod, delta){
-  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=Math.max(1,(ORC_ITENS[i].qtd||1)+delta); break; } }
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=Math.max(1,(ORC_ITENS[i].qtd||1)+delta); orcReprecificar(ORC_ITENS[i]); break; } }
   orcRenderItens();
 }
 function orcQtdSet(cod, val){
   var n=parseInt(String(val).replace(/\D/g,''),10); if(isNaN(n)||n<1) n=1;
-  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=n; break; } }
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].qtd=n; orcReprecificar(ORC_ITENS[i]); break; } }
   orcRenderItens();
 }
 // Formata o valor de venda pro input (vírgula decimal, sem "R$").
 function _orcVal(v){ v=Number(v)||0; return v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-// Edita o valor de venda da unidade (aceita vírgula ou ponto).
+// Edita o valor de venda da unidade (aceita vírgula ou ponto). Trava a regra automática.
 function orcVendaSet(cod, val){
   var s=String(val||'').trim(); if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.'); s=s.replace(/[^0-9.]/g,'');
   var v=parseFloat(s); if(isNaN(v)||v<0) v=0;
-  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].venda=v; break; } }
+  for(var i=0;i<ORC_ITENS.length;i++){ if(ORC_ITENS[i].cod===String(cod)){ ORC_ITENS[i].venda=v; ORC_ITENS[i].precoManual=true; break; } }
   orcRenderItens();
 }
 // Caixas × unidades por caixa → preenche a quantidade em unidades (modo B).
@@ -5218,7 +5231,7 @@ function orcCaixaSet(cod, cxVal, undVal){
     var it=ORC_ITENS[i];
     if(cxVal!==null){ it.cx=Math.max(0,parseInt(String(cxVal).replace(/\D/g,''),10)||0); }
     if(undVal!==null){ it.undcx=Math.max(0,parseInt(String(undVal).replace(/\D/g,''),10)||0); }
-    if((Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0){ it.qtd = it.cx*it.undcx; }
+    if((Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0){ it.qtd = it.cx*it.undcx; orcReprecificar(it); }
     break;
   } }
   orcRenderItens();
@@ -5239,10 +5252,21 @@ function orcRenderItens(){
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var cod=_precoEsc(it.cod); var sub=(Number(it.venda)||0)*(Number(it.qtd)||0);
     var codTxt = it.manual ? '<span style="color:#9A6B00">manual</span>' : ('cód '+_precoEsc(it.barras||it.cod));
     var cx = Number(it.cx)||0, undcx = Number(it.undcx)||0;
+    // linha de preços de tabela (varejo/atacado) + etiqueta do que está valendo
+    var temAtac = (Number(it.atacado)||0)>0;
+    var usandoAtac = !it.manual && !it.precoManual && (Number(it.qtd)||0)>=4 && temAtac;
+    var precoLinha = '';
+    if(!it.manual){
+      precoLinha = '<div style="font-size:10.5px;color:#9a988f;margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<span>Varejo '+_precoBRL(it.varejo)+'</span>'
+        +(temAtac?'<span style="color:#0F6E56">Atacado '+_precoBRL(it.atacado)+' · 4+</span>':'')
+        +(it.precoManual?'<span style="color:#9A6B00">· preço editado</span>':(usandoAtac?'<span style="color:#0F6E56;font-weight:600">· aplicando atacado</span>':'<span>· aplicando varejo</span>'))
+        +'</div>';
+    }
     h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:10px;margin-bottom:7px">'
       +'<div style="display:flex;align-items:flex-start;gap:8px">'
       +'<div style="flex:1"><div style="font-size:13px;color:#1a1a1a;line-height:1.25">'+_precoEsc(it.desc)+'</div>'
-      +'<div style="font-size:10.5px;color:#9a988f;margin-top:2px">'+codTxt+'</div></div>'
+      +'<div style="font-size:10.5px;color:#9a988f;margin-top:2px">'+codTxt+'</div>'+precoLinha+'</div>'
       +'<i class="ti ti-trash" style="font-size:17px;color:#A32D2D;cursor:pointer" onclick="orcRemover(\''+cod+'\')"></i>'
       +'</div>'
       // valor de venda editável
@@ -5291,7 +5315,10 @@ function orcPDF(){
   var linhas='', tot=0;
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var q=Number(it.qtd)||0; var v=Number(it.venda)||0; var sub=q*v; tot+=sub;
     var cxInfo = (Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0 ? (' <span style="color:#888780;font-size:10px">('+it.cx+' cx × '+it.undcx+')</span>') : '';
-    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+'</td><td class="c">'+q+'</td><td class="v">'+_precoBRL(v)+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
+    var atacAplic = !it.manual && !it.precoManual && q>=4 && (Number(it.atacado)||0)>0;
+    var varejoTd = it.manual ? '—' : _precoBRL(it.varejo);
+    var praticadoTag = atacAplic ? ' <span style="color:#0F6E56;font-size:10px">(atacado)</span>' : '';
+    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+'</td><td class="c">'+q+'</td><td class="v">'+varejoTd+'</td><td class="v">'+_precoBRL(v)+praticadoTag+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
   }
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orçamento — Ideal</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
@@ -5312,7 +5339,7 @@ function orcPDF(){
     +'<div class="hd"><h1>Orçamento</h1><div class="sub">Ideal Supermercados'+(loja?(' &middot; '+_precoEsc(loja)):'')+'</div></div><div class="stripe"></div>'
     +'<div class="body">'
     +'<div class="meta"><b>Itens:</b> '+ORC_ITENS.length+' &middot; Gerado em '+_precoEsc(quando)+'</div>'
-    +'<table><tr><th>Produto</th><th class="c">Qtd</th><th class="v">Valor un.</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
+    +'<table><tr><th>Produto</th><th class="c">Qtd</th><th class="v">Varejo</th><th class="v">Praticado</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
     +'<div class="tot"><span>Total do orçamento</span><span>'+_precoBRL(tot)+'</span></div>'
     +'<div class="foot">Valores sujeitos a alteração sem aviso prévio. Documento gerado pelo app — Ideal Supermercados.</div>'
     +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
