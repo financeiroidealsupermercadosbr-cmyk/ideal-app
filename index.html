@@ -2342,7 +2342,17 @@ var _vigiaTimer = null;
 var _termEstado = {};            // id -> 'on' | 'off' (estado já avisado)
 var _termAlertaDispensado = false;
 
+// Os terminais BP (busca-preço) só existem na loja do Ideal. Além disso,
+// só Gestor/Master e Gerentes do Ideal devem ver o alerta de queda.
+// Fiscal/Caixa, Financeiro e Cadastro NÃO recebem o aviso.
+function _podeVerTerminais(){
+  if(window.EH_IDEAL === false) return false;            // outro cliente: não tem terminal BP
+  var k = _setorKey(userAtual && userAtual.setor);
+  return (k === 'gestor' || k === 'gerente');             // só gestor/master e gerentes
+}
+
 function vigiaTerminaisIniciar(){
+  if(!_podeVerTerminais()){ _termBannerEsconder(); return; } // sem permissão / outro tenant
   if(_vigiaTimer) return;                       // não inicia duas vezes
   terminaisCheckSilencioso();                   // checa já na entrada
   _vigiaTimer = setInterval(terminaisCheckSilencioso, 150000); // a cada 2,5 min
