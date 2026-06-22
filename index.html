@@ -8038,8 +8038,8 @@ async function carregarUsuarios(){
   const box = document.getElementById('cfg-users-list');
   if(!box) return;
   box.innerHTML = '<div class="row-sub" style="padding:6px 2px">Carregando usuários…</div>';
-  // ── NUVEM (cliente): lista escopada por cliente_id via RPC meus_usuarios ──
-  if(!window.EH_IDEAL){
+  // ── NUVEM: lista escopada por cliente_id via RPC meus_usuarios (Ideal incluso) ──
+  if(_supaAtivo()){
     try{
       const tk = await supaToken(); if(!tk) throw new Error('sem sessão');
       const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meus_usuarios`, {
@@ -8165,8 +8165,8 @@ async function salvarUsuario(){
   if(!usrEditando && !senha){ toast('⚠ Defina uma senha'); return; }
   const btn = document.getElementById('usr-btn-salvar');
   const txt = btn.textContent; btn.disabled=true; btn.textContent='Salvando...';
-  // ── NUVEM (cliente): cria via Edge Function, edita via RPC gestor_usuario_set ──
-  if(!window.EH_IDEAL){
+  // ── NUVEM: cria via Edge Function, edita via RPC gestor_usuario_set (Ideal incluso) ──
+  if(_supaAtivo()){
     const papel = _setorToPapel(setor);
     const lojasArr = (loja==='all') ? ['all'] : (loja ? [loja] : ['all']);
     try{
@@ -8216,8 +8216,8 @@ async function removerUsuario(login, nome){
     toast('⚠ Você não pode remover o seu próprio usuário'); return;
   }
   appConfirm('Remover o acesso de "'+(nome||login)+'"?\nEle deixa de conseguir entrar. (A linha fica guardada na planilha.)', async function(){
-    // ── NUVEM (cliente): desativa via RPC (ativo=false), não apaga ──
-    if(!window.EH_IDEAL){
+    // ── NUVEM: desativa via RPC (ativo=false), não apaga (Ideal incluso) ──
+    if(_supaAtivo()){
       try{
         const alvo = usuariosCache.find(function(x){ return String(x.usuario)===String(login); }) || {};
         if(!alvo.uid) throw new Error('usuário não localizado');
