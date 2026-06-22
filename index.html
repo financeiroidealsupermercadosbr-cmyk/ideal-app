@@ -1853,6 +1853,7 @@ body:has(#s-login.active) .app{max-width:none}
       <div style="font-size:16px;font-weight:600;color:var(--azul)">Orçamento</div>
       <div style="font-size:11.5px;color:#888780" id="orc-sub">Monte a lista do cliente</div>
     </div>
+    <i class="ti ti-folder" style="font-size:20px;cursor:pointer;color:var(--azul);margin-right:14px" onclick="orcSalvosAbrir()" title="Orçamentos salvos"></i>
     <i class="ti ti-adjustments-horizontal" style="font-size:20px;cursor:pointer;color:var(--azul);margin-right:14px" onclick="orcConfigAbrir()" title="Opções de exportação"></i>
     <i class="ti ti-file-plus" style="font-size:20px;cursor:pointer;color:var(--azul)" onclick="orcNovo()" title="Novo orçamento"></i>
   </div>
@@ -1874,7 +1875,10 @@ body:has(#s-login.active) .app{max-width:none}
       <div style="font-size:11.5px;color:#888780" id="orc-qtd">0 item(ns)</div>
       <div><span style="font-size:12px;color:#888780;margin-right:6px">Total</span><span id="orc-total" style="font-size:19px;font-weight:700;color:var(--azul)">R$ 0,00</span></div>
     </div>
-    <button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="orcPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" style="margin-top:0;flex:0 0 auto;width:auto;padding:0 14px;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="orcSalvarAbrir()"><i class="ti ti-device-floppy"></i> Salvar</button>
+      <button class="btn-primary" style="margin-top:0;flex:1;background:#0F6E56" onclick="orcPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+    </div>
   </div>
 </div>
 
@@ -5119,6 +5123,126 @@ function saRecolherTudo(){
 // 100% local (não grava no servidor). Reusa PRODUTOS + scanner da Busca de Preço.
 // ══════════════════════════════════════════════════════
 let ORC_ITENS = [];   // [{cod,desc,barras,qtd,venda,manual}]
+let ORC_ID = null;    // id do orçamento salvo em edição (null = novo)
+let ORC_NOME = '';    // nome do orçamento atual
+
+// ───── ORÇAMENTOS SALVOS (nuvem) ─────
+// Abre o diálogo de salvar (pede nome + anotação).
+function orcSalvarAbrir(){
+  if(!ORC_ITENS.length){ toast('Adicione itens antes de salvar.'); return; }
+  if(!_supaAtivo()){ toast('Entre na sua conta para salvar na nuvem.'); return; }
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:18px 18px 22px';
+  card.innerHTML='<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">'
+    +'<i class="ti ti-device-floppy" style="font-size:19px;color:var(--azul)"></i>'
+    +'<div style="font-size:15px;font-weight:600;color:var(--azul);flex:1">'+(ORC_ID?'Atualizar orçamento':'Salvar orçamento')+'</div></div>'
+    +'<div style="font-size:11.5px;color:#888780;margin-bottom:4px">Nome do orçamento / cliente</div>'
+    +'<input id="orc-sv-nome" type="text" value="'+_precoEsc(ORC_NOME||'')+'" placeholder="Ex.: Mercadinho do João" style="width:100%;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box;margin-bottom:12px">'
+    +'<div style="font-size:11.5px;color:#888780;margin-bottom:4px">Lembrete / anotação <span style="color:#9a988f">(opcional)</span></div>'
+    +'<textarea id="orc-sv-nota" placeholder="Ex.: aguardando aprovação, ligar quinta…" rows="2" style="width:100%;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box;resize:vertical;margin-bottom:14px">'+_precoEsc(ORC_NOTA||'')+'</textarea>'
+    +'<button id="orc-sv-ok" class="btn-primary" style="margin-top:0;background:#0F6E56"><i class="ti ti-device-floppy"></i> '+(ORC_ID?'Atualizar':'Salvar')+'</button>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  setTimeout(function(){ var n=document.getElementById('orc-sv-nome'); if(n) n.focus(); },50);
+  card.querySelector('#orc-sv-ok').onclick=function(){
+    var nome=(document.getElementById('orc-sv-nome').value||'').trim();
+    var nota=(document.getElementById('orc-sv-nota').value||'').trim();
+    if(nome.length<2){ toast('Dê um nome ao orçamento'); return; }
+    close(); orcSalvarCloud(nome, nota);
+  };
+}
+var ORC_NOTA = '';
+async function orcSalvarCloud(nome, nota){
+  try{
+    var payload = ORC_ITENS.map(function(it){
+      return { cod:it.cod, desc:it.desc, barras:it.barras||'', qtd:Number(it.qtd)||0,
+               venda:Number(it.venda)||0, varejo:Number(it.varejo)||0, atacado:Number(it.atacado)||0,
+               cx:Number(it.cx)||0, undcx:Number(it.undcx)||0, manual:!!it.manual, precoManual:!!it.precoManual };
+    });
+    var res = await supaFetch('/rest/v1/rpc/orc_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id:ORC_ID, p_nome:nome, p_anotacao:nota, p_itens:payload, p_total:_orcTotal() }) });
+    if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error('HTTP '+res.status+' '+t.slice(0,80)); }
+    var novoId = await res.json().catch(function(){return null;});
+    if(novoId){ ORC_ID = (typeof novoId==='string') ? novoId : (novoId.id||novoId); }
+    ORC_NOME = nome; ORC_NOTA = nota;
+    orcSub();
+    toast(ORC_ID?'Orçamento salvo ✓':'Salvo');
+  }catch(e){ toast('Não consegui salvar: '+(e.message||e)); }
+}
+// Lista os orçamentos salvos (modal).
+async function orcSalvosAbrir(){
+  if(!_supaAtivo()){ toast('Entre na sua conta para ver os salvos.'); return; }
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:flex-end;justify-content:center';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;width:100%;max-width:460px;max-height:80vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px 22px';
+  card.innerHTML='<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">'
+    +'<i class="ti ti-folder" style="font-size:19px;color:var(--azul)"></i>'
+    +'<div style="font-size:15px;font-weight:600;color:var(--azul);flex:1">Orçamentos salvos</div></div>'
+    +'<div id="orc-salvos-lista"><div class="loadrow"><span class="spin"></span> Carregando…</div></div>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){ if(e.target===ov && ov.parentNode) ov.parentNode.removeChild(ov); });
+  try{
+    var res = await supaFetch('/rest/v1/rpc/orc_listar', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    var lista = await res.json();
+    var box=document.getElementById('orc-salvos-lista'); if(!box) return;
+    if(!lista || !lista.length){ box.innerHTML='<div style="font-size:13px;color:#9a988f;padding:8px 2px">Nenhum orçamento salvo ainda.</div>'; return; }
+    var h='';
+    for(var i=0;i<lista.length;i++){ var o=lista[i];
+      var qtdItens=(o.itens&&o.itens.length)||0;
+      var quando=o.atualizado_em?new Date(o.atualizado_em).toLocaleDateString('pt-BR'):'';
+      h+='<div style="border:0.5px solid #e8e6dd;border-radius:10px;padding:11px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1">'
+        +'<div style="font-size:14px;font-weight:600;color:var(--azul)">'+_precoEsc(o.nome)+'</div>'
+        +'<div style="font-size:11px;color:#9a988f;margin-top:2px">'+qtdItens+' itens · '+_precoBRL(o.total)+' · '+quando+'</div>'
+        +(o.anotacao?'<div style="font-size:11.5px;color:#9A6B00;margin-top:4px;background:#FFF8E6;border-radius:6px;padding:5px 8px">'+_precoEsc(o.anotacao)+'</div>':'')
+        +'</div></div>'
+        +'<div style="display:flex;gap:7px;margin-top:9px">'
+        +'<button onclick="orcAbrirSalvo(\''+o.id+'\')" style="flex:1;background:#0F6E56;color:#fff;border:none;border-radius:8px;height:34px;font-size:13px"><i class="ti ti-folder-open"></i> Abrir</button>'
+        +'<button onclick="orcExcluirSalvo(\''+o.id+'\',\''+_precoEsc(o.nome).replace(/'/g,"")+'\')" style="background:#fff;color:#A32D2D;border:1px solid #E2C4C4;border-radius:8px;height:34px;width:42px;font-size:16px"><i class="ti ti-trash"></i></button>'
+        +'</div></div>';
+    }
+    box.innerHTML=h;
+    window._ORC_SALVOS = lista;  // guarda pra abrir sem refazer fetch
+  }catch(e){ var b=document.getElementById('orc-salvos-lista'); if(b) b.innerHTML='<div style="font-size:13px;color:#A32D2D;padding:8px 2px">Erro ao carregar: '+(e.message||e)+'</div>'; }
+}
+// Abre um salvo: carrega itens no orçamento atual.
+function orcAbrirSalvo(id){
+  var lista=window._ORC_SALVOS||[]; var o=null;
+  for(var i=0;i<lista.length;i++){ if(lista[i].id===id){ o=lista[i]; break; } }
+  if(!o){ toast('Não encontrei esse orçamento'); return; }
+  function carregar(){
+    ORC_ITENS = (o.itens||[]).map(function(it){
+      return { cod:it.cod, desc:it.desc, barras:it.barras||'', qtd:Number(it.qtd)||1,
+               venda:Number(it.venda)||0, varejo:Number(it.varejo)||0, atacado:Number(it.atacado)||0,
+               cx:Number(it.cx)||0, undcx:Number(it.undcx)||0, manual:!!it.manual, precoManual:!!it.precoManual };
+    });
+    ORC_ID=o.id; ORC_NOME=o.nome||''; ORC_NOTA=o.anotacao||'';
+    var ovs=document.querySelectorAll('div'); // fecha o modal aberto
+    var m=document.getElementById('orc-salvos-lista'); if(m){ var p=m.closest('div[style*="inset"]'); if(p&&p.parentNode) p.parentNode.removeChild(p); }
+    orcRenderItens(); toast('Orçamento carregado');
+  }
+  if(ORC_ITENS.length){ appConfirm('Substituir a lista atual por "'+_precoEsc(o.nome)+'"?', carregar, {okText:'Abrir'}); }
+  else carregar();
+}
+// Exclui de vez (com confirmação).
+function orcExcluirSalvo(id, nome){
+  appConfirm('Excluir o orçamento "'+nome+'"? Não dá pra desfazer.', async function(){
+    try{
+      var res = await supaFetch('/rest/v1/rpc/orc_excluir', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ p_id:id }) });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      if(ORC_ID===id){ ORC_ID=null; ORC_NOME=''; ORC_NOTA=''; }
+      toast('Excluído');
+      orcSalvosAbrir();  // recarrega a lista
+    }catch(e){ toast('Não consegui excluir: '+(e.message||e)); }
+  }, {okText:'Excluir', danger:true});
+}
 let _orcTimer = null;
 
 async function abrirOrcamento(){
@@ -5132,7 +5256,10 @@ async function abrirOrcamento(){
     orcRenderItens();
   }
 }
-function orcSub(){ var el=document.getElementById('orc-sub'); if(el) el.textContent = ORC_ITENS.length ? (ORC_ITENS.length+' item(ns)') : 'Monte a lista do cliente'; }
+function orcSub(){ var el=document.getElementById('orc-sub'); if(!el) return;
+  if(ORC_ITENS.length){ el.textContent = (ORC_NOME ? (ORC_NOME+' · ') : '') + ORC_ITENS.length+' item(ns)'; }
+  else { el.textContent = 'Monte a lista do cliente'; }
+}
 function orcBuscarDebounce(){ clearTimeout(_orcTimer); _orcTimer=setTimeout(orcBuscar,160); }
 function orcBuscar(){
   var termo=_precoNorm((document.getElementById('orc-busca').value||'').trim());
@@ -5340,7 +5467,7 @@ function orcNovo(){
   appConfirm('Limpar a lista e começar um novo orçamento?', _orcNovoDo, {okText:'Novo'});
 }
 function _orcNovoDo(){
-  ORC_ITENS=[];
+  ORC_ITENS=[]; ORC_ID=null; ORC_NOME=''; ORC_NOTA='';
   var bi=document.getElementById('orc-busca'); if(bi) bi.value='';
   var br=document.getElementById('orc-busca-res'); if(br) br.innerHTML='';
   orcRenderItens();
