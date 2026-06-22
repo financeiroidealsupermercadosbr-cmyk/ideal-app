@@ -5243,7 +5243,7 @@ function orcRemover(cod){
 }
 function _orcTotal(){ var t=0; ORC_ITENS.forEach(function(it){ t+=(Number(it.venda)||0)*(Number(it.qtd)||0); }); return t; }
 // Opções de exportação do PDF (o que mostrar pro cliente).
-var ORC_CFG = { mostrarVarejo:false, mostrarCaixa:true, mostrarTagAtacado:false };
+var ORC_CFG = { mostrarVarejo:false, mostrarCaixa:true, mostrarTagAtacado:false, mostrarCodigo:true };
 function orcConfigAbrir(){
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:flex-end;justify-content:center';
@@ -5261,6 +5261,7 @@ function orcConfigAbrir(){
     +'<div style="font-size:11.5px;color:#9a988f;margin-bottom:8px">Escolha o que aparece no PDF entregue ao cliente.</div>'
     +row('cfg-varejo','Mostrar coluna Varejo','Preço de tabela ao lado do praticado',ORC_CFG.mostrarVarejo)
     +row('cfg-atac','Marcar quando for atacado','Etiqueta "(atacado)" no item',ORC_CFG.mostrarTagAtacado)
+    +row('cfg-cod','Mostrar código de barras','Ex.: "cód 789..." abaixo do produto',ORC_CFG.mostrarCodigo)
     +row('cfg-cx','Mostrar caixas','Ex.: "20 cx × 15" ao lado do produto',ORC_CFG.mostrarCaixa)
     +'<button id="cfg-ok" class="btn-primary" style="margin-top:16px;background:#0F6E56">Aplicar</button>';
   ov.appendChild(card); document.body.appendChild(ov);
@@ -5270,6 +5271,7 @@ function orcConfigAbrir(){
     ORC_CFG.mostrarVarejo     = document.getElementById('cfg-varejo').checked;
     ORC_CFG.mostrarTagAtacado = document.getElementById('cfg-atac').checked;
     ORC_CFG.mostrarCaixa      = document.getElementById('cfg-cx').checked;
+    ORC_CFG.mostrarCodigo     = document.getElementById('cfg-cod').checked;
     close(); toast('Opções salvas');
   };
 }
@@ -5350,7 +5352,8 @@ function orcPDF(){
     var atacAplic = !it.manual && !it.precoManual && q>=4 && (Number(it.atacado)||0)>0;
     var praticadoTag = (ORC_CFG.mostrarTagAtacado && atacAplic) ? ' <span style="color:#0F6E56;font-size:10px">(atacado)</span>' : '';
     var varejoTd = ORC_CFG.mostrarVarejo ? ('<td class="v">'+(it.manual?'—':_precoBRL(it.varejo))+'</td>') : '';
-    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+'</td><td class="c">'+q+'</td>'+varejoTd+'<td class="v">'+_precoBRL(v)+praticadoTag+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
+    var codHtml = (ORC_CFG.mostrarCodigo && !it.manual && (it.barras||it.cod)) ? ('<div style="font-size:10px;color:#888780;margin-top:2px">cód '+_precoEsc(it.barras||it.cod)+'</div>') : '';
+    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+codHtml+'</td><td class="c">'+q+'</td>'+varejoTd+'<td class="v">'+_precoBRL(v)+praticadoTag+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
   }
   var thVarejo = ORC_CFG.mostrarVarejo ? '<th class="v">Varejo</th>' : '';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orçamento — Ideal</title>'
