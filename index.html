@@ -1159,16 +1159,25 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
 
     <div style="margin:16px 0 6px;font-size:12px;font-weight:600;color:var(--azul)">Margem desejada (sobre o custo)</div>
-    <div id="calc-chips" style="display:flex;gap:8px;margin-bottom:8px">
-      <div class="dre-chip" data-m="25" onclick="calcChip(25)" style="flex:1;text-align:center">25%</div>
-      <div class="dre-chip" data-m="50" onclick="calcChip(50)" style="flex:1;text-align:center">50%</div>
-      <div class="dre-chip" data-m="70" onclick="calcChip(70)" style="flex:1;text-align:center">70%</div>
-      <div class="dre-chip" data-m="100" onclick="calcChip(100)" style="flex:1;text-align:center">100%</div>
+    <div id="calc-chips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+      <div class="dre-chip" data-m="10"  onclick="calcChip(10)"  style="flex:1 1 21%;min-width:62px;text-align:center">10%</div>
+      <div class="dre-chip" data-m="20"  onclick="calcChip(20)"  style="flex:1 1 21%;min-width:62px;text-align:center">20%</div>
+      <div class="dre-chip" data-m="25"  onclick="calcChip(25)"  style="flex:1 1 21%;min-width:62px;text-align:center">25%</div>
+      <div class="dre-chip" data-m="38"  onclick="calcChip(38)"  style="flex:1 1 21%;min-width:62px;text-align:center">38%</div>
+      <div class="dre-chip" data-m="60"  onclick="calcChip(60)"  style="flex:1 1 21%;min-width:62px;text-align:center">60%</div>
+      <div class="dre-chip" data-m="80"  onclick="calcChip(80)"  style="flex:1 1 21%;min-width:62px;text-align:center">80%</div>
+      <div class="dre-chip" data-m="100" onclick="calcChip(100)" style="flex:1 1 21%;min-width:62px;text-align:center">100%</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:12.5px;color:#888780">Outra:</span>
-      <input id="calc-margem" type="text" inputmode="decimal" placeholder="ex.: 65" oninput="calcRecalc()" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
+      <input id="calc-margem" type="text" inputmode="decimal" placeholder="ex.: 65" oninput="calcDe('margem')" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
       <span style="font-size:15px;color:#888780">%</span>
+    </div>
+
+    <div style="margin:16px 0 6px;font-size:12px;font-weight:600;color:var(--azul)">Preço de venda <span style="font-weight:400;color:#9a988f">(ou digite aqui e eu acho a margem)</span></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:15px;color:#888780">R$</span>
+      <input id="calc-pv-in" type="text" inputmode="decimal" placeholder="0,00" oninput="calcDe('pv')" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box">
     </div>
 
     <div style="margin-top:18px;background:#f8f8f8;border:1px solid rgba(var(--azul-rgb),0.10);border-radius:14px;padding:16px">
@@ -6211,11 +6220,15 @@ function cwMostrarLink(cotId){
   card.querySelector('#cwl-ver').onclick=function(){ close(); abrirCotacoesWeb(); };
 }
 
+var _calcModo='margem';   // 'margem' = custo+margem→PV · 'pv' = custo+PV→margem
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
+  _calcModo='margem';
   calcRecalc();
 }
+// Marca qual campo o usuário mexeu por último (esse "manda" no cálculo).
+function calcDe(qual){ _calcModo=(qual==='pv')?'pv':'margem'; calcRecalc(); }
 // Parse robusto: aceita vírgula OU ponto como separador decimal.
 // "10,12" → 10.12 · "1.234,56" → 1234.56 · "10.12" → 10.12
 function calcNum(v){
@@ -6227,17 +6240,31 @@ function calcNum(v){
   return isNaN(n)?0:n;
 }
 function calcRecalc(){
-  var c=calcNum(document.getElementById('calc-custo').value);
-  var m=calcNum(document.getElementById('calc-margem').value);
-  var pv=c*(1+m/100);
-  var lucro=pv-c;
-  var msv=pv>0 ? (lucro/pv*100) : 0;
+  var c   = calcNum(document.getElementById('calc-custo').value);
+  var elM = document.getElementById('calc-margem');
+  var elP = document.getElementById('calc-pv-in');
+  var pv, m;
+
+  if(_calcModo==='pv'){
+    // Mexeu no PREÇO DE VENDA → acho a margem (sobre o custo).
+    pv = calcNum(elP.value);
+    m  = (c>0) ? ((pv-c)/c*100) : 0;
+    if(elM) elM.value = (c>0 && pv>0) ? (Math.round(m*10)/10).toString().replace('.',',') : '';
+  } else {
+    // Mexeu na MARGEM → acho o preço de venda.
+    m  = calcNum(elM.value);
+    pv = c*(1+m/100);
+    if(elP) elP.value = (c>0 && elM.value!=='') ? brl2(pv).replace('R$','').trim() : '';
+  }
+
+  var lucro = pv - c;
+  var msv   = pv>0 ? (lucro/pv*100) : 0;
   (document.getElementById('calc-pv')||{}).textContent=brl2(pv);
   (document.getElementById('calc-lucro')||{}).textContent=brl2(lucro);
   (document.getElementById('calc-msv')||{}).textContent=(Math.round(msv*10)/10).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
-  // realça o chip que bate com a margem digitada
+  // realça o chip que bate com a margem atual
   document.querySelectorAll('#calc-chips .dre-chip').forEach(function(ch){
-    var on = parseFloat(ch.getAttribute('data-m'))===m;
+    var on = Math.abs(parseFloat(ch.getAttribute('data-m'))-m) < 0.05;
     ch.style.background = on ? '#FFC400' : '';
     ch.style.fontWeight = on ? '600' : '';
   });
