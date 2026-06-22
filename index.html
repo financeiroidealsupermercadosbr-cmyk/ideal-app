@@ -1152,6 +1152,46 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 
   <div style="padding:0 14px 90px">
+    <!-- BLOCO OPCIONAL: custo pela nota (caixa/fardo + ST + IPI ÷ unidades) -->
+    <div style="margin:14px 0 0">
+      <div onclick="calcNotaToggle()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:11px 12px;background:#f8f8f8;border:1px solid rgba(var(--azul-rgb),0.10);border-radius:12px">
+        <i class="ti ti-file-invoice" style="font-size:17px;color:#BA7517"></i>
+        <div style="flex:1">
+          <div style="font-size:12.5px;font-weight:600;color:var(--azul)">Custo pela nota <span style="font-weight:400;color:#9a988f">(opcional)</span></div>
+          <div style="font-size:10.5px;color:#9a988f">Caixa/fardo + ST + IPI ÷ unidades = custo da und</div>
+        </div>
+        <i id="calc-nota-seta" class="ti ti-chevron-down" style="font-size:18px;color:#888780"></i>
+      </div>
+      <div id="calc-nota-corpo" style="display:none;padding:12px 2px 4px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="flex:1">
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">Total da caixa/fardo</div>
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;color:#888780">R$</span>
+              <input id="nota-total" type="text" inputmode="decimal" placeholder="0,00" oninput="calcNotaRecalc()" style="flex:1;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box"></div>
+          </div>
+          <div style="width:96px">
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">Unidades</div>
+            <input id="nota-qtd" type="text" inputmode="decimal" placeholder="ex.: 12" oninput="calcNotaRecalc()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">ST (R$)</div>
+            <input id="nota-st" type="text" inputmode="decimal" placeholder="0,00" oninput="calcNotaRecalc()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box">
+          </div>
+          <div style="flex:1">
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">IPI (R$)</div>
+            <input id="nota-ipi" type="text" inputmode="decimal" placeholder="0,00" oninput="calcNotaRecalc()" style="width:100%;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;box-sizing:border-box">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;background:rgba(var(--azul-rgb),0.05);border-radius:10px;padding:9px 11px">
+          <span style="font-size:11px;color:#888780">Custo por unidade:</span>
+          <span id="nota-und" style="font-size:16px;font-weight:600;color:var(--azul-mid)">R$ 0,00</span>
+          <span style="flex:1"></span>
+        </div>
+      </div>
+    </div>
+
     <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--azul)">Preço de custo</div>
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:15px;color:#888780">R$</span>
@@ -6221,6 +6261,29 @@ function cwMostrarLink(cotId){
 }
 
 var _calcModo='margem';   // 'margem' = custo+margem→PV · 'pv' = custo+PV→margem
+function calcNotaToggle(){
+  var c=document.getElementById('calc-nota-corpo');
+  var s=document.getElementById('calc-nota-seta');
+  if(!c) return;
+  var abrir = (c.style.display==='none' || !c.style.display);
+  c.style.display = abrir ? 'block' : 'none';
+  if(s) s.className = 'ti ' + (abrir ? 'ti-chevron-up' : 'ti-chevron-down');
+}
+// Soma total+ST+IPI, divide pelas unidades, e joga no campo Preço de custo.
+function calcNotaRecalc(){
+  var tot = calcNum(document.getElementById('nota-total').value);
+  var st  = calcNum(document.getElementById('nota-st').value);
+  var ipi = calcNum(document.getElementById('nota-ipi').value);
+  var qtd = calcNum(document.getElementById('nota-qtd').value);
+  var und = (qtd>0) ? (tot+st+ipi)/qtd : 0;
+  (document.getElementById('nota-und')||{}).textContent = brl2(und);
+  // alimenta o custo (só quando há base válida) e recalcula no modo atual
+  if(qtd>0 && (tot+st+ipi)>0){
+    var elC=document.getElementById('calc-custo');
+    if(elC){ elC.value = brl2(und).replace('R$','').trim(); }
+    calcRecalc();
+  }
+}
 function calcChip(m){
   var inp=document.getElementById('calc-margem');
   if(inp) inp.value=m;
