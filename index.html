@@ -1853,6 +1853,7 @@ body:has(#s-login.active) .app{max-width:none}
       <div style="font-size:16px;font-weight:600;color:var(--azul)">Orçamento</div>
       <div style="font-size:11.5px;color:#888780" id="orc-sub">Monte a lista do cliente</div>
     </div>
+    <i class="ti ti-adjustments-horizontal" style="font-size:20px;cursor:pointer;color:var(--azul);margin-right:14px" onclick="orcConfigAbrir()" title="Opções de exportação"></i>
     <i class="ti ti-file-plus" style="font-size:20px;cursor:pointer;color:var(--azul)" onclick="orcNovo()" title="Novo orçamento"></i>
   </div>
 
@@ -1864,7 +1865,7 @@ body:has(#s-login.active) .app{max-width:none}
     <div id="orc-busca-res" style="margin-top:8px"></div>
   </div>
 
-  <div style="padding:10px 14px 140px">
+  <div style="padding:10px 14px 175px">
     <div id="orc-itens"></div>
   </div>
 
@@ -5241,6 +5242,37 @@ function orcRemover(cod){
   orcRenderItens();
 }
 function _orcTotal(){ var t=0; ORC_ITENS.forEach(function(it){ t+=(Number(it.venda)||0)*(Number(it.qtd)||0); }); return t; }
+// Opções de exportação do PDF (o que mostrar pro cliente).
+var ORC_CFG = { mostrarVarejo:false, mostrarCaixa:true, mostrarTagAtacado:false };
+function orcConfigAbrir(){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90;display:flex;align-items:flex-end;justify-content:center';
+  function row(id,label,sub,on){
+    return '<label style="display:flex;align-items:center;gap:11px;padding:13px 4px;border-bottom:1px solid #f0efea;cursor:pointer">'
+      +'<input type="checkbox" id="'+id+'" '+(on?'checked':'')+' style="width:19px;height:19px;accent-color:#0F6E56">'
+      +'<span style="flex:1"><span style="font-size:14px;color:#1a1a1a;font-weight:500">'+label+'</span>'
+      +'<br><span style="font-size:11px;color:#9a988f">'+sub+'</span></span></label>';
+  }
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;width:100%;max-width:460px;border-radius:16px 16px 0 0;padding:18px 18px 22px';
+  card.innerHTML='<div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">'
+    +'<i class="ti ti-adjustments-horizontal" style="font-size:19px;color:var(--azul)"></i>'
+    +'<div style="font-size:15px;font-weight:600;color:var(--azul);flex:1">Opções de exportação</div></div>'
+    +'<div style="font-size:11.5px;color:#9a988f;margin-bottom:8px">Escolha o que aparece no PDF entregue ao cliente.</div>'
+    +row('cfg-varejo','Mostrar coluna Varejo','Preço de tabela ao lado do praticado',ORC_CFG.mostrarVarejo)
+    +row('cfg-atac','Marcar quando for atacado','Etiqueta "(atacado)" no item',ORC_CFG.mostrarTagAtacado)
+    +row('cfg-cx','Mostrar caixas','Ex.: "20 cx × 15" ao lado do produto',ORC_CFG.mostrarCaixa)
+    +'<button id="cfg-ok" class="btn-primary" style="margin-top:16px;background:#0F6E56">Aplicar</button>';
+  ov.appendChild(card); document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+  card.querySelector('#cfg-ok').onclick=function(){
+    ORC_CFG.mostrarVarejo     = document.getElementById('cfg-varejo').checked;
+    ORC_CFG.mostrarTagAtacado = document.getElementById('cfg-atac').checked;
+    ORC_CFG.mostrarCaixa      = document.getElementById('cfg-cx').checked;
+    close(); toast('Opções salvas');
+  };
+}
 function orcRenderItens(){
   orcSub();
   var tot=_orcTotal();
@@ -5314,12 +5346,13 @@ function orcPDF(){
   var quando=new Date().toLocaleString('pt-BR');
   var linhas='', tot=0;
   for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var q=Number(it.qtd)||0; var v=Number(it.venda)||0; var sub=q*v; tot+=sub;
-    var cxInfo = (Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0 ? (' <span style="color:#888780;font-size:10px">('+it.cx+' cx × '+it.undcx+')</span>') : '';
+    var cxInfo = (ORC_CFG.mostrarCaixa && (Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0) ? (' <span style="color:#888780;font-size:10px">('+it.cx+' cx × '+it.undcx+')</span>') : '';
     var atacAplic = !it.manual && !it.precoManual && q>=4 && (Number(it.atacado)||0)>0;
-    var varejoTd = it.manual ? '—' : _precoBRL(it.varejo);
-    var praticadoTag = atacAplic ? ' <span style="color:#0F6E56;font-size:10px">(atacado)</span>' : '';
-    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+'</td><td class="c">'+q+'</td><td class="v">'+varejoTd+'</td><td class="v">'+_precoBRL(v)+praticadoTag+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
+    var praticadoTag = (ORC_CFG.mostrarTagAtacado && atacAplic) ? ' <span style="color:#0F6E56;font-size:10px">(atacado)</span>' : '';
+    var varejoTd = ORC_CFG.mostrarVarejo ? ('<td class="v">'+(it.manual?'—':_precoBRL(it.varejo))+'</td>') : '';
+    linhas+='<tr><td>'+_precoEsc(it.desc)+(it.manual?' <span style="color:#9A6B00;font-size:10px">(manual)</span>':'')+cxInfo+'</td><td class="c">'+q+'</td>'+varejoTd+'<td class="v">'+_precoBRL(v)+praticadoTag+'</td><td class="v">'+_precoBRL(sub)+'</td></tr>';
   }
+  var thVarejo = ORC_CFG.mostrarVarejo ? '<th class="v">Varejo</th>' : '';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orçamento — Ideal</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     +'body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}'
@@ -5339,7 +5372,7 @@ function orcPDF(){
     +'<div class="hd"><h1>Orçamento</h1><div class="sub">Ideal Supermercados'+(loja?(' &middot; '+_precoEsc(loja)):'')+'</div></div><div class="stripe"></div>'
     +'<div class="body">'
     +'<div class="meta"><b>Itens:</b> '+ORC_ITENS.length+' &middot; Gerado em '+_precoEsc(quando)+'</div>'
-    +'<table><tr><th>Produto</th><th class="c">Qtd</th><th class="v">Varejo</th><th class="v">Praticado</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
+    +'<table><tr><th>Produto</th><th class="c">Qtd</th>'+thVarejo+'<th class="v">Praticado</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
     +'<div class="tot"><span>Total do orçamento</span><span>'+_precoBRL(tot)+'</span></div>'
     +'<div class="foot">Valores sujeitos a alteração sem aviso prévio. Documento gerado pelo app — Ideal Supermercados.</div>'
     +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
