@@ -131,10 +131,22 @@
   var HEARTBEAT_MS = 2*60*1000; // manda um "oi" a cada 2 min
 
   // Manda o "oi" (fire-and-forget: não precisa ler a resposta).
+  // DUAL-WRITE: nuvem (bp_terminal_ping) + Sheets (Apps Script), como a Ponte.
   function darOi(){
     if(!TERMINAL_ID) return;            // sem ?t= na URL, não se identifica
+    var info = (online ? 'online' : 'offline') + ' · ' + total + ' produtos';
+    // 1) NUVEM (fonte nova) — RPC pública, mesmo padrão do bp_produtos
     try{
-      var info = (online ? 'online' : 'offline') + ' · ' + total + ' produtos';
+      if(SUPA_ANON && SUPA_ANON.indexOf('COLE_AQUI') !== 0){
+        fetch(SUPA_URL + '/rest/v1/rpc/bp_terminal_ping', {
+          method:'POST',
+          headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+SUPA_ANON, 'Content-Type':'application/json' },
+          body: JSON.stringify({ p_cliente: CLIENTE_ID, p_codigo: TERMINAL_ID, p_info: info })
+        }).catch(function(){});
+      }
+    }catch(e){}
+    // 2) SHEETS (reserva, igual antes) — sai quando confirmarmos a nuvem
+    try{
       fetch(APPS_SCRIPT_URL, {
         method:'POST',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
