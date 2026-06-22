@@ -2521,6 +2521,13 @@ async function _fzPostCloud(p){
     var n=await r3.json().catch(function(){return null;});
     return { ok:true, gravados:(n==null?0:n) };
   }
+  if(a==='freezertemp_del'){
+    var r4 = await supaFetch('/rest/v1/rpc/fz_temp_excluir', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ p_id:String((p&&p.id)||'') }) });
+    if(!r4.ok){ var e4=await r4.text().catch(function(){return '';}); throw new Error('fz_temp_excluir HTTP '+r4.status+' '+e4.slice(0,80)); }
+    return { ok:true };
+  }
   return null; // ação não tratada na nuvem → cai no Sheets
 }
 
@@ -9652,6 +9659,14 @@ async function _estPostCloud(payload){
     });
     var _fr=Object.keys(_agg).map(function(k){return _agg[k];});
     return { ok:true, nCotacoes:_scots.length, totalGanho:_totalGanho, fornecedores:_fr };
+  }
+
+  // ───────── ESTRUTURA (reclassificar 1 produto: setor + grupo) ─────────
+  if(acao==='estrutura_save'){
+    var rES = await supaFetch('/rest/v1/rpc/estrutura_set', { method:'POST',
+      body: JSON.stringify({ p_codigo:String(payload.codigo||''), p_setor:String(payload.setor||''), p_grupo:String(payload.grupo||'') }) });
+    if(!rES.ok){ var eES=await rES.text().catch(function(){return '';}); throw new Error('estrutura_set HTTP '+rES.status+' '+eES.slice(0,80)); }
+    return { ok:true };
   }
 
   return null; // não é compras/forn -> Sheets trata
