@@ -12,7 +12,7 @@
   .slide{position:absolute;inset:0;display:flex;flex-direction:column;
     align-items:center;justify-content:center;text-align:center;padding:0 4vw;
     background:linear-gradient(160deg,#1a2c8c 0%,#0c163f 100%);will-change:opacity,transform;}
-  .logo{position:absolute;top:2.4vh;left:2.4vw;z-index:6;width:8.6vh;height:8.6vh;
+  .logo{position:absolute;top:2.4vh;left:2.4vw;z-index:6;width:11.5vh;height:11.5vh;
     border-radius:50%;background:#1565C0;display:flex;align-items:center;justify-content:center;
     box-shadow:0 .8vh 2.6vh rgba(0,0,0,.4);}
   .logo .inner{width:6.7vh;height:6.7vh;border-radius:50%;background:#E2231A;
@@ -74,6 +74,9 @@
   .bgfull{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;}
   .tint{position:absolute;inset:0;z-index:1;}
   .above{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
+  .brandmark{display:flex;flex-direction:column;align-items:center;line-height:.92;}
+  .brandmark .bm1{font-size:11.5vh;font-weight:900;color:#FFC400;letter-spacing:.5vw;text-shadow:0 .6vh 1.4vh rgba(0,0,0,.45);}
+  .brandmark .bm2{font-size:3.8vh;font-weight:800;color:#fff;letter-spacing:1.3vw;margin-top:.6vh;}
   @keyframes pop{0%{transform:scale(.8);opacity:0}65%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
   @keyframes rise{0%{transform:translateY(2.4vh);opacity:0}100%{transform:translateY(0);opacity:1}}
@@ -278,17 +281,15 @@
       setTimeout(function(){ var cs=s.querySelectorAll('.scard'); cs.forEach(function(c2,k){ c2.style.animation='inn .5s ease '+(0.15+k*0.18)+'s both'; }); },30);
       return s;
     }
-    var s=el('<div class="above">'+
-      '<div class="tphy" style="font-size:8vh;">&#127942;</div>'+
-      '<div class="ititle" style="color:#fff;font-size:6.6vh;">Supermercado Ideal</div>'+
-      '<div class="isub" style="color:#cfd6ff;font-size:3.4vh;margin-top:.6vh;">A maior variedade de toda a região</div>'+
-      '<div class="bigline" style="margin-top:2.6vh;background:#FFC400;color:#16267A;font-weight:700;font-size:5vh;padding:1.6vh 5vw;border-radius:2.4vh;">o menor preço é aqui!</div>'+
+    var s=el('<div class="above" style="z-index:2;">'+
+      '<div class="brandmark"><span class="bm1">IDEAL</span><span class="bm2">SUPERMERCADOS</span></div>'+
+      '<div class="isub" style="color:#e6eaff;font-size:3.8vh;margin-top:1.6vh;">A maior variedade de toda a região</div>'+
+      '<div class="bigline" style="margin-top:3vh;background:linear-gradient(180deg,#FFD23F,#FFC400);color:#16267A;font-weight:900;font-size:6.4vh;padding:2vh 6vw;border-radius:2.8vh;box-shadow:0 1.4vh 3.6vh rgba(0,0,0,.35);">O menor preço é aqui!</div>'+
       '</div>');
     setTimeout(function(){
-      var t=s.querySelector('.tphy'); if(t) t.style.animation='pop .6s ease both';
-      var ti=s.querySelector('.ititle'); if(ti){ ti.style.opacity='0'; ti.style.animation='rise .6s ease .2s both'; }
-      var su=s.querySelector('.isub'); if(su){ su.style.opacity='0'; su.style.animation='rise .6s ease .35s both'; }
-      var bl=s.querySelector('.bigline'); if(bl){ bl.style.opacity='0'; bl.style.animation='pop .6s ease .55s both'; setTimeout(function(){ bl.style.animation='pulse 1.8s ease-in-out infinite'; },1300); }
+      var bm=s.querySelector('.brandmark'); if(bm){ bm.style.opacity='0'; bm.style.animation='rise .6s ease both'; }
+      var su=s.querySelector('.isub'); if(su){ su.style.opacity='0'; su.style.animation='rise .6s ease .25s both'; }
+      var bl=s.querySelector('.bigline'); if(bl){ bl.style.opacity='0'; bl.style.animation='pop .65s ease .5s both'; setTimeout(function(){ bl.style.animation='pulse 3.2s ease-in-out infinite'; },1500); }
     },30);
     return s;
   }
@@ -305,16 +306,24 @@
     return s;
   }
   function pagSlide(){
-    var s=el('<div class="above"><div class="ititle" style="color:#fff;font-size:4.4vh;">Aqui você paga como quiser</div>'+
-      '<div class="chips">'+
-      '<div class="chip"><span class="ic">&#9889;</span><span class="lb">Pix</span></div>'+
-      '<div class="chip"><span class="ic">&#128179;</span><span class="lb">Crédito</span></div>'+
-      '<div class="chip"><span class="ic">&#128181;</span><span class="lb">Débito</span></div>'+
-      '<div class="chip"><span class="ic">&#127915;</span><span class="lb">Voucher</span></div>'+
-      '</div><div class="hl"><div class="big">Parcelamos em 6x sem juros!</div><div class="sub">Leve mais, pague com folga</div></div></div>');
+    function ico(n){
+      var a='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:5.4vh;height:5.4vh;">';
+      if(n==='pix')    return a+'<path d="M12 3l9 9-9 9-9-9 9-9z"/><path d="M8.5 12l2.5 2.5L15.5 10"/></svg>';
+      if(n==='credito')return a+'<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 9.5h20"/><path d="M6 15.5h4"/></svg>';
+      if(n==='debito') return a+'<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 9.5h20"/><rect x="5.5" y="12.8" width="5" height="3.4" rx="1"/></svg>';
+      if(n==='alim')   return a+'<path d="M5 8h14l-1.1 10.2a2 2 0 0 1-2 1.8H8.1a2 2 0 0 1-2-1.8L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>';
+      return a+'<path d="M7 3v8M10 3v8M8.5 11v10"/><path d="M16.5 3c-1.6 0-2.6 2.2-2.6 4.8 0 2 1 3.2 2.6 3.2v10"/></svg>';
+    }
+    var items=[['pix','Pix'],['credito','Crédito'],['debito','Débito'],['alim','Alimentação'],['refe','Refeição']];
+    var ch='';
+    items.forEach(function(it){ ch+='<div class="chip"><span class="ic">'+ico(it[0])+'</span><span class="lb">'+it[1]+'</span></div>'; });
+    var s=el('<div class="above" style="z-index:2;">'+
+      '<div class="ititle" style="color:#fff;font-size:5.6vh;">Aqui você paga como quiser</div>'+
+      '<div class="chips">'+ch+'</div>'+
+      '<div class="hl" style="margin-top:1.4vh;"><div class="big" style="font-size:7.4vh;">Parcelamos em 6x sem juros!</div><div class="sub">Leve mais, pague com folga</div></div></div>');
     setTimeout(function(){
-      var chips=s.querySelectorAll('.chip'); chips.forEach(function(c,k){ c.style.opacity='0'; c.style.animation='pop .5s ease '+(0.2+k*0.16)+'s both'; });
-      var hl=s.querySelector('.hl'); hl.style.opacity='0'; hl.style.animation='pop .6s ease '+(0.2+chips.length*0.16+0.2)+'s both';
+      var chips=s.querySelectorAll('.chip'); chips.forEach(function(c,k){ c.style.opacity='0'; c.style.animation='pop .5s ease '+(0.15+k*0.12)+'s both'; });
+      var hl=s.querySelector('.hl'); if(hl){ hl.style.opacity='0'; hl.style.animation='pop .65s ease '+(0.15+chips.length*0.12+0.2)+'s both'; setTimeout(function(){ hl.style.animation='pulse 3s ease-in-out infinite'; },1700); }
     },30);
     return s;
   }
