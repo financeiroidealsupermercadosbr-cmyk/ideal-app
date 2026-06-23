@@ -6,65 +6,82 @@
 <title>Mural de Ofertas — Ideal Supermercados</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
-  html,body{height:100%;width:100%;overflow:hidden;background:#16267A;
-    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
-  #stage{position:fixed;inset:0;}
+  html,body{height:100%;width:100%;overflow:hidden;background:#0c163f;
+    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+  #stage{position:fixed;inset:0;background:#0c163f;}
   .slide{position:absolute;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;text-align:center;padding:0 4vw;}
-  .logo{position:absolute;top:2.4vh;left:2.4vw;z-index:5;width:8.4vh;height:8.4vh;
-    border-radius:50%;background:#1565C0;display:flex;align-items:center;justify-content:center;}
+    align-items:center;justify-content:center;text-align:center;padding:0 4vw;
+    background:linear-gradient(160deg,#1a2c8c 0%,#0c163f 100%);will-change:opacity,transform;}
+  .logo{position:absolute;top:2.4vh;left:2.4vw;z-index:6;width:8.6vh;height:8.6vh;
+    border-radius:50%;background:#1565C0;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 .8vh 2.6vh rgba(0,0,0,.4);}
   .logo .inner{width:6.7vh;height:6.7vh;border-radius:50%;background:#E2231A;
     display:flex;flex-direction:column;align-items:center;justify-content:center;color:#FFC400;font-weight:700;}
   .logo .cart{font-size:2.6vh;line-height:1;}
   .logo .nm{font-size:1.6vh;}
-  .footer{position:absolute;bottom:0;left:0;right:0;background:#0e1a52;color:#fff;z-index:5;
-    display:flex;align-items:center;justify-content:space-between;padding:1.1vh 2.5vw;}
-  .footer b{font-size:2vh;font-weight:600;}
-  .footer span{font-size:1.6vh;color:#aab2e0;}
-  .badge{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;z-index:4;}
-  .badge .b{background:#E2231A;color:#fff;font-size:4.6vh;font-weight:800;letter-spacing:6px;
-    width:100%;text-align:center;padding:2.4vh 0;border-radius:0;}
-  .pname{color:#16267A;font-size:7vh;font-weight:700;}
-  .plaque{background:#fff;border-radius:3vh;padding:1.5vh 5vw;margin:2.2vh 0 1.4vh;}
-  .price{color:#E2231A;font-weight:700;font-size:19vh;line-height:1;}
-  .price .rs{font-size:.34em;vertical-align:.85em;}
-  .unit{color:#9a7b00;font-size:4.6vh;}
-  .pfoto{width:36vh;height:36vh;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 1.4vh 4vh rgba(0,0,0,.20);margin-bottom:1vh;}
-  .pfoto img{width:88%;height:88%;object-fit:contain;}
-  .ititle{color:#FFC400;font-size:5.4vh;font-weight:700;}
-  .isub{color:#cfd6ff;font-size:3vh;}
+  .footer{position:absolute;bottom:0;left:0;right:0;z-index:6;color:#fff;
+    background:linear-gradient(180deg,rgba(8,16,46,0),#0a1444 65%);
+    display:flex;align-items:center;justify-content:space-between;padding:1.6vh 3vw .9vh;}
+  .footer b{font-size:2.2vh;font-weight:800;letter-spacing:.4px;}
+  .footer span{font-size:1.7vh;color:#aeb8ee;}
+  .badge{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;z-index:5;}
+  .badge .b{position:relative;overflow:hidden;width:100%;text-align:center;
+    background:linear-gradient(180deg,#ff453a,#cf120a);color:#fff;
+    font-size:4.4vh;font-weight:900;letter-spacing:12px;padding:1.7vh 0;
+    box-shadow:0 .7vh 2.2vh rgba(170,0,0,.45);text-shadow:0 .25vh .5vh rgba(0,0,0,.3);}
+  .badge .b::after{content:"";position:absolute;top:0;left:0;height:100%;width:30%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
+    transform:translateX(-130%);animation:shine 3.4s ease-in-out infinite;}
+  .ptag{display:inline-flex;align-items:center;justify-content:center;
+    font-size:2.5vh;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#fff;
+    padding:.85vh 3vw;border-radius:99px;margin-bottom:1.4vh;box-shadow:0 .6vh 1.8vh rgba(0,0,0,.22);}
+  .pname{font-size:7.4vh;font-weight:900;line-height:1.02;letter-spacing:-.5px;
+    text-shadow:0 .25vh .5vh rgba(0,0,0,.12);max-width:92vw;}
+  .plaque{background:#fff;border-radius:3vh;padding:1.2vh 5vw;margin:1.6vh 0 1vh;
+    box-shadow:0 1.3vh 3.8vh rgba(0,0,0,.25);}
+  .price{font-weight:900;font-size:18vh;line-height:.95;letter-spacing:-2px;}
+  .price .rs{font-size:.32em;vertical-align:.95em;font-weight:800;}
+  .unit{font-size:4.6vh;font-weight:800;}
+  .pfoto{width:38vh;height:38vh;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;box-shadow:0 1.8vh 5vh rgba(0,0,0,.28);margin-bottom:1.6vh;animation:floaty 4.2s ease-in-out infinite;}
+  .pfoto img{width:86%;height:86%;object-fit:contain;}
+  .ititle{color:#FFC400;font-size:5.6vh;font-weight:800;text-shadow:0 .25vh .6vh rgba(0,0,0,.3);}
+  .isub{color:#d3d9ff;font-size:3vh;}
   .pillrow{display:flex;gap:1.4vw;flex-wrap:wrap;justify-content:center;margin:2vh 0;}
   .pill{font-size:2.6vh;padding:1.2vh 2.4vw;border-radius:99px;color:#fff;}
-  .showrow{display:flex;gap:1.2vw;justify-content:center;align-items:stretch;margin-top:2vh;}
-  .scard{width:20vw;border-radius:1.6vh;overflow:hidden;display:flex;flex-direction:column;opacity:0;}
-  .scard .thumb{height:17vh;background-size:cover;background-position:center;}
-  .scard .body{flex:1;padding:1.4vh 1vw;display:flex;flex-direction:column;gap:.6vh;align-items:center;text-align:center;}
-  .scard .dname{font-size:2.6vh;font-weight:700;line-height:1.1;}
+  .showrow{display:flex;gap:1.4vw;justify-content:center;align-items:stretch;margin-top:2.4vh;}
+  .scard{width:21vw;border-radius:2vh;overflow:hidden;display:flex;flex-direction:column;opacity:0;
+    box-shadow:0 1.2vh 3vh rgba(0,0,0,.3);}
+  .scard .thumb{height:19vh;background-size:cover;background-position:center;}
+  .scard .body{flex:1;padding:1.6vh 1vw;display:flex;flex-direction:column;gap:.6vh;align-items:center;text-align:center;}
+  .scard .dname{font-size:2.8vh;font-weight:800;line-height:1.1;}
   .scard .dslo{font-size:1.8vh;}
-  .day .dtitle{color:#fff;font-size:5.4vh;font-weight:700;}
+  .day .dtitle{color:#fff;font-size:5.6vh;font-weight:900;text-shadow:0 .25vh .6vh rgba(0,0,0,.35);}
   .day .dsub{font-size:3vh;margin-bottom:1vh;}
-  .minirow{display:flex;gap:1.6vw;flex-wrap:wrap;justify-content:center;margin-top:1.4vh;}
-  .mini{background:#fff;border-radius:2vh;padding:2.2vh 2.4vw;min-width:15vw;box-shadow:0 .6vh 1.6vh rgba(0,0,0,.25);}
-  .mini .mn{color:#16267A;font-size:3vh;font-weight:600;margin-bottom:.6vh;}
-  .mini .mp{color:#E2231A;font-size:5.2vh;font-weight:700;}
-  .chips{display:flex;gap:1.6vw;flex-wrap:wrap;justify-content:center;margin:1.5vh 0;}
-  .chip{background:#fff;color:#16267A;border-radius:1.8vh;padding:2vh 2.4vw;min-width:13vw;
-    display:flex;flex-direction:column;align-items:center;gap:1vh;}
-  .chip .ic{font-size:4.4vh;}
-  .chip .lb{font-size:2.6vh;font-weight:600;}
-  .hl{background:#FFC400;color:#16267A;border-radius:2.2vh;padding:2.4vh 3.5vw;}
-  .hl .big{font-size:6vh;font-weight:700;line-height:1.05;}
+  .minirow{display:flex;gap:1.6vw;flex-wrap:wrap;justify-content:center;margin-top:1.6vh;}
+  .mini{background:#fff;border-radius:2vh;padding:2.2vh 2.4vw;min-width:16vw;box-shadow:0 .8vh 2vh rgba(0,0,0,.28);}
+  .mini .mn{color:#16267A;font-size:3vh;font-weight:700;margin-bottom:.6vh;}
+  .mini .mp{color:#E2231A;font-size:5.4vh;font-weight:900;}
+  .chips{display:flex;gap:1.6vw;flex-wrap:wrap;justify-content:center;margin:1.6vh 0;}
+  .chip{background:#fff;color:#16267A;border-radius:2vh;padding:2vh 2.4vw;min-width:13vw;
+    display:flex;flex-direction:column;align-items:center;gap:1vh;box-shadow:0 .8vh 2vh rgba(0,0,0,.25);}
+  .chip .ic{font-size:4.6vh;}
+  .chip .lb{font-size:2.6vh;font-weight:700;}
+  .hl{background:#FFC400;color:#16267A;border-radius:2.4vh;padding:2.4vh 3.6vw;box-shadow:0 1vh 2.8vh rgba(0,0,0,.28);}
+  .hl .big{font-size:6vh;font-weight:900;line-height:1.05;}
   .hl .sub{font-size:2.8vh;color:#7a5b00;margin-top:.6vh;}
   .bgimg{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;opacity:.22;}
   .bgfull{position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;}
   .tint{position:absolute;inset:0;z-index:1;}
   .above{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
-  @keyframes pop{0%{transform:scale(.78);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
-  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
-  @keyframes rise{0%{transform:translateY(2.2vh);opacity:0}100%{transform:translateY(0);opacity:1}}
-  @keyframes inn{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes pop{0%{transform:scale(.8);opacity:0}65%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+  @keyframes rise{0%{transform:translateY(2.4vh);opacity:0}100%{transform:translateY(0);opacity:1}}
+  @keyframes inn{0%{transform:scale(.75);opacity:0}100%{transform:scale(1);opacity:1}}
   @keyframes fadein{0%{opacity:0}100%{opacity:1}}
   @keyframes kb{0%{transform:scale(1)}100%{transform:scale(1.06)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.2vh)}}
+  @keyframes shine{0%{transform:translateX(-130%)}60%,100%{transform:translateX(130%)}}
 </style>
 </head>
 <body>
@@ -184,9 +201,9 @@
     prods.forEach(function(p){ if(p.cod) addIndex(p.cod,p); });
   }
   function resolve(){
-    function map(list){ var out=[]; list.forEach(function(c){ var p=lookup(c); if(p && p.varejo>0) out.push(p); }); return out; }
-    prodAcougue=map(ACOUGUE);
-    prodHorti=map(HORTI);
+    function map(list,cat){ var out=[]; list.forEach(function(c){ var p=lookup(c); if(p && p.varejo>0){ p.cat=cat; out.push(p); } }); return out; }
+    prodAcougue=map(ACOUGUE,'carne');
+    prodHorti=map(HORTI,'horti');
     prodGeral=prodAcougue.concat(prodHorti);
     try{ localStorage.setItem('ideal_mural', JSON.stringify({a:prodAcougue,h:prodHorti,t:Date.now()})); }catch(e){}
   }
@@ -216,18 +233,26 @@
   function prodSlide(){
     if(prodGeral.length===0) return instSlide('semana');
     var p=prodGeral[gi%prodGeral.length]; gi++;
+    var carne = (p.cat!=='horti');
+    var th = carne
+      ? {bg:'radial-gradient(125% 125% at 50% 0%, #fff7ef 0%, #ffe7cd 52%, #ffd3aa 100%)', ring:'#cf120a', tagbg:'linear-gradient(180deg,#ff453a,#c20f06)', tag:'A\u00c7OUGUE', name:'#3a0d08', price:'#cf120a', unit:'#8a3b16'}
+      : {bg:'radial-gradient(125% 125% at 50% 0%, #f3fff2 0%, #d6f7d3 52%, #b6eeb3 100%)', ring:'#179a37', tagbg:'linear-gradient(180deg,#2bbd4f,#0f8c30)', tag:'HORTIFR\u00daTI', name:'#0c3d18', price:'#179a37', unit:'#2a6b34'};
     var arq = FOTOS[p.barras] || FOTOS[p.cod] || '';
-    var foto = arq ? '<div class="pfoto"><img src="'+FOTOS_BASE+arq+'" onerror="this.parentNode.style.display=\'none\'"></div>' : '';
+    var foto = arq ? '<div class="pfoto" style="box-shadow:0 1.8vh 5vh rgba(0,0,0,.28), inset 0 0 0 .9vh '+th.ring+';"><img src="'+FOTOS_BASE+arq+'" onerror="this.parentNode.style.display=\'none\'"></div>' : '';
     var s=el('<div class="badge"><div class="b">OFERTA</div></div>'+
-      '<div class="above" style="background:#FFDD00;position:absolute;inset:0;justify-content:center;">'+
+      '<div class="above" style="background:'+th.bg+';position:absolute;inset:0;justify-content:center;padding-top:9vh;">'+
+      '<div class="ptag" style="background:'+th.tagbg+';opacity:0;">'+th.tag+'</div>'+
       foto+
-      '<div class="pname">'+p.nome+'</div>'+
-      '<div class="plaque"><span class="price"><span class="rs">R$</span> '+brl(p.varejo)+'</span></div>'+
-      '<div class="unit">'+unidade(p.un)+'</div></div>');
+      '<div class="pname" style="color:'+th.name+';opacity:0;">'+p.nome+'</div>'+
+      '<div class="plaque"><span class="price" style="color:'+th.price+';"><span class="rs">R$</span> '+brl(p.varejo)+'</span></div>'+
+      '<div class="unit" style="color:'+th.unit+';opacity:0;">'+unidade(p.un)+'</div></div>');
     setTimeout(function(){
       var im=s.querySelector('.pfoto img'); if(im) im.style.animation='inn .6s ease both';
-      anim(s,'.price','pop .55s ease');
-      var pl=s.querySelector('.plaque'); if(pl) setTimeout(function(){pl.style.animation='pulse 2.4s ease-in-out infinite';},600);
+      var tg=s.querySelector('.ptag'); if(tg) tg.style.animation='rise .5s ease .1s both';
+      anim(s,'.pname','rise .55s ease .22s both');
+      anim(s,'.price','pop .6s ease .36s both');
+      var un=s.querySelector('.unit'); if(un) un.style.animation='fadein .5s ease .5s both';
+      var pl=s.querySelector('.plaque'); if(pl) setTimeout(function(){pl.style.animation='pulse 2.6s ease-in-out infinite';},1000);
     },30);
     return s;
   }
@@ -329,10 +354,17 @@
   function tick(){
     var type=pattern[step%pattern.length]; step++;
     var node=buildSlide(type);
-    node.style.animation='fadein .5s ease';
+    node.style.zIndex='2';
+    node.style.opacity='0';
     stage.appendChild(node);
-    var olds=stage.querySelectorAll('.slide');
-    if(olds.length>1){ for(var i=0;i<olds.length-1;i++){ (function(o){ o.style.transition='opacity .5s ease'; o.style.opacity='0'; setTimeout(function(){ if(o.parentNode) o.parentNode.removeChild(o); },600); })(olds[i]); } }
+    void node.offsetWidth;
+    node.style.transition='opacity .6s ease';
+    node.style.opacity='1';
+    setTimeout(function(){
+      var slides=stage.querySelectorAll('.slide');
+      for(var i=0;i<slides.length-1;i++){ var o=slides[i]; if(o.parentNode) o.parentNode.removeChild(o); }
+      node.style.zIndex='1';
+    },680);
     setTimeout(tick, durFor(type));
   }
 
