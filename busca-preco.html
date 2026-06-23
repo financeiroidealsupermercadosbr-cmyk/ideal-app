@@ -106,24 +106,21 @@
 <script>
 (function(){
   "use strict";
-  var SHEET_ID = '1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4';
-  var API_KEY  = 'AIzaSyCgN7C50SDOe5iNwyD84xn5ERN1ivZWDiw';
-  var RANGE    = 'Produtos!A:M';
+  // >>> Sheets REMOVIDO — kiosk 100% nuvem (cache local como reserva) <<<
   var ATACADO_MIN = 4;          // atacado vale a partir de 4 unidades
   var REFRESH_MS  = 10*60*1000; // reconfere a lista a cada 10 min
   var IDLE_MS     = 9000;       // volta ao repouso depois de mostrar um preço
   var CACHE_KEY   = 'ideal_bp_v2';
 
-  // >>> SUPABASE (fonte primaria; Sheets vira reserva automatica) <<<
+  // >>> SUPABASE (fonte UNICA agora; reserva = cache local) <<<
   var SUPA_URL   = 'https://jnupgembzivsiowdkacc.supabase.co';
   var SUPA_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudXBnZW1ieml2c2lvd2RrYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDY4NDgsImV4cCI6MjA5NzMyMjg0OH0.emhFhJOZvoHd-qFR-bvNc_zSWpPs9oQK_7vwd-H0aR0';   // Settings > API > anon/public. E publica (pode ficar no codigo).
   var CLIENTE_ID = 'd9b2c1a4-7e3f-4a6b-9c2d-1f0e5a8b3c47';   // Grupo Ideal
 
   // >>> SITUAÇÃO DO TERMINAL ("dá o oi" pro painel do app) <<<
   // O id do terminal vem da URL: busca-preco.html?t=bp1  (ou ?t=bp2 etc).
-  // A cada HEARTBEAT_MS o terminal manda um "oi" pro Apps Script, que anota
-  // na aba Terminais. O app lê essa aba e mostra verde/vermelho.
-  var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
+  // A cada HEARTBEAT_MS o terminal manda um "oi" pra nuvem (bp_terminal_ping).
+  // O app lê a tabela terminais e mostra verde/vermelho.
   var TERMINAL_ID = (function(){
     try{ var m = location.search.match(/[?&]t=([^&]+)/); return m ? decodeURIComponent(m[1]).trim() : ''; }
     catch(e){ return ''; }
@@ -131,11 +128,10 @@
   var HEARTBEAT_MS = 2*60*1000; // manda um "oi" a cada 2 min
 
   // Manda o "oi" (fire-and-forget: não precisa ler a resposta).
-  // DUAL-WRITE: nuvem (bp_terminal_ping) + Sheets (Apps Script), como a Ponte.
+  // CLOUD-ONLY: nuvem (bp_terminal_ping). Sheets removido.
   function darOi(){
     if(!TERMINAL_ID) return;            // sem ?t= na URL, não se identifica
     var info = (online ? 'online' : 'offline') + ' · ' + total + ' produtos';
-    // 1) NUVEM (fonte nova) — RPC pública, mesmo padrão do bp_produtos
     try{
       if(SUPA_ANON && SUPA_ANON.indexOf('COLE_AQUI') !== 0){
         fetch(SUPA_URL + '/rest/v1/rpc/bp_terminal_ping', {
@@ -144,14 +140,6 @@
           body: JSON.stringify({ p_cliente: CLIENTE_ID, p_codigo: TERMINAL_ID, p_info: info })
         }).catch(function(){});
       }
-    }catch(e){}
-    // 2) SHEETS (reserva, igual antes) — sai quando confirmarmos a nuvem
-    try{
-      fetch(APPS_SCRIPT_URL, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ acao:'heartbeat', sheetId:SHEET_ID, terminal:TERMINAL_ID, info:info })
-      }).catch(function(){});
     }catch(e){}
   }
 
@@ -322,13 +310,8 @@
     elFtR.textContent = 'Atualizado em ' + (bancoStamp ? bancoStamp : dataHora());
   }
   function atualizarBanco(){
-    var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID
-            + '/values/' + encodeURIComponent('Metadados!A:B') + '?key=' + API_KEY + '&_=' + Date.now();
-    fetch(url, {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
-      if(!j || !j.values) return;
-      for(var i=0;i<j.values.length;i++){ if(String(j.values[i][0]).trim() === 'ultima_atualizacao_banco'){ bancoStamp = String(j.values[i][1]||'').trim(); break; } }
-      atualizarRodape();
-    }).catch(function(){});
+    // Sem Sheets: o rodapé mostra a hora da última atualização (local).
+    atualizarRodape();
   }
 
   function salvarCompact(arr){
@@ -342,26 +325,9 @@
     }catch(e){ return false; }
   }
 
-  // Reserva: le direto do Google Sheets (jeito antigo).
-  function atualizarSheets(){
-    var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SHEET_ID
-            + '/values/' + encodeURIComponent(RANGE) + '?key=' + API_KEY + '&_=' + Date.now();
-    fetch(url, {cache:'no-store'})
-      .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
-      .then(function(j){
-        var values = (j && j.values) || [];
-        if(values.length){ construirIndice(values); }
-        setOnline(true);
-      })
-      .catch(function(e){
-        setOnline(false);
-        if(total===0) elFtR.textContent = 'sem conexão — tentando…';
-      });
-  }
-
-  // Principal: le do Supabase (rapido, sem cota). Se falhar, cai pro Sheets.
+  // Principal: le do Supabase (rapido, sem cota). Reserva = cache local ja carregado.
   function atualizar(){
-    if(!SUPA_ANON || SUPA_ANON.indexOf('COLE_AQUI') === 0){ atualizarSheets(); return; }
+    if(!SUPA_ANON || SUPA_ANON.indexOf('COLE_AQUI') === 0){ setOnline(false); return; }
     fetch(SUPA_URL + '/rest/v1/rpc/bp_produtos', {
       method:'POST',
       headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+SUPA_ANON, 'Content-Type':'application/json' },
@@ -371,9 +337,9 @@
       .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
       .then(function(arr){
         if(arr && arr.length){ construirCompact(arr); salvarCompact(arr); setOnline(true); }
-        else { atualizarSheets(); }   // veio vazio -> tenta o Sheets
+        else { setOnline(false); }   // veio vazio -> segue com o cache
       })
-      .catch(function(e){ atualizarSheets(); });   // erro -> reserva
+      .catch(function(e){ setOnline(false); if(total===0) elFtR.textContent = 'sem conexão — tentando…'; });
   }
 
   // ---- leitor de código (funciona como teclado) ----
