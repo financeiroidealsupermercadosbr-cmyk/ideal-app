@@ -266,7 +266,7 @@
   function instSlide(which){
     if(which==='semana'){
       var cards=[
-        {bg:'#1f9d3a',tc:'#fff',sc:'#d6f3df',img:IMG_HORTI,name:'Terça Verde',slo:'Hortifruti selecionado, mais frescor'},
+        {bg:'#1f9d3a',tc:'#fff',sc:'#d6f3df',img:IMG_HORTI,name:'Terça Verde',slo:'Hortifrúti selecionado, mais frescor'},
         {bg:'#8a1420',tc:'#fff',sc:'#f2c9cd',img:IMG_CARNE,name:'Quinta da Carne',slo:'Os melhores cortes pra você'},
         {bg:'#e9a400',tc:'#3a2a00',sc:'#5a4200',img:IMG_CHURRASCO,name:'Fim de Semana',slo:'Ofertas pra família toda'}
       ];
@@ -289,7 +289,7 @@
     setTimeout(function(){
       var bm=s.querySelector('.brandmark'); if(bm){ bm.style.opacity='0'; bm.style.animation='rise .6s ease both'; }
       var su=s.querySelector('.isub'); if(su){ su.style.opacity='0'; su.style.animation='rise .6s ease .25s both'; }
-      var bl=s.querySelector('.bigline'); if(bl){ bl.style.opacity='0'; bl.style.animation='pop .65s ease .5s both'; setTimeout(function(){ bl.style.animation='pulse 3.2s ease-in-out infinite'; },1500); }
+      var bl=s.querySelector('.bigline'); if(bl){ bl.style.opacity='0'; bl.style.animation='pop .65s ease .5s both'; setTimeout(function(){ bl.style.opacity='1'; bl.style.animation='pulse 3.2s ease-in-out infinite'; },1500); }
     },30);
     return s;
   }
@@ -323,7 +323,7 @@
       '<div class="hl" style="margin-top:1.4vh;"><div class="big" style="font-size:7.4vh;">Parcelamos em 6x sem juros!</div><div class="sub">Leve mais, pague com folga</div></div></div>');
     setTimeout(function(){
       var chips=s.querySelectorAll('.chip'); chips.forEach(function(c,k){ c.style.opacity='0'; c.style.animation='pop .5s ease '+(0.15+k*0.12)+'s both'; });
-      var hl=s.querySelector('.hl'); if(hl){ hl.style.opacity='0'; hl.style.animation='pop .65s ease '+(0.15+chips.length*0.12+0.2)+'s both'; setTimeout(function(){ hl.style.animation='pulse 3s ease-in-out infinite'; },1700); }
+      var hl=s.querySelector('.hl'); if(hl){ hl.style.opacity='0'; hl.style.animation='pop .65s ease '+(0.15+chips.length*0.12+0.2)+'s both'; setTimeout(function(){ hl.style.opacity='1'; hl.style.animation='pulse 3s ease-in-out infinite'; },1700); }
     },30);
     return s;
   }
