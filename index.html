@@ -6947,8 +6947,9 @@ async function fazerLogin() {
   // Cliente que NÃO é o Grupo Ideal roda 100% nuvem: sem Sheets/Apps Script (que é do Ideal)
   // e sem defaults de loja do Ideal. Login pelo Sheets (só o Ideal tem) => EH_IDEAL=true.
   window.EH_IDEAL = (!usr.cliente_id) ? true : (usr.cliente_id === CLIENTE_ID);
+  // zerar Sheets: TODOS rodam 100% nuvem (Ideal incluso). Login Sheets segue como reserva (não é cortado por isto).
+  _SHEETS_OFF = true;
   if(!window.EH_IDEAL){
-    _SHEETS_OFF = true;
     window.BRAND.lojas = {};
     window.BRAND.lojasArr = [];
   }
