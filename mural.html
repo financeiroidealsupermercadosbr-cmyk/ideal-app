@@ -50,12 +50,12 @@
   .pillrow{display:flex;gap:1.4vw;flex-wrap:wrap;justify-content:center;margin:2vh 0;}
   .pill{font-size:2.6vh;padding:1.2vh 2.4vw;border-radius:99px;color:#fff;}
   .showrow{display:flex;gap:1.4vw;justify-content:center;align-items:stretch;margin-top:2.4vh;}
-  .scard{width:21vw;border-radius:2vh;overflow:hidden;display:flex;flex-direction:column;opacity:0;
+  .scard{width:24vw;border-radius:2vh;overflow:hidden;display:flex;flex-direction:column;opacity:0;
     box-shadow:0 1.2vh 3vh rgba(0,0,0,.3);}
-  .scard .thumb{height:19vh;background-size:cover;background-position:center;}
+  .scard .thumb{height:24vh;background-size:cover;background-position:center;}
   .scard .body{flex:1;padding:1.6vh 1vw;display:flex;flex-direction:column;gap:.6vh;align-items:center;text-align:center;}
-  .scard .dname{font-size:2.8vh;font-weight:800;line-height:1.1;}
-  .scard .dslo{font-size:1.8vh;}
+  .scard .dname{font-size:3.2vh;font-weight:800;line-height:1.1;}
+  .scard .dslo{font-size:2vh;}
   .day .dtitle{color:#fff;font-size:5.6vh;font-weight:900;text-shadow:0 .25vh .6vh rgba(0,0,0,.35);}
   .day .dsub{font-size:3vh;margin-bottom:1vh;}
   .minirow{display:flex;gap:1.6vw;flex-wrap:wrap;justify-content:center;margin-top:1.6vh;}
@@ -75,8 +75,8 @@
   .tint{position:absolute;inset:0;z-index:1;}
   .above{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
   .brandmark{display:flex;flex-direction:column;align-items:center;line-height:.92;}
-  .brandmark .bm1{font-size:11.5vh;font-weight:900;color:#FFC400;letter-spacing:.5vw;text-shadow:0 .6vh 1.4vh rgba(0,0,0,.45);}
-  .brandmark .bm2{font-size:3.8vh;font-weight:800;color:#fff;letter-spacing:1.3vw;margin-top:.6vh;}
+  .brandmark .bm1{font-size:14vh;font-weight:900;color:#FFC400;letter-spacing:.5vw;text-shadow:0 .6vh 1.4vh rgba(0,0,0,.45);}
+  .brandmark .bm2{font-size:4.6vh;font-weight:800;color:#fff;letter-spacing:1.3vw;margin-top:.6vh;}
   @keyframes pop{0%{transform:scale(.8);opacity:0}65%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
   @keyframes rise{0%{transform:translateY(2.4vh);opacity:0}100%{transform:translateY(0);opacity:1}}
@@ -238,8 +238,8 @@
     var p=prodGeral[gi%prodGeral.length]; gi++;
     var carne = (p.cat!=='horti');
     var th = carne
-      ? {bg:'radial-gradient(125% 125% at 50% 0%, #fff7ef 0%, #ffe7cd 52%, #ffd3aa 100%)', ring:'#cf120a', tagbg:'linear-gradient(180deg,#ff453a,#c20f06)', tag:'A\u00c7OUGUE', name:'#3a0d08', price:'#cf120a', unit:'#8a3b16'}
-      : {bg:'radial-gradient(125% 125% at 50% 0%, #f3fff2 0%, #d6f7d3 52%, #b6eeb3 100%)', ring:'#179a37', tagbg:'linear-gradient(180deg,#2bbd4f,#0f8c30)', tag:'HORTIFR\u00daTI', name:'#0c3d18', price:'#179a37', unit:'#2a6b34'};
+      ? {bg:'radial-gradient(125% 125% at 50% 0%, #fff7ef 0%, #ffe7cd 52%, #ffd3aa 100%)', ring:'#cf120a', tagbg:'linear-gradient(180deg,#ff453a,#c20f06)', tag:'AÇOUGUE', name:'#3a0d08', price:'#cf120a', unit:'#8a3b16'}
+      : {bg:'radial-gradient(125% 125% at 50% 0%, #f3fff2 0%, #d6f7d3 52%, #b6eeb3 100%)', ring:'#179a37', tagbg:'linear-gradient(180deg,#2bbd4f,#0f8c30)', tag:'HORTIFRÚTI', name:'#0c3d18', price:'#179a37', unit:'#2a6b34'};
     var arq = FOTOS[p.barras] || FOTOS[p.cod] || '';
     var foto = arq ? '<div class="pfoto" style="box-shadow:0 1.8vh 5vh rgba(0,0,0,.28), inset 0 0 0 .9vh '+th.ring+';"><img src="'+FOTOS_BASE+arq+'" onerror="this.parentNode.style.display=\'none\'"></div>' : '';
     var s=el('<div class="badge"><div class="b">OFERTA</div></div>'+
@@ -270,7 +270,7 @@
         {bg:'#8a1420',tc:'#fff',sc:'#f2c9cd',img:IMG_CARNE,name:'Quinta da Carne',slo:'Os melhores cortes pra você'},
         {bg:'#e9a400',tc:'#3a2a00',sc:'#5a4200',img:IMG_CHURRASCO,name:'Fim de Semana',slo:'Ofertas pra família toda'}
       ];
-      var h='<div class="above"><div class="ititle">Ofertas fixas da semana</div><div class="showrow">';
+      var h='<div class="above"><div class="ititle" style="font-size:6.6vh;margin-bottom:.6vh;">Ofertas fixas da semana</div><div class="showrow">';
       cards.forEach(function(c){
         h+='<div class="scard" style="background:'+c.bg+';">'+thumb(c.img)+
            '<div class="body"><div class="dname" style="color:'+c.tc+';">'+c.name+'</div>'+
@@ -283,8 +283,8 @@
     }
     var s=el('<div class="above" style="z-index:2;">'+
       '<div class="brandmark"><span class="bm1">IDEAL</span><span class="bm2">SUPERMERCADOS</span></div>'+
-      '<div class="isub" style="color:#e6eaff;font-size:3.8vh;margin-top:1.6vh;">A maior variedade de toda a região</div>'+
-      '<div class="bigline" style="margin-top:3vh;background:linear-gradient(180deg,#FFD23F,#FFC400);color:#16267A;font-weight:900;font-size:6.4vh;padding:2vh 6vw;border-radius:2.8vh;box-shadow:0 1.4vh 3.6vh rgba(0,0,0,.35);">O menor preço é aqui!</div>'+
+      '<div class="isub" style="color:#e6eaff;font-size:4.4vh;margin-top:1.8vh;">A maior variedade de toda a região</div>'+
+      '<div class="bigline" style="margin-top:3vh;background:linear-gradient(180deg,#FFD23F,#FFC400);color:#16267A;font-weight:900;font-size:7.4vh;padding:2.4vh 7vw;border-radius:2.8vh;box-shadow:0 1.4vh 3.6vh rgba(0,0,0,.35);">O menor preço é aqui!</div>'+
       '</div>');
     setTimeout(function(){
       var bm=s.querySelector('.brandmark'); if(bm){ bm.style.opacity='0'; bm.style.animation='rise .6s ease both'; }
