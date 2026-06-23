@@ -72,8 +72,10 @@
 
 <script>
 (function(){
-  var SHEET_ID='1ICENG-MlIKXuWhu5vOwEETf0xtdE_Myn45Exlbuqnw4';
-  var API_KEY='AIzaSyCgN7C50SDOe5iNwyD84xn5ERN1ivZWDiw';
+  // >>> SUPABASE (fonte UNICA agora; reserva = cache local). Sheets removido. <<<
+  var SUPA_URL   = 'https://jnupgembzivsiowdkacc.supabase.co';
+  var SUPA_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudXBnZW1ieml2c2lvd2RrYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDY4NDgsImV4cCI6MjA5NzMyMjg0OH0.emhFhJOZvoHd-qFR-bvNc_zSWpPs9oQK_7vwd-H0aR0';
+  var CLIENTE_ID = 'd9b2c1a4-7e3f-4a6b-9c2d-1f0e5a8b3c47';   // Grupo Ideal
   var ACOUGUE=['261700','263000','009800','264100','262800','265500','265200','261200','260900','264700','260300'];
   var HORTI=['8','26','56','34','10','35','3'];
 
@@ -110,9 +112,7 @@
   var prodAcougue=[], prodHorti=[], prodGeral=[];
   var gi=0, step=0;
 
-  function range(r){
-    return 'https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+'/values/'+encodeURIComponent(r)+'?key='+API_KEY;
-  }
+  function dataHora(){ var d=new Date(); function p(x){return (x<10?'0':'')+x;} return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
   function keysFor(c){
     c=(''+c).trim();
     var out=[c];
@@ -134,9 +134,10 @@
 
   function buildIndex(rows){
     idx={};
+    // bp_produtos -> [cod, nome, un, barras, varejo, atacado]. Supabase = Number (ponto decimal).
     var prods=rows.map(function(r){
-      return { nome:(r[1]||'').trim(), un:(r[3]||''), varejo:num(r[7]),
-               barras:(r[2]==null?'':(''+r[2]).trim()), cod:(r[0]==null?'':(''+r[0]).trim()) };
+      return { nome:(r[1]||'').toString().trim(), un:(r[2]||''), varejo:Number(r[4])||0, atacado:Number(r[5])||0,
+               barras:(r[3]==null?'':(''+r[3]).trim()), cod:(r[0]==null?'':(''+r[0]).trim()) };
     });
     prods.forEach(function(p){ if(p.barras) addIndex(p.barras,p); });
     prods.forEach(function(p){ if(p.cod) addIndex(p.cod,p); });
@@ -154,12 +155,18 @@
   }
 
   function fetchData(){
-    fetch(range('Produtos!A:M'),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
-      if(j&&j.values){ buildIndex(j.values); resolve(); }
-    }).catch(function(){});
-    fetch(range('Metadados!A:B'),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
-      if(j&&j.values){ j.values.forEach(function(row){ if(row[0]==='ultima_atualizacao_banco'&&row[1]) ftr.textContent='Atualizado em '+row[1]; }); }
-    }).catch(function(){});
+    if(!SUPA_ANON){ return; }
+    fetch(SUPA_URL + '/rest/v1/rpc/bp_produtos', {
+      method:'POST',
+      headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+SUPA_ANON, 'Content-Type':'application/json' },
+      cache:'no-store',
+      body: JSON.stringify({ p_cliente: CLIENTE_ID })
+    })
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(arr){
+        if(arr && arr.length){ buildIndex(arr); resolve(); ftr.textContent='Atualizado em '+dataHora(); }
+      })
+      .catch(function(){});
   }
 
   function el(html){ var d=document.createElement('div'); d.className='slide'; d.innerHTML=html; return d; }
@@ -278,7 +285,7 @@
     node.style.animation='fadein .5s ease';
     stage.appendChild(node);
     var olds=stage.querySelectorAll('.slide');
-    if(olds.length>1){ for(var i=0;i<olds.length-1;i++){ (function(o){ setTimeout(function(){ if(o.parentNode) o.parentNode.removeChild(o); },600); })(olds[i]); } }
+    if(olds.length>1){ for(var i=0;i<olds.length-1;i++){ (function(o){ o.style.transition='opacity .5s ease'; o.style.opacity='0'; setTimeout(function(){ if(o.parentNode) o.parentNode.removeChild(o); },600); })(olds[i]); } }
     setTimeout(tick, durFor(type));
   }
 
