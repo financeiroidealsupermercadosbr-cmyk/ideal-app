@@ -77,6 +77,13 @@
   .brandmark{display:flex;flex-direction:column;align-items:center;line-height:.92;}
   .brandmark .bm1{font-size:14vh;font-weight:900;color:#FFC400;letter-spacing:.5vw;text-shadow:0 .6vh 1.4vh rgba(0,0,0,.45);}
   .brandmark .bm2{font-size:4.6vh;font-weight:800;color:#fff;letter-spacing:1.3vw;margin-top:.6vh;}
+  .spinner{width:9vh;height:9vh;border-radius:50%;border:.9vh solid rgba(255,255,255,.16);border-top-color:#FFC400;animation:spin 1s linear infinite;margin-bottom:3vh;}
+  .sptitle{color:#fff;font-size:4.6vh;font-weight:800;letter-spacing:.4px;}
+  .spsub{color:#aeb8ee;font-size:2.6vh;margin-top:1vh;}
+  .spbar{margin-top:3.4vh;width:44vw;height:1.4vh;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;}
+  .spbar i{display:block;height:100%;width:34%;border-radius:99px;background:linear-gradient(90deg,#FFC400,#FFD23F);animation:slidebar 1.5s ease-in-out infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes slidebar{0%{transform:translateX(-130%)}100%{transform:translateX(360%)}}
   @keyframes pop{0%{transform:scale(.8);opacity:0}65%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
   @keyframes rise{0%{transform:translateY(2.4vh);opacity:0}100%{transform:translateY(0);opacity:1}}
@@ -215,8 +222,8 @@
     return false;
   }
 
-  function fetchData(){
-    if(!SUPA_ANON){ return; }
+  function fetchData(cb){
+    if(!SUPA_ANON){ if(cb)cb(false); return; }
     fetch(SUPA_URL + '/rest/v1/rpc/bp_produtos', {
       method:'POST',
       headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+SUPA_ANON, 'Content-Type':'application/json' },
@@ -226,8 +233,9 @@
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
       .then(function(arr){
         if(arr && arr.length){ buildIndex(arr); resolve(); ftr.textContent='Atualizado em '+dataHora(); }
+        if(cb)cb(true);
       })
-      .catch(function(){});
+      .catch(function(){ if(cb)cb(false); });
   }
 
   function el(html){ var d=document.createElement('div'); d.className='slide'; d.innerHTML=html; return d; }
@@ -377,11 +385,40 @@
     setTimeout(tick, durFor(type));
   }
 
+  // ===== SPLASH / SINCRONIZACAO =====
+  var started=false;
+  function splash(){
+    var d=document.createElement('div'); d.className='slide splashwrap'; d.id='splash';
+    d.innerHTML='<div class="above">'
+      +'<div class="spinner"></div>'
+      +'<div class="sptitle">Sincronizando ofertas</div>'
+      +'<div class="spsub" id="spsub">Conectando ao servidor…</div>'
+      +'<div class="spbar"><i></i></div>'
+      +'</div>';
+    return d;
+  }
+  function setSplash(t){ var e=document.getElementById('spsub'); if(e) e.textContent=t; }
+  function start(){ if(started) return; started=true; setSplash('Tudo pronto!'); tick(); }
+  function preloadFotosFor(list, done){
+    var urls=[]; (list||[]).forEach(function(p){ var a=FOTOS[p.barras]||FOTOS[p.cod]; if(a) urls.push(FOTOS_BASE+a); });
+    if(!urls.length){ done(); return; }
+    var n=urls.length, loaded=0, fin=false;
+    function bump(){ loaded++; setSplash('Carregando imagens '+loaded+'/'+n+'…'); if(loaded>=n && !fin){ fin=true; done(); } }
+    urls.forEach(function(u){ var im=new Image(); im.onload=bump; im.onerror=bump; im.src=u; });
+    setTimeout(function(){ if(!fin){ fin=true; done(); } }, 4500); // teto: nunca espera pra sempre
+  }
+  function arrancar(){
+    if(started) return;
+    if(prodGeral.length){ setSplash('Carregando imagens…'); preloadFotosFor(prodGeral, start); }
+    else { setSplash('Sem dados ainda…'); start(); }
+  }
+
+  stage.appendChild(splash());
   buildImageRefs();
   resolveBase(function(){ buildImageRefs(); });
-  if(loadCache()){ tick(); } else { stage.appendChild(el('<div class="above"><div class="ititle">Ideal Supermercados</div><div class="isub">Carregando ofertas...</div></div>')); }
-  fetchData();
-  setTimeout(function(){ if(step===0) tick(); }, 2500);
+  loadCache();                                  // se tiver cache, ja temos algo pra precarregar
+  fetchData(function(){ arrancar(); });         // dados chegaram -> precarrega fotos -> arranca
+  setTimeout(function(){ if(!started){ if(!prodGeral.length) loadCache(); arrancar(); } }, 7000); // fallback duro
   setInterval(fetchData, 600000);
   darOi(); setInterval(darOi, HEARTBEAT_MS);
 })();
