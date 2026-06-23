@@ -22,13 +22,15 @@
   .footer b{font-size:2vh;font-weight:600;}
   .footer span{font-size:1.6vh;color:#aab2e0;}
   .badge{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;z-index:4;}
-  .badge .b{background:#E2231A;color:#fff;font-size:3vh;font-weight:700;letter-spacing:2px;
-    padding:1vh 5vw;border-radius:0 0 2vh 2vh;}
+  .badge .b{background:#E2231A;color:#fff;font-size:4.6vh;font-weight:800;letter-spacing:6px;
+    width:100%;text-align:center;padding:2.4vh 0;border-radius:0;}
   .pname{color:#16267A;font-size:7vh;font-weight:700;}
   .plaque{background:#fff;border-radius:3vh;padding:1.5vh 5vw;margin:2.2vh 0 1.4vh;}
   .price{color:#E2231A;font-weight:700;font-size:19vh;line-height:1;}
   .price .rs{font-size:.34em;vertical-align:.85em;}
   .unit{color:#9a7b00;font-size:4.6vh;}
+  .pfoto{width:36vh;height:36vh;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 1.4vh 4vh rgba(0,0,0,.20);margin-bottom:1vh;}
+  .pfoto img{width:88%;height:88%;object-fit:contain;}
   .ititle{color:#FFC400;font-size:5.4vh;font-weight:700;}
   .isub{color:#cfd6ff;font-size:3vh;}
   .pillrow{display:flex;gap:1.4vw;flex-wrap:wrap;justify-content:center;margin:2vh 0;}
@@ -80,6 +82,18 @@
   var HORTI=['8','26','56','34','10','35','3'];
 
   var BASE='https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/img/';
+  var FOTOS_BASE = BASE;   // fotos dos produtos ficam direto em /img/
+  // codigo de balanca (EAN/referencia) -> arquivo da foto em /img/produtos/
+  var FOTOS = {
+    // acougue
+    '260300':'contrafile.png', '264700':'coxaoduro.png', '260900':'musculo.webp',
+    '261200':'peito.png',      '261700':'picadao.jpg',   '263000':'acem.png',
+    '265200':'costelinha.png', '265500':'bisteca.jpg',   '264100':'pernil.png',
+    '262800':'coxasobrecoxa.png',
+    // hortifruti
+    '34':'laranja.webp', '35':'limao.jpg', '56':'tomate.webp', '10':'banana.png',
+    '8':'batata.webp',   '26':'cebola.webp', '3':'abobora.jpg'
+  };
   var IMAGENS={}, IMG_HORTI='', IMG_CARNE='', IMG_CHURRASCO='', IMG_CORTES='';
   var imgIdx={carne:0,horti:0,fimdesemana:0};
   function pickImg(k){ var a=IMAGENS[k]||[]; if(!a.length) return ''; var u=a[imgIdx[k]%a.length]; imgIdx[k]++; return u; }
@@ -175,12 +189,19 @@
   function prodSlide(){
     if(prodGeral.length===0) return instSlide('semana');
     var p=prodGeral[gi%prodGeral.length]; gi++;
+    var arq = FOTOS[p.barras] || FOTOS[p.cod] || '';
+    var foto = arq ? '<div class="pfoto"><img src="'+FOTOS_BASE+arq+'" onerror="this.parentNode.style.display=\'none\'"></div>' : '';
     var s=el('<div class="badge"><div class="b">OFERTA</div></div>'+
       '<div class="above" style="background:#FFDD00;position:absolute;inset:0;justify-content:center;">'+
+      foto+
       '<div class="pname">'+p.nome+'</div>'+
       '<div class="plaque"><span class="price"><span class="rs">R$</span> '+brl(p.varejo)+'</span></div>'+
       '<div class="unit">'+unidade(p.un)+'</div></div>');
-    setTimeout(function(){ anim(s,'.price','pop .55s ease'); var pl=s.querySelector('.plaque'); if(pl) setTimeout(function(){pl.style.animation='pulse 2.4s ease-in-out infinite';},600); },30);
+    setTimeout(function(){
+      var im=s.querySelector('.pfoto img'); if(im) im.style.animation='inn .6s ease both';
+      anim(s,'.price','pop .55s ease');
+      var pl=s.querySelector('.plaque'); if(pl) setTimeout(function(){pl.style.animation='pulse 2.4s ease-in-out infinite';},600);
+    },30);
     return s;
   }
   function thumb(img){
@@ -192,8 +213,7 @@
       var cards=[
         {bg:'#1f9d3a',tc:'#fff',sc:'#d6f3df',img:IMG_HORTI,name:'Terça Verde',slo:'Hortifrúti selecionado, mais frescor'},
         {bg:'#8a1420',tc:'#fff',sc:'#f2c9cd',img:IMG_CARNE,name:'Quinta da Carne',slo:'Os melhores cortes pra você'},
-        {bg:'#e9a400',tc:'#3a2a00',sc:'#5a4200',img:IMG_CHURRASCO,name:'Fim de Semana',slo:'Ofertas pra família toda'},
-        {bg:'#0e1a52',tc:'#FFC400',sc:'#cfd6ff',img:'',name:'Dia da Economia',slo:'Preços baixos de verdade'}
+        {bg:'#e9a400',tc:'#3a2a00',sc:'#5a4200',img:IMG_CHURRASCO,name:'Fim de Semana',slo:'Ofertas pra família toda'}
       ];
       var h='<div class="above"><div class="ititle">Ofertas fixas da semana</div><div class="showrow">';
       cards.forEach(function(c){
@@ -266,7 +286,7 @@
     return s;
   }
 
-  var pattern=['SEMANA','PROD','PROD','PROD','PAG','PROD','PROD','BANNER','PROD','IDEAL','PROD','PROD','CORTES','PROD','PROD','DIA'];
+  var pattern=['SEMANA','PROD','PROD','PROD','PAG','PROD','PROD','PROD','IDEAL','PROD','PROD','PROD','PROD','DIA'];
   function buildSlide(type){
     if(type==='PROD') return prodSlide();
     if(type==='SEMANA') return instSlide('semana');
