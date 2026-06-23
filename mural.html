@@ -107,6 +107,13 @@
       horti:[BASE+'hortifruit-6.jpg', BASE+'Hortifruti-1.jpg'],
       fimdesemana:[BASE+'Lorens-Crescimento-do-Hortifruti-no-Brasil-legumes-sortidos-2.jpg', BASE+'hortifruit-6.jpg']
     };
+    preloadImgs();
+  }
+  function preloadImgs(){
+    var urls=[IMG_HORTI,IMG_CARNE,IMG_CHURRASCO,IMG_CORTES];
+    for(var k in IMAGENS){ if(IMAGENS.hasOwnProperty(k)) urls=urls.concat(IMAGENS[k]); }
+    for(var c in FOTOS){ if(FOTOS.hasOwnProperty(c)) urls.push(FOTOS_BASE+FOTOS[c]); }
+    urls.forEach(function(u){ if(u){ var im=new Image(); im.src=u; } });
   }
   function resolveBase(cb){
     var cands=['https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/img/','https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/'];
