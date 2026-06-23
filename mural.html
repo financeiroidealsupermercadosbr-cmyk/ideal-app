@@ -78,6 +78,26 @@
   var SUPA_URL   = 'https://jnupgembzivsiowdkacc.supabase.co';
   var SUPA_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudXBnZW1ieml2c2lvd2RrYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDY4NDgsImV4cCI6MjA5NzMyMjg0OH0.emhFhJOZvoHd-qFR-bvNc_zSWpPs9oQK_7vwd-H0aR0';
   var CLIENTE_ID = 'd9b2c1a4-7e3f-4a6b-9c2d-1f0e5a8b3c47';   // Grupo Ideal
+
+  // >>> SITUAÇÃO DA TV ("dá o oi" pro painel de terminais do app) <<<
+  // Sem ?t= na URL usa 'mural' como id fixo; se um dia quiser outro nome no painel, troca aqui ou passa ?t=.
+  var TERMINAL_ID = (function(){
+    try{ var m = location.search.match(/[?&]t=([^&]+)/); return m ? decodeURIComponent(m[1]).trim() : 'mural'; }
+    catch(e){ return 'mural'; }
+  })();
+  var HEARTBEAT_MS = 2*60*1000; // manda um "oi" a cada 2 min
+  function darOi(){
+    if(!TERMINAL_ID) return;
+    var n=0; try{ n=prodGeral.length; }catch(e){}
+    var info = 'mural TV · ' + n + ' itens';
+    try{
+      fetch(SUPA_URL + '/rest/v1/rpc/bp_terminal_ping', {
+        method:'POST',
+        headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+SUPA_ANON, 'Content-Type':'application/json' },
+        body: JSON.stringify({ p_cliente: CLIENTE_ID, p_codigo: TERMINAL_ID, p_info: info })
+      }).catch(function(){});
+    }catch(e){}
+  }
   var ACOUGUE=['261700','263000','009800','264100','262800','265500','265200','261200','260900','264700','260300'];
   var HORTI=['8','26','56','34','10','35','3'];
 
@@ -322,6 +342,7 @@
   fetchData();
   setTimeout(function(){ if(step===0) tick(); }, 2500);
   setInterval(fetchData, 600000);
+  darOi(); setInterval(darOi, HEARTBEAT_MS);
 })();
 </script>
 </body>
