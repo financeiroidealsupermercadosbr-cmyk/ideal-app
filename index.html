@@ -6770,7 +6770,8 @@ function supaSessClear(){ try{ localStorage.removeItem(_SUPA_SESS_KEY); }catch(e
 
 // Login no Supabase (grant_type=password). Devolve true/false; NUNCA lança pra fora.
 async function supaLogin(usuario, senha){
-  if(!_supaAtivo()) return false;
+  window._supaLoginErr = null;
+  if(!_supaAtivo()){ window._supaLoginErr = 'net'; return false; }
   try {
     const res = await _supaFetchT(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
       method:'POST',
@@ -6779,14 +6780,16 @@ async function supaLogin(usuario, senha){
     }, 8000);
     const data = await res.json().catch(()=>null);
     if(!res.ok || !data || !data.access_token){
-      console.warn('[supa] login falhou (segue no Sheets):', (data && (data.error_description||data.msg||data.error)) || res.status);
+      window._supaLoginErr = (res.status===400 || res.status===401) ? 'cred' : 'net';
+      console.warn('[supa] login falhou:', (data && (data.error_description||data.msg||data.error)) || res.status);
       supaSessClear();
       return false;
     }
     supaSessSet(data);
     return true;
   } catch(e){
-    console.warn('[supa] sem conexão com a nuvem (segue no Sheets):', e);
+    window._supaLoginErr = 'net';
+    console.warn('[supa] sem conexão com a nuvem:', e);
     return false;
   }
 }
@@ -6919,9 +6922,10 @@ async function fazerLogin() {
   // LEVA 5: tenta o Supabase primeiro (cliente novo nao tem Sheets).
   // Se nao montar perfil pela nuvem, cai no login da planilha (Grupo Ideal).
   let usr;
-  let _supaUsr = null;
+  let _supaUsr = null, _authOk = false;
   try {
     if (await supaLogin(u, p)) {
+      _authOk = true;
       const perfil = await supaMeuPerfil();
       if (perfil && perfil.ativo !== false && perfil.nivel) {
         _supaUsr = { nome:(perfil.nome||u), nivel:perfil.nivel, loja:perfil.loja, setor:perfil.nivel, usuario:u, telefone:'', email:_supaEmail(u), cliente_id:perfil.cliente_id };
@@ -6933,32 +6937,17 @@ async function fazerLogin() {
   if (_supaUsr) {
     usr = _supaUsr;
   } else {
-    // FALLBACK: login pela planilha (Apps Script). A senha nao fica no app.
-    try {
-      const urlLogin = APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwdpH2mlJv_TxQA3sgCgr48Q7EygKnh52zlN79XsOOtrK1JQ7ST95FdN-ZfT_8iifwX/exec';
-      const res = await fetch(urlLogin, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({acao:'login', usuario:u, senha:p, sheetId:SHEET_ID})
-      });
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const data = await res.json();
-      if(!data.ok){
-        if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-        err.style.display='flex'; etx.textContent = data.erro || 'Usuário ou senha incorretos.'; return;
-      }
-      if(!data.nome || !data.nivel){
-        if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-        err.style.display='flex'; etx.textContent = 'Não consegui confirmar seu acesso agora. Tente de novo em instantes.'; return;
-      }
-      usr = { nome:data.nome, nivel:data.nivel, loja:data.loja, setor:data.setor||'', usuario:u, telefone:data.telefone||'', email:data.email||'' };
-      // Login no Supabase POR TRÁS (pega o JWT pras telas sensíveis). Não bloqueia: se falhar, segue no Sheets.
-      try { await supaLogin(u, p); } catch(_e){ /* nuvem opcional nesta fase */ }
-    } catch(e){
-      console.error('Falha no login:', e);
-      if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
-      err.style.display='flex'; etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.'; return;
+    // Login 100% nuvem (GoTrue). O fallback pelo Sheets/Apps Script foi removido.
+    if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
+    err.style.display='flex';
+    if (_authOk) {
+      etx.textContent = 'Login ok, mas seu acesso não está liberado. Fale com o gestor.';
+    } else if (window._supaLoginErr === 'net') {
+      etx.textContent = 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
+    } else {
+      etx.textContent = 'Usuário ou senha incorretos.';
     }
+    return;
   }
   if(btn){ btn.disabled=false; btn.innerHTML=btnHTML; }
   const l = usr.loja || 'l2';   // loja vem do cadastro do usuário; 'all' = master => Consolidado
