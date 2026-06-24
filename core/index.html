@@ -167,6 +167,21 @@
     </div>
     <span id="m_loja_msg" class="mc" style="margin:0"></span>
   </div>
+  <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:2px">Pontes / Tokens</div>
+    <div class="mc" style="margin-bottom:8px">Cada máquina (Ponte) tem o seu token. Revogar um corta só aquela máquina, sem afetar as outras. O token só aparece no momento em que é gerado.</div>
+    <div id="m_tokens"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="m_token_rotulo" placeholder="Rótulo (ex: SERVIDOR, Caixa 1)" style="flex:1">
+      <button type="button" class="btn ghost mini" id="m_token_add">+ Novo token</button>
+    </div>
+    <div id="m_token_result" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,196,0,.08)">
+      <div style="font-size:12px;color:var(--mut);margin-bottom:4px">Token gerado — copie agora, só aparece desta vez. Cole no <code>ingest_token.dat</code> da máquina dessa Ponte:</div>
+      <div id="m_token_val" style="font-family:monospace;font-size:12px;word-break:break-all;margin-bottom:8px"></div>
+      <button type="button" class="btn ghost mini" id="m_token_copy">Copiar token</button>
+    </div>
+    <span id="m_token_msg" class="mc" style="margin:0"></span>
+  </div>
   <div class="modal-foot"><button class="btn ghost" id="mCancel">Cancelar</button>
     <button class="btn amar" id="mSalvar">Salvar</button></div>
 </div></div>
@@ -363,6 +378,7 @@ function abrirModal(id){
   _logoPrevSync();
   $('m_logo_msg').textContent='';
   lojasRender(id); $('m_loja_nome').value=''; $('m_loja_msg').textContent='';
+  $('m_token_result').classList.add('hide'); $('m_token_rotulo').value=''; $('m_token_msg').textContent=''; tokensRender(id);
   renderMods(c.modulos); // estado provisório (caso admin_clientes já traga modulos)
   rpc('admin_modulos_get',{p_id:id}).then(function(m){ renderMods(m); }).catch(function(){ /* mantém o provisório */ });
   $('modal').classList.remove('hide');
@@ -440,6 +456,55 @@ $('m_loja_add').onclick=async function(){
     $('m_loja_nome').value=''; $('m_loja_msg').textContent='Loja adicionada.'; lojasRender(editId);
   }catch(e){ $('m_loja_msg').textContent='Erro: '+e.message; }
 };
+
+// ── Pontes / Tokens (token-por-Ponte) ──
+// Gera o token e o hash SHA-256 NO NAVEGADOR (mesmo algoritmo das Edge Functions ingest/heartbeat).
+// O texto puro nunca trafega pro servidor — só o hash é gravado.
+async function _genToken(){
+  var b=new Uint8Array(24); crypto.getRandomValues(b);
+  var tok=Array.from(b).map(function(x){return x.toString(16).padStart(2,'0');}).join('');
+  var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(tok));
+  var hash=Array.from(new Uint8Array(buf)).map(function(x){return x.toString(16).padStart(2,'0');}).join('');
+  return {tok:tok, hash:hash};
+}
+async function tokensRender(cli){
+  var box=$('m_tokens'); box.textContent='Carregando…';
+  try{
+    var ts=await rpc('admin_tokens_get',{p_cliente:cli})||[];
+    box.textContent='';
+    if(!ts.length){ box.appendChild(_el('div',{class:'mc',style:'margin:0'},['Nenhum token ainda.'])); return; }
+    ts.forEach(function(t){
+      var ativo=t.ativo!==false;
+      var min=t.ult_visto?Math.floor((Date.now()-new Date(t.ult_visto))/60000):null;
+      var nome=_el('span',{style:'font-weight:600;font-size:13px'},[t.rotulo||'(sem rótulo)']);
+      var sub=_el('span',{class:'mc',style:'margin:0'},[t.ult_visto?('visto '+tempo(min)):'nunca visto']);
+      var info=_el('div',{style:'flex:1;display:flex;flex-direction:column'},[nome,sub]);
+      var badge=_el('span',{class:'badge',style:'background:'+(ativo?'#22c55e22;color:#22c55e':'#ef444422;color:#ef4444')},[ativo?'ativo':'revogado']);
+      var btn=_el('button',{type:'button',class:'btn '+(ativo?'ghost':'amar')+' mini'},[ativo?'Revogar':'Reativar']);
+      btn.onclick=async function(){
+        if(ativo && !confirm('Revogar o token "'+(t.rotulo||'(sem rótulo)')+'"?\n\nA Ponte que usa esse token PARA de escrever no próximo ciclo. Só revogue depois de instalar um token novo na máquina que deve continuar.')) return;
+        btn.disabled=true;
+        try{ await rpc('admin_token_set',{p_id:t.id,p_ativo:!ativo}); tokensRender(cli); }
+        catch(e){ $('m_token_msg').textContent='Erro: '+e.message; btn.disabled=false; }
+      };
+      box.appendChild(_el('div',{style:'display:flex;align-items:center;gap:8px;margin-bottom:6px'},[info,badge,btn]));
+    });
+  }catch(e){ box.textContent=''; box.appendChild(_el('div',{class:'mc',style:'margin:0'},['Não consegui carregar os tokens: '+e.message])); }
+}
+$('m_token_add').onclick=async function(){
+  if(!editId){ $('m_token_msg').textContent='Salve o cliente antes.'; return; }
+  var rotulo=($('m_token_rotulo').value||'').trim();
+  if(!rotulo){ $('m_token_msg').textContent='Dê um rótulo pra Ponte (ex: SERVIDOR).'; return; }
+  $('m_token_add').disabled=true; $('m_token_msg').textContent='Gerando…';
+  try{
+    var g=await _genToken();
+    await rpc('admin_token_add',{p_cliente:editId,p_rotulo:rotulo,p_hash:g.hash});
+    $('m_token_val').textContent=g.tok; $('m_token_result').classList.remove('hide');
+    $('m_token_rotulo').value=''; $('m_token_msg').textContent=''; tokensRender(editId);
+  }catch(e){ $('m_token_msg').textContent='Erro: '+e.message; }
+  $('m_token_add').disabled=false;
+};
+$('m_token_copy').onclick=function(){ navigator.clipboard.writeText($('m_token_val').textContent).then(function(){ $('m_token_copy').textContent='Copiado!'; setTimeout(function(){$('m_token_copy').textContent='Copiar token';},1500); }); };
 
 $('mSalvar').onclick=async()=>{
   await rpc('admin_salvar_cliente',{p_id:editId,p_nome:$('m_nome').value,p_loja:$('m_loja').value,
