@@ -6962,6 +6962,7 @@ async function fazerLogin() {
   const l = usr.loja || 'l2';   // loja vem do cadastro do usuário; 'all' = master => Consolidado
   err.style.display='none';
   userAtual = usr; lojaAtual = l==='all'?'l2':l;
+  window.LOGIN_LOJA = l;   // escolha real do login ('all'=Consolidado) p/ exibição (lojaAtual vira l2 por padrão)
   // ── ISOLAMENTO MULTI-TENANT ──
   // Cliente que NÃO é o Grupo Ideal roda 100% nuvem: sem Sheets/Apps Script (que é do Ideal)
   // e sem defaults de loja do Ideal. Login pelo Sheets (só o Ideal tem) => EH_IDEAL=true.
@@ -10923,9 +10924,9 @@ function _syncSplash(mostrar, sub){
       if(_nm && window.BRAND && window.BRAND.nome){ _nm.textContent = window.BRAND.nome; }
       var _tg = document.getElementById('sync-loja-tag');
       if(_tg){
-        var _l = (typeof lojaAtual !== 'undefined' && lojaAtual) ? lojaAtual : 'all';
-        if(_l !== 'all'){ try{ _tg.textContent = lojaNome(_l); }catch(_e2){ _tg.textContent=''; } _tg.style.display = _tg.textContent ? 'block' : 'none'; }
-        else { _tg.style.display = 'none'; }
+        var _l = (typeof window.LOGIN_LOJA !== 'undefined' && window.LOGIN_LOJA) ? window.LOGIN_LOJA : 'all';
+        try{ _tg.textContent = lojaNome(_l, 'Consolidado'); }catch(_e2){ _tg.textContent=''; }
+        _tg.style.display = _tg.textContent ? 'block' : 'none';
       }
     }catch(_e){}
   }
