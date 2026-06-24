@@ -182,6 +182,7 @@
     </div>
     <span id="m_token_msg" class="mc" style="margin:0"></span>
   </div>
+  <div id="m_msg" class="mc" style="margin:0 0 8px"></div>
   <div class="modal-foot"><button class="btn ghost" id="mCancel">Cancelar</button>
     <button class="btn amar" id="mSalvar">Salvar</button></div>
 </div></div>
@@ -378,7 +379,7 @@ function abrirModal(id){
   _logoPrevSync();
   $('m_logo_msg').textContent='';
   lojasRender(id); $('m_loja_nome').value=''; $('m_loja_msg').textContent='';
-  $('m_token_result').classList.add('hide'); $('m_token_rotulo').value=''; $('m_token_msg').textContent=''; tokensRender(id);
+  $('m_msg').textContent=''; $('m_token_result').classList.add('hide'); $('m_token_rotulo').value=''; $('m_token_msg').textContent=''; tokensRender(id);
   renderMods(c.modulos); // estado provisório (caso admin_clientes já traga modulos)
   rpc('admin_modulos_get',{p_id:id}).then(function(m){ renderMods(m); }).catch(function(){ /* mantém o provisório */ });
   $('modal').classList.remove('hide');
@@ -507,13 +508,19 @@ $('m_token_add').onclick=async function(){
 $('m_token_copy').onclick=function(){ navigator.clipboard.writeText($('m_token_val').textContent).then(function(){ $('m_token_copy').textContent='Copiado!'; setTimeout(function(){$('m_token_copy').textContent='Copiar token';},1500); }); };
 
 $('mSalvar').onclick=async()=>{
-  await rpc('admin_salvar_cliente',{p_id:editId,p_nome:$('m_nome').value,p_loja:$('m_loja').value,
-    p_modelo:$('m_modelo').value,p_cidade:$('m_cidade').value,p_uf:$('m_uf').value,
-    p_mensalidade:Number($('m_mens').value)||0,p_dia:Number($('m_dia').value)||10,
-    p_ativo:$('m_ativo').value==='true',p_obs:$('m_obs').value});
-  await rpc('admin_modulos_set',{p_id:editId,p_modulos:lerMods()});
-  await rpc('admin_branding_set',{p_id:editId,p_cor_principal:$('m_cor1').value,p_cor_destaque:$('m_cor2').value,p_logo_url:($('m_logo').value||'').trim()});
-  $('modal').classList.add('hide'); carregar();
+  const btn=$('mSalvar'), txt=btn.textContent; btn.disabled=true; btn.textContent='Salvando…'; $('m_msg').textContent='';
+  try{
+    await rpc('admin_salvar_cliente',{p_id:editId,p_nome:$('m_nome').value,p_loja:$('m_loja').value,
+      p_modelo:$('m_modelo').value,p_cidade:$('m_cidade').value,p_uf:$('m_uf').value,
+      p_mensalidade:Number($('m_mens').value)||0,p_dia:Number($('m_dia').value)||10,
+      p_ativo:$('m_ativo').value==='true',p_obs:$('m_obs').value});
+    await rpc('admin_modulos_set',{p_id:editId,p_modulos:lerMods()});
+    await rpc('admin_branding_set',{p_id:editId,p_cor_principal:$('m_cor1').value,p_cor_destaque:$('m_cor2').value,p_logo_url:($('m_logo').value||'').trim()});
+    btn.textContent='Salvo ✓'; $('m_msg').textContent='Alterações salvas.';
+    setTimeout(()=>{ $('modal').classList.add('hide'); btn.textContent=txt; btn.disabled=false; carregar(); }, 700);
+  }catch(e){
+    btn.textContent=txt; btn.disabled=false; $('m_msg').textContent='Erro ao salvar: '+e.message;
+  }
 };
 // ── Novo cliente (cria cliente + token) ──
 $('btnNovo').onclick=()=>{
