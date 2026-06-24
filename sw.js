@@ -1,15 +1,21 @@
-/* Service Worker — Ideal Supermercados (D11-P1 · PWA)
-   Estratégia conservadora para NÃO travar atualizações nem a API:
-   - NUNCA cacheia chamadas ao Apps Script (script.google.com) → dados sempre frescos.
-   - HTML = network-first → sempre pega a versão nova quando online; cai no cache offline.
-   - Estáticos (ícones, etc.) = cache-first.
-   Para forçar atualização do cache no futuro, suba o número da versão em CACHE. */
-const CACHE = 'ideal-v12';
-const SHELL = ['./', './index.html', './icon-192-3.png', './icon-512-3.png', './manifest.json'];
+/* Service Worker — Ideal Core (PWA)
+   Estratégia que se atualiza sozinha (sem limpar cache na mão):
+   - HTML (same-origin): network-first → sempre a versão nova quando online; cache = rede offline.
+   - Estáticos (same-origin: ícones, manifest, imagens): stale-while-revalidate →
+     entrega rápido do cache E busca a versão nova em segundo plano; a próxima carga já vem atualizada.
+   - Cross-origin (Supabase, CDNs, fontes Google): passa DIRETO pela rede, nunca cacheia
+     (protege os dados da API e impede servir manifest/ícone velho).
+   Para um reset imediato e total, basta subir o número em CACHE. */
+const CACHE = 'ideal-v13';
+const SHELL = ['./', './index.html', './manifest.json',
+               './logo-core.png', './login-bg-core.png',
+               './core/admin-icon-192.png', './core/admin-icon-512.png'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL).catch(() => {})));
+  e.waitUntil(caches.open(CACHE).then((c) =>
+    Promise.all(SHELL.map((u) => c.add(u).catch(() => {})))   // cada item isolado: 1 falha não derruba os outros
+  ));
 });
 
 self.addEventListener('activate', (e) => {
@@ -22,9 +28,9 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
-  if (req.method !== 'GET') return;                          // POSTs (API) passam direto
+  if (req.method !== 'GET') return;                    // POST/PUT/etc (API) passam direto
   const url = new URL(req.url);
-  if (url.hostname.indexOf('script.google.com') !== -1) return; // nunca cacheia a API
+  if (url.origin !== self.location.origin) return;     // Supabase, CDNs e fontes: rede direta, sem cache
 
   const aceita = req.headers.get('accept') || '';
   const ehHTML = req.mode === 'navigate' || aceita.indexOf('text/html') !== -1;
@@ -37,12 +43,15 @@ self.addEventListener('fetch', (e) => {
         .catch(() => caches.match(req).then((m) => m || caches.match('./index.html')))
     );
   } else {
-    // estáticos: cache-first
+    // stale-while-revalidate: serve cache na hora E atualiza em segundo plano
     e.respondWith(
-      caches.match(req).then((m) => m || fetch(req).then((r) => {
-        const cp = r.clone(); caches.open(CACHE).then((c) => c.put(req, cp));
-        return r;
-      }))
+      caches.match(req).then((cached) => {
+        const rede = fetch(req).then((r) => {
+          if (r && r.status === 200) { const cp = r.clone(); caches.open(CACHE).then((c) => c.put(req, cp)); }
+          return r;
+        }).catch(() => cached);
+        return cached || rede;
+      })
     );
   }
 });
