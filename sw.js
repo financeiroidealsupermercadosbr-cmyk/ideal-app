@@ -6,10 +6,11 @@
    - Cross-origin (Supabase, CDNs, fontes Google): passa DIRETO pela rede, nunca cacheia
      (protege os dados da API e impede servir manifest/ícone velho).
    Para um reset imediato e total, basta subir o número em CACHE. */
-const CACHE = 'ideal-v15';
+const CACHE = 'ideal-v16';
 const SHELL = ['./', './index.html', './manifest.json',
                './logo-core.png', './login-bg-core.png',
-               './icon-cliente-192.png', './icon-cliente-512.png'];
+               './icon-cliente-192.png', './icon-cliente-512.png',
+               './icon-splash-192.png', './icon-splash-512.png'];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
