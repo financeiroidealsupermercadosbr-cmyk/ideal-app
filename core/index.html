@@ -263,12 +263,20 @@ async function carregarPontes(){
       const c=cor[p.status]||'#6b7280';
       const h=p.ultima_sync?new Date(p.ultima_sync).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
       const extra=[p.host,p.versao].filter(Boolean).join(' · ');
+      const rm=p.host?'<button class="btn ghost mini" data-rmcli="'+p.cliente_id+'" data-rmhost="'+encodeURIComponent(p.host)+'" title="Remover esta linha" style="margin-left:6px">✕</button>':'';
       return '<div class="cli" style="cursor:default">'+
         '<div class="av">'+ini+'</div>'+
         '<div class="info"><div class="n">'+(p.cliente_nome||'(sem nome)')+'</div>'+
         '<div class="s"><span>'+h+' · '+tempo(p.minutos)+'</span>'+(extra?'<span class="chip">'+extra+'</span>':'')+'</div></div>'+
-        '<span class="badge" style="background:'+c+'22;color:'+c+'">'+(rot[p.status]||p.status)+'</span></div>';
+        '<span class="badge" style="background:'+c+'22;color:'+c+'">'+(rot[p.status]||p.status)+'</span>'+rm+'</div>';
     }).join('') : '<div class="vazio">Nenhum cliente.</div>';
+    $('pontesMini').querySelectorAll('[data-rmcli]').forEach(b=>b.onclick=async()=>{
+      const cid=b.getAttribute('data-rmcli'), host=decodeURIComponent(b.getAttribute('data-rmhost')||'');
+      if(!confirm('Remover a linha da Ponte "'+host+'"?\n\nSó remova com a máquina DESLIGADA — se ela ainda estiver ligada, reaparece no próximo ciclo (~10 min).')) return;
+      b.disabled=true;
+      try{ await rpc('admin_ponte_remover',{p_cliente:cid,p_host:host}); carregarPontes(); }
+      catch(e){ alert('Erro ao remover: '+e.message); b.disabled=false; }
+    });
   }catch(e){
     // fallback: status antigo via admin_clientes (ult_visto)
     $('pontesMini').innerHTML=CLIENTES.map(c=>linhaCli(c,true)).join('')||'<div class="vazio">Nenhum cliente.</div>';
