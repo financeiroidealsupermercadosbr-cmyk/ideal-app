@@ -106,11 +106,11 @@
       <div class="tab" data-t="financeiro">Financeiro</div>
     </div>
     <div id="t-visao">
+      <div class="card-b"><h2>Pontes <span class="sub">status agora</span></h2>
+        <div id="pontesMini"></div></div>
       <div class="kpis" id="kpis"></div>
       <div class="card-b"><h2>Receita recebida <span class="sub">últimos meses</span></h2>
         <div class="chart" id="chart12"><div class="vazio">—</div></div></div>
-      <div class="card-b"><h2>Pontes <span class="sub">status agora</span></h2>
-        <div id="pontesMini"></div></div>
     </div>
     <div id="t-clientes" class="hide">
       <div class="card-b"><h2>Clientes <span class="sub" id="cliCount">—</span> <span style="float:right"><button class="btn amar mini" id="btnNovo">+ Novo cliente</button></span></h2>
@@ -242,7 +242,8 @@ async function carregar(){
   catch(e){ if(String(e.message).includes('acesso negado')){ $('app').innerHTML='<div class="vazio" style="margin-top:20vh">Sua conta não é administradora.</div>'; } return; }
   CLIENTES=cli||[];
   const f=(fin&&fin[0])||{mrr:0,clientes_ativos:0,recebido_mes:0,aberto_mes:0};
-  $('kpis').innerHTML=kpi('Receita mensal (MRR)',BRL(f.mrr),'💰',true)+kpi('Clientes ativos',f.clientes_ativos,'🏪')+kpi('Recebido no mês',BRL(f.recebido_mes),'✅')+kpi('Em aberto',BRL(f.aberto_mes),'⏳');
+  const totalGeral=(r12||[]).reduce((s,x)=>s+Number(x.recebido||0),0);
+  $('kpis').innerHTML=kpi('Receita mensal (MRR)',BRL(f.mrr),'💰',true)+kpi('Clientes ativos',f.clientes_ativos,'🏪')+kpi('Receita geral',BRL(totalGeral),'🏆')+kpi('Recebido no mês',BRL(f.recebido_mes),'✅')+kpi('Em aberto',BRL(f.aberto_mes),'⏳');
   $('kpisFin').innerHTML=$('kpis').innerHTML;
   desenhaChart(r12||[]);
   carregarPontes();
@@ -507,6 +508,7 @@ $('sair').onclick=()=>{sessSet(null);location.reload();};
 $('entrar').onclick=async()=>{$('loginErro').textContent='';
   try{await login($('u').value,$('p').value);$('login').classList.add('hide');$('app').classList.remove('hide');carregar();}
   catch(e){$('loginErro').textContent='Não foi possível entrar.';}};
+$('u').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('p').focus();}});
 $('p').addEventListener('keydown',e=>{if(e.key==='Enter')$('entrar').click();});
 setInterval(()=>{ if(!$('app').classList.contains('hide')) carregar(); },60000);
 (async()=>{ if(await token()){$('login').classList.add('hide');$('app').classList.remove('hide');carregar();} })();
