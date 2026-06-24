@@ -1,7 +1,7 @@
 {
-  "name": "IDEAL Core · Operador",
-  "short_name": "IDEAL Core",
-  "description": "Painel do operador do IDEAL Core",
+  "name": "Ideal Core OP",
+  "short_name": "Core OP",
+  "description": "Painel do operador (OP) do IDEAL Core",
   "start_url": "/ideal-app/core/index.html",
   "scope": "/ideal-app/core/",
   "display": "standalone",
