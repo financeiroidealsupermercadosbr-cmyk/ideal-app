@@ -2016,11 +2016,13 @@ body:has(#s-login.active) .app{max-width:none}
 
 <!-- Tela "Sincronizando dados" (offline-first) -->
 <div id="sync-splash" style="display:none;position:fixed;inset:0;background:var(--azul);z-index:90;flex-direction:column;align-items:center;justify-content:center;color:#fff">
-  <!-- Marca oficial do app. logo-splash.png = logo redonda com cantos transparentes (flutua no fundo navy). -->
+  <!-- Marca do CLIENTE logado: logo + nome vêm do branding (window.BRAND). Fallback = IDEAL Core. -->
   <div id="brand-mark" class="brand-mark">
-    <img src="logo-core.png" width="100" height="100" alt="Ideal Core" style="display:block">
+    <div style="width:118px;height:118px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto">
+      <img id="sync-logo" src="logo-core.png" alt="" style="max-width:86%;max-height:86%;object-fit:contain;display:block" onerror="this.onerror=null;this.src='logo-core.png'">
+    </div>
   </div>
-  <div class="brand-word"><span>Supermercados</span></div>
+  <div class="brand-word"><b id="sync-loja-nome">Grupo Ideal</b><span id="sync-loja-tag" style="display:none"></span></div>
   <span class="spin" style="width:34px;height:34px;border-width:3px;border-color:rgba(255,255,255,0.35);border-top-color:#fff"></span>
   <div style="font-size:16px;font-weight:500;margin-top:18px">Sincronizando dados…</div>
   <div id="sync-splash-sub" style="font-size:12.5px;color:#C9D3F0;margin-top:6px;min-height:16px">Preparando o app</div>
@@ -2057,6 +2059,9 @@ window.BRAND = window.BRAND || {
   // Lista ordenada (código+nome+ativo). Default = Ideal (fallback). Populada pela nuvem em aplicarLojas().
   lojasArr: [ {codigo:'l1',nome:'Loja 1 — Areal QS11',ativo:true}, {codigo:'l2',nome:'Loja 2 — Melhor QS8',ativo:true}, {codigo:'bolos',nome:'Ideal Bolos — Restaurante',ativo:true} ]
 };
+// Nome do CLIENTE p/ documentos/PDFs (white-label). Fallback se o branding não carregou.
+function _brandNome(){ return (window.BRAND && window.BRAND.nome) ? String(window.BRAND.nome) : 'Ideal Supermercados'; }
+function _brandNomeH(){ return _brandNome().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 // Resolvedor ÚNICO de nome de loja. Substitui os ~9 ternários espalhados.
 // allLabel: o que mostrar p/ 'all'/consolidado. unknownLabel: p/ código desconhecido.
 function lojaNome(l, allLabel, unknownLabel){
@@ -2940,11 +2945,11 @@ function fzPDF(usarFiltro){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Controle de Temperatura dos Freezers</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_fzNomeLoja())+'</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Controle de Temperatura dos Freezers</h1><div class="sub">'+_brandNomeH()+' &middot; '+_precoEsc(_fzNomeLoja())+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>Período:</b> '+_precoEsc(periodoTxt)+' &middot; Freezers: '+cols.length+' &middot; Datas: '+datas.length+' &middot; Gerado em '+agora+'</div>'
     + '<table>'+thead+tbody+'</table>'
-    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="foot">Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -3243,11 +3248,11 @@ function ckPDF(){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Checklist Diário Gerente</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_ckNomeLoja())+'</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Checklist Diário Gerente</h1><div class="sub">'+_brandNomeH()+' &middot; '+_precoEsc(_ckNomeLoja())+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>Data:</b> '+_ckDataBR(dd)+' &middot; <b>Preenchido por:</b> '+(_precoEsc(quem)||'—')+' &middot; Gerado em '+agora+'</div>'
     + '<table><tr><th class="n">#</th><th>Tarefas a serem desempenhadas</th><th class="c">Sim</th><th class="c">Não</th><th class="as">Assinatura - Gerente</th></tr>'+rows+'</table>'
-    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="foot">Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -4134,7 +4139,7 @@ function avPDF(){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#A32D2D;color:#fff}.b2{background:#FDECEC;color:#A32D2D}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Controle de Avarias</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_avNomeLoja())+'</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Controle de Avarias</h1><div class="sub">'+_brandNomeH()+' &middot; '+_precoEsc(_avNomeLoja())+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>Período:</b> '+_precoEsc(_avFiltroLabel())+' &middot; Itens: '+arr.length+' &middot; Gerado em '+agora+'</div>'
     + '<div style="font-size:13px;font-weight:bold;color:#A32D2D;margin:12px 0 2px">Resumo (modelo CISS)</div>'
@@ -4142,7 +4147,7 @@ function avPDF(){
     + '<div style="font-size:12px;font-weight:bold;color:#16267A;margin:18px 0 4px">Avarias do período</div>'
     + '<table><tr><th class="d">Data</th><th>Produto</th><th class="c">Qtd</th><th class="c">Ocorrência</th><th class="v">Perda</th></tr>'+rows+'</table>'
     + '<div class="tot"><span>Prejuízo total no período</span><span>'+_precoBRL(tot)+'</span></div>'
-    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="foot">Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -4621,7 +4626,7 @@ function foPDF(){
     +'.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#16267A;color:#fff}.b2{background:#EEF0F6;color:#16267A}'
     +'@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     +'</style></head><body><div class="sheet">'
-    +'<div class="hd"><h1>Folha de Pagamento</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(_foNomeLoja())+'</div></div><div class="stripe"></div>'
+    +'<div class="hd"><h1>Folha de Pagamento</h1><div class="sub">'+_brandNomeH()+' &middot; '+_precoEsc(_foNomeLoja())+'</div></div><div class="stripe"></div>'
     +'<div class="body">'
     +'<div class="meta"><b>Mês:</b> '+_precoEsc(mesLabel)+' &middot; Pessoas: '+_foFunc.length+' &middot; Gerado em '+agora+'</div>'
     +'<div style="font-size:13px;font-weight:bold;color:#16267A;margin:12px 0 2px">Resumo por setor</div>'
@@ -4629,7 +4634,7 @@ function foPDF(){
     +'<div style="font-size:13px;font-weight:bold;color:#16267A;margin:18px 0 2px">Detalhe por funcionário</div>'
     +det
     +'<div class="tot"><span>Total da folha no mês</span><span>'+_precoBRL(totGeral)+'</span></div>'
-    +'<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    +'<div class="foot">Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     +'</div></div>'
     +'<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -5517,12 +5522,12 @@ function orcPDF(){
     +'.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#16267A;color:#fff}.b2{background:#EEF0F6;color:#16267A}'
     +'@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     +'</style></head><body><div class="sheet">'
-    +'<div class="hd"><h1>Orçamento</h1><div class="sub">Ideal Supermercados'+(loja?(' &middot; '+_precoEsc(loja)):'')+'</div></div><div class="stripe"></div>'
+    +'<div class="hd"><h1>Orçamento</h1><div class="sub">'+_brandNomeH()+''+(loja?(' &middot; '+_precoEsc(loja)):'')+'</div></div><div class="stripe"></div>'
     +'<div class="body">'
     +'<div class="meta"><b>Itens:</b> '+ORC_ITENS.length+' &middot; Gerado em '+_precoEsc(quando)+'</div>'
     +'<table><tr><th>Produto</th><th class="c">Qtd</th>'+thVarejo+'<th class="v">Praticado</th><th class="v">Subtotal</th></tr>'+linhas+'</table>'
     +'<div class="tot"><span>Total do orçamento</span><span>'+_precoBRL(tot)+'</span></div>'
-    +'<div class="foot">Valores sujeitos a alteração sem aviso prévio. Documento gerado pelo app — Ideal Supermercados.</div>'
+    +'<div class="foot">Valores sujeitos a alteração sem aviso prévio. Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     +'</div></div>'
     +'<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -6235,7 +6240,7 @@ function cwCopiar(){ if(_cwAtual) _cwCopiarTxt(_cwLink(_cwAtual.id)); }
 function _cwForn(fid){ var c=_cwAtual; if(!c) return null; for(var i=0;i<c.fornecedores.length;i++){ if(String(c.fornecedores[i].id)===String(fid)) return c.fornecedores[i]; } return null; }
 function _cwMsgFor(fid){
   var c=_cwAtual; var fo=_cwForn(fid); if(!c||!fo) return '';
-  var base='Olá, '+fo.nome+'! Segue a cotação "'+(c.titulo||'')+'" da Ideal Supermercados: '+_cwLink(c.id);
+  var base='Olá, '+fo.nome+'! Segue a cotação "'+(c.titulo||'')+'" da '+_brandNome()+': '+_cwLink(c.id);
   if(_pinIndef(fo.pin)) return base+' — Entre com o nome da sua empresa e, no primeiro acesso, crie a sua senha. Qualquer dúvida, estamos à disposição!';
   return base+' — Entre com o nome da sua empresa e a senha que você cadastrou. Qualquer dúvida, estamos à disposição!';
 }
@@ -6370,10 +6375,10 @@ function _cwPrintPedido(titulo, secoes){
   var grandHtml=(secoes.length>1)?('<div class="grand"><span>Total geral</span><span>'+_precoBRL(grand)+'</span></div>'):'';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Cota&ccedil;&atilde;o &mdash; itens vencedores</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}.hd{background:#1B3A9E;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 12px;border-bottom:1px solid #eee;line-height:1.7}.forn{margin:14px 0;border:1px solid #cfe0d6;border-radius:8px;padding:10px}.fname{font-size:14px;font-weight:bold;color:#0F6E56}.fname span{font-weight:normal;font-size:11px;color:#5F5E5A}table{width:100%;border-collapse:collapse;margin-top:6px}th{font-size:10px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:5px 4px;border-bottom:1px solid #ccd}td{padding:6px 4px;font-size:12.5px;border-bottom:1px solid #f1f1f1;color:#1a1a1a}td.c,th.c{text-align:center;white-space:nowrap}td.v,th.v{text-align:right;white-space:nowrap}.tot{display:flex;justify-content:space-between;font-size:13px;font-weight:bold;padding:8px 4px 2px;color:#16267A}.grand{display:flex;justify-content:space-between;font-size:15px;font-weight:bold;padding:12px 4px;margin-top:10px;border-top:2px solid #1B3A9E;color:#1B3A9E}.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}</style></head><body><div class="sheet">'
-    +'<div class="hd"><h1>Cota&ccedil;&atilde;o &mdash; itens vencedores</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    +'<div class="hd"><h1>Cota&ccedil;&atilde;o &mdash; itens vencedores</h1><div class="sub">'+_brandNomeH()+'</div></div><div class="stripe"></div>'
     +'<div class="body"><div class="meta"><b>'+_cwEscP(titulo)+'</b><br>Gerado em '+agora+'</div>'
     +corpo+grandHtml
-    +'<div class="foot">Pre&ccedil;os conforme cota&ccedil;&atilde;o respondida pelos fornecedores. Documento gerado pelo app &mdash; Ideal Supermercados.</div>'
+    +'<div class="foot">Pre&ccedil;os conforme cota&ccedil;&atilde;o respondida pelos fornecedores. Documento gerado pelo app &mdash; '+_brandNomeH()+'.</div>'
     +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     +'</div></div><scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt></body></html>';
   _cwAbrePrint(html);
@@ -6396,10 +6401,10 @@ function cwPdfNaoCotados(){
   }
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>N&atilde;o cotados</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}.hd{background:#A32D2D;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 12px;border-bottom:1px solid #eee;line-height:1.7}table{width:100%;border-collapse:collapse;margin-top:10px}th{font-size:10px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:5px 4px;border-bottom:1px solid #ccd}td{padding:7px 4px;font-size:12.5px;border-bottom:1px solid #f1f1f1;color:#1a1a1a}td.c,th.c{text-align:center;white-space:nowrap}td.n,th.n{color:#9a988f;width:26px;text-align:center}.cod{font-size:10px;color:#9a988f;margin-top:2px}.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}</style></head><body><div class="sheet">'
-    +'<div class="hd"><h1>Itens n&atilde;o cotados</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    +'<div class="hd"><h1>Itens n&atilde;o cotados</h1><div class="sub">'+_brandNomeH()+'</div></div><div class="stripe"></div>'
     +'<div class="body"><div class="meta"><b>'+_cwEscP(titulo)+'</b><br>Gerado em '+agora+'<br>'+arr.length+' item(ns) sem pre&ccedil;o</div>'
     +'<table><thead><tr><th class="n">#</th><th>Item</th><th class="c">Qtd</th><th class="c">Un</th></tr></thead><tbody>'+linhas+'</tbody></table>'
-    +'<div class="foot">Itens que nenhum fornecedor cotou (marcaram &ldquo;n&atilde;o tenho&rdquo; ou n&atilde;o responderam). Documento gerado pelo app &mdash; Ideal Supermercados.</div>'
+    +'<div class="foot">Itens que nenhum fornecedor cotou (marcaram &ldquo;n&atilde;o tenho&rdquo; ou n&atilde;o responderam). Documento gerado pelo app &mdash; '+_brandNomeH()+'.</div>'
     +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     +'</div></div><scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt></body></html>';
   _cwAbrePrint(html);
@@ -7836,11 +7841,11 @@ function exportarContasPDF(){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Contas a Pagar</h1><div class="sub">Ideal Supermercados &middot; '+_precoEsc(rotulo)+'</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Contas a Pagar</h1><div class="sub">'+_brandNomeH()+' &middot; '+_precoEsc(rotulo)+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>'+_precoEsc(rotulo)+'</b> &middot; '+rows.length+' boleto(s) &middot; Gerado em '+agora+'</div>'
     + tabelaHtml
-    + '<div class="foot">Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="foot">Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -9358,7 +9363,7 @@ tr.grp td{color:#16267A;font-size:12px}
 @media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}
 </style></head><body>
 <div class="sheet">
-  <div class="hd"><h1>DRE — Demonstrativo de Resultados</h1><div class="sub">Ideal Supermercados</div></div>
+  <div class="hd"><h1>DRE — Demonstrativo de Resultados</h1><div class="sub">${_brandNomeH()}</div></div>
   <div class="stripe"></div>
   <div class="body">
     <div class="meta"><span><b>${nomeLoja}</b></span><span>Período: <b>${periodo}</b></span><span>Gerado em ${agora}</span></div>
@@ -9387,7 +9392,7 @@ tr.grp td{color:#16267A;font-size:12px}
       <div><div class="lbl">(=) Resultado</div><div class="note">${posit?'lucro no período':'prejuízo no período'} · margem ${pct(resultado)}</div></div>
       <div class="val">${brlC(resultado)}</div>
     </div>
-    <div class="foot">Separação automática pelo nome do fornecedor (ajustável). Contas contadas pela data de vencimento.<br>Documento gerado pelo app de Gestão Financeira — Ideal Supermercados.</div>
+    <div class="foot">Separação automática pelo nome do fornecedor (ajustável). Contas contadas pela data de vencimento.<br>Documento gerado pelo app de Gestão Financeira — '+_brandNomeH()+'.</div>
     <div class="bar noprint">
       <button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button>
       <button class="b2" onclick="window.close()">Fechar</button>
@@ -10910,6 +10915,20 @@ const EST_FRESCO_MS = 3 * 60 * 60 * 1000;
 
 function _syncSplash(mostrar, sub){
   var el = document.getElementById('sync-splash'); if(!el) return;
+  if(mostrar){
+    try{
+      var _lg = document.getElementById('sync-logo');
+      if(_lg && window.BRAND && window.BRAND.logo_url){ _lg.src = window.BRAND.logo_url; }
+      var _nm = document.getElementById('sync-loja-nome');
+      if(_nm && window.BRAND && window.BRAND.nome){ _nm.textContent = window.BRAND.nome; }
+      var _tg = document.getElementById('sync-loja-tag');
+      if(_tg){
+        var _l = (typeof lojaAtual !== 'undefined' && lojaAtual) ? lojaAtual : 'all';
+        if(_l !== 'all'){ try{ _tg.textContent = lojaNome(_l); }catch(_e2){ _tg.textContent=''; } _tg.style.display = _tg.textContent ? 'block' : 'none'; }
+        else { _tg.style.display = 'none'; }
+      }
+    }catch(_e){}
+  }
   el.style.display = mostrar ? 'flex' : 'none';
   if(sub){ var s = document.getElementById('sync-splash-sub'); if(s) s.textContent = sub; }
 }
@@ -11473,10 +11492,14 @@ async function sincronizarInicio(){
     var eFresco = em && em.ts && (Date.now()-em.ts)<EST_FRESCO_MS && em.n && em.nv2;
     precisa = !(pFresco && eFresco);
   }catch(e){ precisa=true; }
-  if(precisa) _syncSplash(true, 'Baixando produtos, estrutura e vendas…');
+  var _t0 = Date.now();
+  _syncSplash(true, precisa ? 'Baixando produtos, estrutura e vendas…' : 'Preparando seu painel…');
   var safety = setTimeout(function(){ _syncSplash(false); }, 25000);
   try{ await Promise.allSettled([ precoSync(false), estSync(false) ]); }catch(e){}
   clearTimeout(safety);
+  // tempo mínimo de marca: mostra a loja do cliente por ~1.3s mesmo se já estiver em cache
+  var _MIN = 1300, _dt = Date.now() - _t0;
+  if(_dt < _MIN){ await new Promise(function(r){ setTimeout(r, _MIN - _dt); }); }
   _syncSplash(false);
 }
 
@@ -11780,12 +11803,12 @@ function _colGerarPDF(obs, usuario, data, itens){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Lista de Cotação</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Lista de Cotação</h1><div class="sub">'+_brandNomeH()+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>'+(_precoEsc(obs)||'Coleta sem observacao')+'</b><br>Coletado por: '+(_precoEsc(usuario)||'—')+' &middot; '+_precoEsc((data||'').slice(0,16))+'<br>Itens: '+itens.length+' &middot; Gerado em '+agora+'</div>'
     + '<table><tr><th class="n">#</th><th>Produto</th><th class="c">Qtd</th><th class="c">Un</th><th class="v">Varejo (ref.)</th></tr>'+linhas+'</table>'
     + '<div class="tot"><span>Valor de referencia (varejo &times; qtd)</span><span>'+_precoBRL(refTot)+'</span></div>'
-    + '<div class="foot">Precos de varejo apenas como referencia. Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="foot">Precos de varejo apenas como referencia. Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
@@ -11927,13 +11950,13 @@ function _colGerarPDFCruza(d){
     + '.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}'
     + '@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}'
     + '</style></head><body><div class="sheet">'
-    + '<div class="hd"><h1>Cruzamento de Coletas</h1><div class="sub">Ideal Supermercados</div></div><div class="stripe"></div>'
+    + '<div class="hd"><h1>Cruzamento de Coletas</h1><div class="sub">'+_brandNomeH()+'</div></div><div class="stripe"></div>'
     + '<div class="body">'
     + '<div class="meta"><b>Produtos repetidos entre coletas em destaque</b><br>Repetidos: '+d.rep.length+' &middot; Produtos no total: '+(d.rep.length+d.uni.length)+'<br>Gerado em '+agora+'</div>'
     + '<div class="sec r">Repetidos em 2 ou mais coletas ('+d.rep.length+')</div>'+rep
     + '<div class="sec o">Demais produtos ('+d.uni.length+')</div>'
     + '<table class="big"><tr><th>Produto</th><th>Quem coletou</th><th class="c">Qtd</th><th class="v">Data</th></tr>'+uni+'</table>'
-    + '<div class="foot">Repetido = mesmo produto em 2+ coletas, listado por coleta (sem somar). Documento gerado pelo app — Ideal Supermercados.</div>'
+    + '<div class="foot">Repetido = mesmo produto em 2+ coletas, listado por coleta (sem somar). Documento gerado pelo app — '+_brandNomeH()+'.</div>'
     + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
     + '<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt>'
