@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "br.com.idealcore.app",
+        "sha256_cert_fingerprints": ["88:9E:45:A8:61:5B:1B:0E:78:71:3D:F2:C9:A8:13:B9:3D:27:A3:3F:FE:F8:BE:35:37:45:C5:FD:3E:80:24:DF"]
+      }
+    }]
