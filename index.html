@@ -5992,7 +5992,7 @@ function fnEditar(id, aoSalvar){
 // Usa cotweb_criar / cotweb_list / cotweb_painel / cotweb_fechar.
 // ══════════════════════════════════════════════════════
 var COTWEB=[], _cwAtual=null;
-var COTWEB_BASE='https://financeiroidealsupermercadosbr-cmyk.github.io/ideal-app/cotacao.html';
+var COTWEB_BASE='https://idealcore.com.br/cotacao.html';
 function _cwLink(cotId){ return COTWEB_BASE+'?c='+encodeURIComponent(cotId); }
 function _cwBadgeTxt(s){ s=String(s).toUpperCase(); return s==='ABERTA'?'Aberta':(s==='AGENDADA'?'Agendada':'Fechada'); }
 function _cwFmtEp(ep){ ep=Number(ep)||0; if(!ep) return ''; var d=new Date(ep); var p=function(n){return ('0'+n).slice(-2);}; return p(d.getDate())+'/'+p(d.getMonth()+1)+' '+p(d.getHours())+':'+p(d.getMinutes()); }
