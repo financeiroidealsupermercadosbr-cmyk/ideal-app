@@ -525,6 +525,26 @@ body:has(#s-login.active) .app{max-width:none}
   </div>
 </div>
 
+<!-- SINCRONIZAÇÃO DE LOJA (multi-tenant) -->
+<div class="screen" id="s-sync">
+  <div class="splash" style="justify-content:flex-start;padding:44px 24px">
+    <div class="splash-logo-wrap logo-circle" style="margin-top:8px"><img src="logo-core.png" alt="Ideal"></div>
+    <div class="splash-title">Sincronizar loja</div>
+    <div class="splash-sub" style="text-align:center;max-width:280px;margin-top:6px">Digite o código da sua loja</div>
+    <div style="width:100%;max-width:300px;margin-top:28px">
+      <input id="sync-slug" type="text" placeholder="código da loja" autocapitalize="none" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px 14px;border:none;border-radius:10px;font-size:15px;text-transform:lowercase" onkeydown="if(event.key==='Enter'){event.preventDefault();syncValidar();}">
+      <div id="sync-result" style="display:none;margin-top:14px;background:rgba(255,255,255,0.15);border-radius:10px;padding:12px 14px;color:#fff">
+        <div style="font-size:12px;opacity:.8">Loja encontrada</div>
+        <div id="sync-loja-nome" style="font-size:16px;font-weight:600;margin:2px 0 10px"></div>
+        <button onclick="syncConfirmar()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#fff;color:var(--azul-mid);font-weight:600;font-size:14px;cursor:pointer">É essa, confirmar</button>
+      </div>
+      <div id="sync-err" style="display:none;margin-top:10px;color:#ffd5d5;font-size:13px;text-align:center"></div>
+      <button id="sync-btn" onclick="syncValidar()" style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:10px;background:rgba(255,255,255,0.95);color:var(--azul-mid);font-weight:600;font-size:15px;cursor:pointer">Verificar</button>
+      <div style="text-align:center;margin-top:18px"><a onclick="show('s-login')" style="color:rgba(255,255,255,0.8);font-size:13px;text-decoration:underline;cursor:pointer">Voltar ao login</a></div>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN -->
 <div class="screen active" id="s-login">
   <div class="login2">
@@ -548,6 +568,7 @@ body:has(#s-login.active) .app{max-width:none}
         <div><i class="ti ti-shopping-cart"></i><span>Sistema integrado</span></div>
         <div><i class="ti ti-headset"></i><span>Suporte</span></div>
       </div>
+      <div style="text-align:center;margin-top:12px"><a onclick="show('s-sync')" style="color:var(--azul-mid);font-size:13px;text-decoration:underline;cursor:pointer">Primeiro acesso? Sincronizar loja</a></div>
       <div class="login2-foot"><span id="ver-foot">Versão …</span><br><a href="politica-privacidade.html" target="_blank" rel="noopener" style="color:inherit;opacity:.75;text-decoration:underline">Política de Privacidade</a></div>
     </div>
   </div>
@@ -6743,7 +6764,56 @@ function togglePass(el){
 // Se o Supabase falhar, NÃO trava o login — o app segue no Sheets.
 // ══════════════════════════════════════════════════════
 function _supaAtivo(){ return SUPA_ANON && SUPA_ANON !== 'COLE_A_ANON_AQUI' && SUPA_URL; }
-function _supaEmail(usuario){ return String(usuario||'').trim().toLowerCase() + '@' + SUPA_EMAIL_DOMAIN; }
+// ── Multi-tenant: slug da loja por aparelho (localStorage) ──
+// Sem slug salvo => '@ideal.local' puro (grandfather: Grupo Ideal/DEMO seguem iguais).
+// Com slug 'mercadox' => '<usuario>@mercadox.ideal.local' (único por cliente).
+var _SLUG_KEY = 'ideal_cli_slug';
+function _cliSlug(){ try { return (localStorage.getItem(_SLUG_KEY)||'').trim().toLowerCase(); } catch(_){ return ''; } }
+function _cliSlugSet(s){ try { if(s){ localStorage.setItem(_SLUG_KEY, String(s).trim().toLowerCase()); } else { localStorage.removeItem(_SLUG_KEY); } } catch(_){} }
+function _supaEmail(usuario){
+  var u = String(usuario||'').trim().toLowerCase();
+  var slug = _cliSlug();
+  if(slug==='ideal') slug='';   // sentinela: Grupo Ideal usa o namespace base (@ideal.local)
+  return u + '@' + (slug ? (slug + '.' + SUPA_EMAIL_DOMAIN) : SUPA_EMAIL_DOMAIN);
+}
+
+// Boot (Opção B): sempre abre no login. A sincronização é um link dentro do login.
+function _bootDest(){ show('s-login'); }
+
+// Valida o slug online (RPC pública loja_por_slug) e mostra o nome pra confirmar.
+async function syncValidar(){
+  var inp = document.getElementById('sync-slug');
+  var err = document.getElementById('sync-err');
+  var res = document.getElementById('sync-result');
+  var btn = document.getElementById('sync-btn');
+  var slug = ((inp && inp.value)||'').trim().toLowerCase();
+  if(err) err.style.display='none';
+  if(res) res.style.display='none';
+  if(!slug){ if(err){ err.textContent='Digite o código da loja.'; err.style.display='block'; } return; }
+  var t0 = btn ? btn.textContent : '';
+  if(btn){ btn.disabled=true; btn.textContent='Verificando...'; }
+  try {
+    var r = await _supaFetchT(SUPA_URL+'/rest/v1/rpc/loja_por_slug', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON },
+      body: JSON.stringify({ p_slug: slug })
+    }, 8000);
+    var data = await r.json().catch(function(){ return null; });
+    var nome = (typeof data==='string') ? data : (data && (data.nome||data.loja)) || '';
+    if(!r.ok || !nome){
+      if(err){ err.textContent='Código não encontrado. Confira com o suporte.'; err.style.display='block'; }
+    } else {
+      var el = document.getElementById('sync-loja-nome'); if(el) el.textContent = nome;
+      window._syncSlugPend = slug;
+      if(res) res.style.display='block';
+    }
+  } catch(e){
+    if(err){ err.textContent='Sem conexão. Verifique a internet e tente de novo.'; err.style.display='block'; }
+  }
+  if(btn){ btn.disabled=false; btn.textContent=t0; }
+}
+function syncConfirmar(){ if(window._syncSlugPend){ _cliSlugSet(window._syncSlugPend); } show('s-login'); }
+function syncPular(){ show('s-login'); }
 
 // fetch com timeout (AbortController) — rede ruim NUNCA trava o app.
 // Estoura o tempo => aborta a chamada => o caller cai no Sheets.
@@ -9741,7 +9811,7 @@ const prog = document.getElementById('prog');
 let w=0;
 const iv = setInterval(()=>{
   w+=2; prog.style.width=Math.min(w,100)+'%';
-  if(w>=100){ clearInterval(iv); setTimeout(()=>show('s-login'),300); }
+  if(w>=100){ clearInterval(iv); setTimeout(_bootDest,300); }
 },30);
 setTimeout(function(){ try{ categoriasCarregar(); }catch(e){} }, 0);
 
