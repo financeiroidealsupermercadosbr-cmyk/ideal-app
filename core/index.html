@@ -190,6 +190,7 @@
 <div id="modal-novo" class="modal-bg hide"><div class="modal">
   <h3>Novo cliente</h3><div class="mc">Cria o cliente e gera o token da Ponte.</div>
   <label>Nome (exibição)</label><input id="n_nome">
+  <label>Código da loja (login do cliente)</label><input id="n_slug" placeholder="gerado do nome — pode editar" autocapitalize="none" spellcheck="false" style="text-transform:lowercase">
   <div class="grid2"><div><label>Mensalidade (R$)</label><input id="n_mens" type="number" step="0.01" value="0"></div>
     <div><label>Dia vencimento</label><input id="n_dia" type="number" min="1" max="28" value="10"></div></div>
   <div class="grid2"><div><label>Loja</label><input id="n_loja"></div>
@@ -199,6 +200,7 @@
   <textarea id="n_lojas" rows="3" placeholder="Loja Centro&#10;Loja Bairro" style="width:100%;resize:vertical;font-family:inherit"></textarea>
   <div class="mc">Opcional agora — dá pra adicionar/editar depois no cliente. O código é gerado sozinho.</div>
   <div id="n_result" class="hide" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,196,0,.08)">
+    <div id="n_slugshow" style="font-size:13px;margin-bottom:10px"></div>
     <div style="font-size:12px;color:var(--mut);margin-bottom:4px">Token da Ponte — copie agora, só aparece desta vez:</div>
     <div id="n_token" style="font-family:monospace;font-size:12px;word-break:break-all;margin-bottom:8px"></div>
     <button class="btn ghost mini" id="n_copy">Copiar token</button>
@@ -523,9 +525,18 @@ $('mSalvar').onclick=async()=>{
   }
 };
 // ── Novo cliente (cria cliente + token) ──
+function _slugify(s){
+  s=(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+  if(!s) s='loja';
+  if(['ideal','demo','www','admin','api','app','core'].indexOf(s)>=0) s+='x';
+  return s;
+}
+let n_slugTouched=false;
+$('n_slug').addEventListener('input',()=>{ n_slugTouched=true; });
+$('n_nome').addEventListener('input',()=>{ if(!n_slugTouched) $('n_slug').value=_slugify($('n_nome').value); });
 $('btnNovo').onclick=()=>{
-  ['n_nome','n_loja','n_cidade','n_uf'].forEach(k=>$(k).value=''); $('n_mens').value=0; $('n_dia').value=10;
-  $('n_lojas').value='';
+  ['n_nome','n_slug','n_loja','n_cidade','n_uf'].forEach(k=>$(k).value=''); $('n_mens').value=0; $('n_dia').value=10;
+  $('n_lojas').value=''; n_slugTouched=false;
   $('n_result').classList.add('hide'); $('nCriar').disabled=false; $('modal-novo').classList.remove('hide');
 };
 $('nCancel').onclick=()=>$('modal-novo').classList.add('hide');
@@ -538,6 +549,10 @@ $('nCriar').onclick=async()=>{
       p_loja:$('n_loja').value.trim()||null,p_cidade:$('n_cidade').value.trim()||null,p_uf:$('n_uf').value.trim()||null});
     const row=Array.isArray(r)?r[0]:r;
     novoCliId=row.cliente_id; novoCliNome=nome;
+    // gera/garante o slug único do cliente (código de login)
+    var slugFinal='';
+    try{ var _sr=await rpc('admin_slug_set',{p_cliente:novoCliId,p_base:($('n_slug').value.trim()||nome)}); slugFinal=(Array.isArray(_sr)?_sr[0]:_sr)||''; }catch(_e){}
+    if(slugFinal){ var _ss=$('n_slugshow'); if(_ss) _ss.innerHTML='Código da loja: <b>'+slugFinal+'</b> — passe ao cliente pra sincronizar.'; }
     // cria as lojas digitadas (uma por linha), código gerado automático
     var nomes=($('n_lojas').value||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
     var feitas=0;
