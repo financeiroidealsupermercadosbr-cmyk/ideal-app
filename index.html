@@ -12292,10 +12292,23 @@ async function _colSalvarAgrupada(){
   var btns=document.querySelectorAll('#col-cruza-itens .btn-primary');
   for(var b=0;b<btns.length;b++){ btns[b].disabled=true; }
   try{
-    var r=await _estPost({acao:'coleta_save', id:'', usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:itens});
-    if(!r.ok) throw new Error(r.erro||'falha');
+    var _lojaAgr = COL_FILTRO_LOJA || 'all';
+    var novoId;
+    if(_supaAtivo()){
+      novoId = await _coletaSalvarCloud({ id:'', usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:itens, loja:_lojaAgr });
+    } else {
+      var r=await _estPost({acao:'coleta_save', id:'', usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:itens, loja:_lojaAgr});
+      if(!r.ok) throw new Error(r.erro||'falha');
+      novoId = r.id;
+    }
     toast('✓ Coleta agrupada salva ('+itens.length+' itens)');
-    appConfirm('Coleta agrupada salva!\nJá está em "Coletas salvas". Quer abrir agora?', function(){ abrirColetas(); }, {okText:'Abrir'});
+    appConfirm('Coleta agrupada salva!\nJá está em "Coletas salvas". Quer abrir agora?', async function(){
+      document.getElementById('col-cruza-view').style.display='none';
+      document.getElementById('col-lista-view').style.display='block';
+      colRenderLojaSel();
+      try{ await _colCarregar(); }catch(e){}
+      if(novoId){ colAbrir(String(novoId)); } else { colRenderLista(); }
+    }, {okText:'Abrir'});
   }catch(e){ console.error('_colSalvarAgrupada',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
   for(var b2=0;b2<btns.length;b2++){ if(btns[b2]) btns[b2].disabled=false; }
 }
