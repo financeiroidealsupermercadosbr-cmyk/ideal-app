@@ -1507,7 +1507,7 @@ body:has(#s-login.active) .app{max-width:none}
     <div id="col-lista" style="margin-top:10px"><div class="loadrow"><span class="spin"></span> Carregando coletas…</div></div>
   </div>
   <div id="col-detalhe-view" style="display:none;padding:0 14px 90px">
-    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div></div>
+    <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="col-det-titulo">Coleta</div><div class="row-sub" id="col-det-sub">—</div></div><i class="ti ti-pencil" style="color:var(--azul);font-size:18px;padding:4px" title="Renomear" onclick="event.stopPropagation();colRenomear()"></i></div>
     <div id="col-det-itens"></div>
     <button class="btn-primary" style="margin-top:14px;background:#BA7517" onclick="cwAbrirCriar()"><i class="ti ti-world"></i> Mandar pra Cotação Web</button>
     <div style="display:flex;gap:8px;margin-top:10px">
@@ -11889,12 +11889,12 @@ function cotRenderLojaBar(){
   var opts=arr.map(function(l){ return {codigo:l.codigo, nome:_cotLojaCurto(l.codigo)}; });
   opts.push({codigo:'all', nome:'Consolidado'});
   var chips=opts.map(function(o){ var on=(o.codigo===COT_LOJA);
-    return '<button onclick="cotSetLoja(\''+_precoEsc(o.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 12px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:12px;font-weight:600;cursor:pointer">'+_precoEsc(o.nome)+'</button>';
+    return '<button onclick="cotSetLoja(\''+_precoEsc(o.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 10px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:11.5px;font-weight:600;cursor:pointer">'+_precoEsc(o.nome)+'</button>';
   }).join('');
   var aviso = COT_LOJA ? '' : '<div style="font-size:11px;color:#B23C3C;margin-top:7px">Escolha a loja desta lista pra poder salvar/enviar.</div>';
   bar.innerHTML='<div style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px">'
     +'<div style="font-size:12px;color:#16267A;font-weight:600;margin-bottom:7px"><i class="ti ti-building-store" style="font-size:15px;vertical-align:-2px;margin-right:4px"></i>Lista para qual loja?</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'+chips+'</div>'+aviso+'</div>';
+    +'<div style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch">'+chips+'</div>'+aviso+'</div>';
 }
 
 async function abrirCotacao(){
@@ -12085,8 +12085,8 @@ function colRenderLojaSel(){
   if(!arr.length){ box.innerHTML=''; return; }
   var opts=arr.map(function(l){ return {codigo:l.codigo, nome:_cotLojaCurto(l.codigo)}; });
   opts.push({codigo:'all', nome:'Consolidado'});
-  box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto">'+opts.map(function(o){ var on=(o.codigo===COL_FILTRO_LOJA);
-    return '<button onclick="colSetFiltroLoja(\''+_precoEsc(o.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 12px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:12px;font-weight:600;cursor:pointer">'+_precoEsc(o.nome)+'</button>';
+  box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch">'+opts.map(function(o){ var on=(o.codigo===COL_FILTRO_LOJA);
+    return '<button onclick="colSetFiltroLoja(\''+_precoEsc(o.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 10px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:11.5px;font-weight:600;cursor:pointer">'+_precoEsc(o.nome)+'</button>';
   }).join('')+'</div>';
 }
 function colSetFiltroLoja(cod){ COL_FILTRO_LOJA=String(cod||'all'); colRenderLojaSel(); colRenderLista(); }
@@ -12116,6 +12116,24 @@ function colRenderLista(){
 function colVoltar(){
   document.getElementById('col-detalhe-view').style.display='none';
   document.getElementById('col-lista-view').style.display='block';
+  colRenderLojaSel(); colRenderLista();
+}
+async function colRenomear(){
+  if(!_colAtual){ return; }
+  appPrompt('Renomear coleta:', (_colAtual.obs||''), async function(novo){
+    novo=(novo||'').trim(); if(!novo) return;
+    try{
+      if(_supaAtivo()){
+        await _coletaSalvarCloud({ id:_colAtual.id, usuario:(_colAtual.usuario||(userAtual&&userAtual.usuario)||''), observacao:novo, itens:(_colAtual.itens||[]), loja:(_colAtual.loja||'') });
+      } else {
+        await _estPost({acao:'coleta_save', id:_colAtual.id, usuario:(_colAtual.usuario||''), observacao:novo, itens:(_colAtual.itens||[]), loja:(_colAtual.loja||'')});
+      }
+      _colAtual.obs=novo;
+      (document.getElementById('col-det-titulo')||{}).textContent = novo;
+      for(var i=0;i<COLETAS.length;i++){ if(COLETAS[i].id===_colAtual.id){ COLETAS[i].obs=novo; break; } }
+      toast('✓ Coleta renomeada');
+    }catch(e){ console.error('colRenomear',e); toast('⚠ Não consegui renomear. Verifique a internet.'); }
+  }, {okText:'Salvar'});
 }
 function _colVarejoDe(it){
   var v=Number(it.varejo)||0; if(v>0) return v;
