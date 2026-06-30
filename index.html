@@ -13,6 +13,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="IDEAL Core">
 <link rel="apple-touch-icon" href="icon-cliente-192.png">
+<!-- Gerador de PDF (jsPDF + autotable) — usado p/ exportar/compartilhar PDFs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -881,7 +884,10 @@ body:has(#s-login.active) .app{max-width:none}
       <div id="contas-resumo-filtro" style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:8px 12px;margin-bottom:10px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <span style="font-size:12px;color:var(--azul);font-weight:600;line-height:1.4"><span id="cf-rotulo">Contas a pagar hoje</span> · <span id="cf-qtd">0</span> boleto(s) · <span style="white-space:nowrap">Total <b id="cf-total" style="font-size:14px;font-weight:800">—</b></span></span>
-          <button onclick="exportarContasPDF()" style="padding:7px 12px;border:none;border-radius:9px;background:#B23C3C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" style="font-size:15px"></i>PDF</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button onclick="exportarContasPDF()" style="padding:7px 12px;border:none;border-radius:9px;background:#B23C3C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" style="font-size:15px"></i>PDF</button>
+            <button id="cf-wpp" onclick="compartilharContasWhatsApp()" style="padding:7px 12px;border:none;border-radius:9px;background:#25D366;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-brand-whatsapp" style="font-size:15px"></i>WhatsApp</button>
+          </div>
         </div>
       </div>
       <div id="lista-boletos"><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div><div class="skel-card"><div style="flex:1"><div class="skel skel-l1"></div><div class="skel skel-l2"></div></div></div></div>
@@ -7981,38 +7987,71 @@ function exportarContasExcel(){
   setTimeout(function(){ URL.revokeObjectURL(url); },1500);
   toast('Exportado: '+rows.length+' boleto(s).');
 }
-// Rodapé reutilizável dos PDFs: botões Imprimir / Enviar pro WhatsApp / Fechar.
-// O WhatsApp gera o PDF de verdade (html2pdf) a partir do .sheet e usa o menu nativo
-// de compartilhar do celular (Web Share). Sem auto-impressão: o usuário escolhe a ação.
-// Reuso nos demais PDFs: basta chamar este rodapé FORA do elemento .sheet.
-function _pdfRodapeShare(filename, titulo, texto){
-  var fn=JSON.stringify(String(filename||'documento')+'.pdf');
-  var tt=JSON.stringify(String(titulo||'Documento'));
-  var tx=JSON.stringify(String(texto||''));
-  var bs='font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px';
-  return '<div class="bar noprint" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0 8px">'
-    + '<button onclick="window.print()" style="'+bs+';background:#1B3A9E;color:#fff">Imprimir / Salvar PDF</button>'
-    + '<button id="btn-wpp" onclick="enviarWhatsApp()" style="'+bs+';background:#25D366;color:#fff">Enviar pro WhatsApp</button>'
-    + '<button onclick="window.close()" style="'+bs+';background:#E6F1FB;color:#16267A">Fechar</button>'
-    + '</div>'
-    + '<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></scr'+'ipt>'
-    + '<scr'+'ipt>'
-    + 'var _PFN='+fn+',_PTT='+tt+',_PTX='+tx+';'
-    + 'async function enviarWhatsApp(){'
-    +   'var b=document.getElementById("btn-wpp");'
-    +   'if(typeof html2pdf==="undefined"){alert("Não consegui carregar o gerador de PDF. Confira a internet e tente de novo.");return;}'
-    +   'var alvo=document.querySelector(".sheet")||document.body;'
-    +   'var t0=b?b.textContent:"";if(b){b.disabled=true;b.textContent="Gerando PDF...";}'
-    +   'try{'
-    +     'var opt={margin:[6,6,6,6],filename:_PFN,image:{type:"jpeg",quality:0.96},html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},pagebreak:{mode:["css","legacy"],avoid:"tr"}};'
-    +     'var blob=await html2pdf().set(opt).from(alvo).toPdf().output("blob");'
-    +     'var file=new File([blob],_PFN,{type:"application/pdf"});'
-    +     'if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:_PTT,text:_PTX});}'
-    +     'else{var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=_PFN;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},5000);try{window.open("https://wa.me/?text="+encodeURIComponent(_PTX+" — o PDF foi salvo no aparelho, \u00e9 s\u00f3 anexar na conversa."),"_blank");}catch(e){}}'
-    +   '}catch(e){if(e&&e.name!=="AbortError"){alert("Não consegui gerar/compartilhar: "+((e&&e.message)||e));}}'
-    +   'if(b){b.disabled=false;b.textContent=t0;}'
-    + '}'
-    + '</scr'+'ipt>';
+// Gera o PDF do Contas a Pagar com jsPDF + autotable (texto vetorial, multipágina,
+// agrupado por dia com subtotais e total geral). Retorna o doc jsPDF ou null.
+function _contasPDFdoc(){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('Carregando gerador de PDF… tente de novo em 2s.'); return null; }
+  var rows = contasFiltradas||[];
+  if(!rows.length){ toast('Nada para exportar — ajuste os filtros.'); return null; }
+  var rotulo=(document.getElementById('cf-rotulo')||{textContent:''}).textContent||'Contas a pagar';
+  var marca=_brandNomeH();
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var _stTxt=function(b){ var st=statusB(b); return st==='pago'?'Pago':st==='vencido'?'Vencido':st==='hoje'?'Vence hoje':'Pendente'; };
+  var total=rows.reduce(function(s,b){return s+(b.valor||0);},0);
+  var _k=function(v){ var p=String(v||'').split('/'); return (p.length>=3)?(p[2]+p[1]+p[0]):'99999999'; };
+  var grupos={}, ordem=[];
+  rows.forEach(function(b){ var d=String(b.venc||'—'); if(!grupos[d]){grupos[d]=[];ordem.push(d);} grupos[d].push(b); });
+  ordem.sort(function(a,b){ var ka=_k(a),kb=_k(b); return ka<kb?-1:(ka>kb?1:0); });
+  var NAVY=[27,58,158], LIGHT=[234,240,251], SUB=[245,248,253];
+  var body=[];
+  ordem.forEach(function(dia){
+    var g=grupos[dia]; var sub=g.reduce(function(s,b){return s+(b.valor||0);},0);
+    body.push([{content:'Vencimento '+dia+'  \u00b7  '+g.length+' boleto(s)', colSpan:5, styles:{fillColor:LIGHT, textColor:NAVY, fontStyle:'bold', halign:'left'}}]);
+    g.forEach(function(b){ body.push([ String(b.forn||''), String(b.doc||''), {content:String(b.venc||''),styles:{halign:'center'}}, {content:brlC(b.valor||0),styles:{halign:'right'}}, {content:_stTxt(b),styles:{halign:'center'}} ]); });
+    body.push([{content:'Subtotal do dia '+dia+'  \u00b7  '+g.length+' boleto(s)', colSpan:3, styles:{fillColor:SUB, fontStyle:'bold'}}, {content:brlC(sub), styles:{fillColor:SUB, fontStyle:'bold', halign:'right'}}, {content:'', styles:{fillColor:SUB}}]);
+  });
+  body.push([{content:'TOTAL GERAL  \u00b7  '+rows.length+' boleto(s)', colSpan:3, styles:{fillColor:NAVY, textColor:255, fontStyle:'bold'}}, {content:brlC(total), styles:{fillColor:NAVY, textColor:255, fontStyle:'bold', halign:'right'}}, {content:'', styles:{fillColor:NAVY}}]);
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  var pw=doc.internal.pageSize.getWidth();
+  doc.autoTable({
+    head:[['Fornecedor','Documento','Vencimento','Valor','Status']],
+    body:body,
+    startY:24,
+    margin:{top:24,left:10,right:10,bottom:14},
+    styles:{font:'helvetica', fontSize:8, cellPadding:1.8, overflow:'linebreak', lineColor:[230,230,230], lineWidth:0.1, textColor:[26,26,26]},
+    headStyles:{fillColor:LIGHT, textColor:NAVY, fontStyle:'bold', fontSize:8, halign:'left'},
+    columnStyles:{ 0:{cellWidth:'auto'}, 1:{cellWidth:30}, 2:{cellWidth:24, halign:'center'}, 3:{cellWidth:26, halign:'right'}, 4:{cellWidth:22, halign:'center'} },
+    didDrawPage:function(){
+      doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]); doc.rect(0,0,pw,16,'F');
+      doc.setFillColor(255,196,0); doc.rect(0,16,pw,1.3,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Contas a Pagar', 10, 8);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(marca+'  \u00b7  '+rotulo, 10, 13);
+      var ph=doc.internal.pageSize.getHeight();
+      doc.setTextColor(140,140,140); doc.setFontSize(7);
+      doc.text('Gerado em '+agora+'  —  '+marca, 10, ph-6);
+      doc.text('P\u00e1g. '+doc.internal.getCurrentPageInfo().pageNumber, pw-10, ph-6, {align:'right'});
+    }
+  });
+  return doc;
+}
+async function compartilharContasWhatsApp(){
+  var doc=_contasPDFdoc(); if(!doc) return;
+  var btn=document.getElementById('cf-wpp'); var t0=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="ti ti-loader"></i> Gerando…'; }
+  try{
+    var blob=doc.output('blob');
+    var file=new File([blob],'Contas_a_Pagar.pdf',{type:'application/pdf'});
+    var rotulo=(document.getElementById('cf-rotulo')||{textContent:''}).textContent||'Contas a pagar';
+    var texto='Contas a Pagar — '+rotulo+' \u00b7 '+_brandNomeH();
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'Contas a Pagar', text:texto});
+    } else {
+      doc.save('Contas_a_Pagar.pdf');
+      try{ window.open('https://wa.me/?text='+encodeURIComponent(texto+' (PDF salvo no aparelho — anexe na conversa).'),'_blank'); }catch(e){}
+    }
+  }catch(e){ if(e && e.name!=='AbortError'){ toast('Não consegui compartilhar: '+((e&&e.message)||e)); } }
+  if(btn){ btn.disabled=false; btn.innerHTML=t0; }
 }
 function exportarContasPDF(){
   var rows = contasFiltradas||[];
@@ -8064,8 +8103,8 @@ function exportarContasPDF(){
     + '<div class="meta"><b>'+_precoEsc(rotulo)+'</b> &middot; '+rows.length+' boleto(s) &middot; Gerado em '+agora+'</div>'
     + tabelaHtml
     + '<div class="foot">Documento gerado pelo app — '+_brandNomeH()+'.</div>'
+    + '<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
     + '</div></div>'
-    + _pdfRodapeShare('Contas_a_Pagar', 'Contas a Pagar', 'Contas a Pagar — '+rotulo+' · '+_brandNomeH())
     + '</body></html>';
   var win=window.open('','_blank');
   if(!win){ toast('Permita pop-ups para gerar o PDF'); return; }
