@@ -11769,7 +11769,7 @@ function cotAdd(cod){
   if(COT_ITENS.some(function(x){return x.cod===cod;})) return;
   var p=null; for(var i=0;i<PRODUTOS.length;i++){ if(PRODUTOS[i].c===cod){ p=PRODUTOS[i]; break; } }
   if(!p) return;
-  COT_ITENS.push({cod:p.c, desc:p.d, barras:p.b, qtd:1, un:_cotUnDefault(p.u), varejo:p.v, atacado:p.a});
+  COT_ITENS.unshift({cod:p.c, desc:p.d, barras:p.b, qtd:1, un:_cotUnDefault(p.u), varejo:p.v, atacado:p.a});
   var bi=document.getElementById('cot-busca'); if(bi){ bi.value=''; bi.focus(); }
   (document.getElementById('cot-busca-res')||{}).innerHTML='';
   cotRenderItens(); cotSub();
@@ -11794,7 +11794,7 @@ function cotManualConfirmar(){
   var txt=((inp&&inp.value)||'').trim();
   if(txt.length<2){ toast('Digite o nome do produto.'); if(inp) inp.focus(); return; }
   var id='MAN'+Date.now()+Math.floor(Math.random()*1000);
-  COT_ITENS.push({cod:id, desc:txt, barras:'', qtd:1, un:'UN', varejo:null, atacado:null, manual:true});
+  COT_ITENS.unshift({cod:id, desc:txt, barras:'', qtd:1, un:'UN', varejo:null, atacado:null, manual:true});
   var bi=document.getElementById('cot-busca'); if(bi) bi.value='';
   var box=document.getElementById('cot-busca-res'); if(box) box.innerHTML='';
   cotRenderItens(); cotSub();
