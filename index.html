@@ -1467,6 +1467,7 @@ body:has(#s-login.active) .app{max-width:none}
       <span style="font-size:13px;font-weight:600;color:var(--azul)">Coleta em andamento</span>
       <span style="font-size:12px;color:var(--azul);cursor:pointer" onclick="cotNova()"><i class="ti ti-plus" style="vertical-align:-2px"></i> Nova coleta</span>
     </div>
+    <div id="cot-loja-bar" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:8px">
       <input id="cot-busca" type="text" inputmode="search" autocomplete="off" placeholder="Buscar produto pra adicionar" style="flex:1;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:15px;box-sizing:border-box" oninput="cotBuscarDebounce()">
       <button class="btn-primary" style="width:52px;padding:0;margin-top:0" onclick="cotScanAbrir()" aria-label="Escanear código de barras"><i class="ti ti-barcode" style="font-size:23px"></i></button>
@@ -7413,7 +7414,8 @@ async function _despExcluirCloud(id){
 async function _coletasSupa(){
   if(!_supaAtivo()) return null;
   var tk = await supaToken(); if(!tk) return null;
-  var rows = await _supaPaged('/rest/v1/coletas?select=id_ext,usuario,data,observacao,itens_json,n_itens,status&order=criado_em.desc');
+  var rows = await _supaPaged('/rest/v1/coletas?select=id_ext,usuario,data,observacao,itens_json,n_itens,status,loja&order=criado_em.desc');
+  if(rows === null){ rows = await _supaPaged('/rest/v1/coletas?select=id_ext,usuario,data,observacao,itens_json,n_itens,status&order=criado_em.desc'); }
   if(rows === null) return null;
   var out=[];
   for(var i=0;i<rows.length;i++){ var r=rows[i]; var id=String(r.id_ext||'').trim(); if(!id) continue;
@@ -7421,16 +7423,22 @@ async function _coletasSupa(){
     var itens = Array.isArray(r.itens_json) ? r.itens_json : [];
     if(!Array.isArray(itens)){ try{ itens=JSON.parse(r.itens_json||'[]'); }catch(e){ itens=[]; } }
     out.push({ id:id, usuario:String(r.usuario||''), data:String(r.data||''),
-      obs:String(r.observacao||''), n:(parseInt(r.n_itens,10)||itens.length), itens:itens });
+      obs:String(r.observacao||''), n:(parseInt(r.n_itens,10)||itens.length), itens:itens, loja:String(r.loja||'') });
   }
   out.sort(function(a,b){ return (parseInt(b.id.replace(/\D/g,''),10)||0)-(parseInt(a.id.replace(/\D/g,''),10)||0); });
   return out;
 }
 async function _coletaSalvarCloud(d){
+  var base = { p_id_ext:String(d.id||''), p_usuario:String(d.usuario||''),
+      p_obs:String(d.observacao||''), p_itens:(d.itens||[]), p_n:(d.itens||[]).length };
+  var comLoja = Object.assign({}, base, { p_loja:(d.loja||null) });
   var res = await supaFetch('/rest/v1/rpc/coleta_salvar', { method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ p_id_ext:String(d.id||''), p_usuario:String(d.usuario||''),
-      p_obs:String(d.observacao||''), p_itens:(d.itens||[]), p_n:(d.itens||[]).length }) });
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify(comLoja) });
+  if(!res.ok && (res.status===404 || res.status===400)){
+    // RPC ainda sem p_loja (SQL não aplicado) → salva sem a loja, sem quebrar
+    res = await supaFetch('/rest/v1/rpc/coleta_salvar', { method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify(base) });
+  }
   if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error('coleta_salvar HTTP '+res.status+' '+t.slice(0,80)); }
   return await res.json().catch(function(){return null;}); // id_ext
 }
@@ -11838,6 +11846,7 @@ async function sincronizarInicio(){
 // ══════════════════════════════════════════════════════
 let COT_ITENS = [];   // [{cod,desc,barras,qtd,varejo,atacado}]
 let COT_ID = '';      // id da coleta atual ('' = nova, ainda não salva)
+let COT_LOJA = '';    // loja da coleta atual (cotação separada por loja)
 let _cotTimer = null;
 const COT_UNS = ['UN','CX','FD','DP','CJ','PCT','KG','DZ','SC'];
 function _cotUnDefault(pu){
@@ -11863,11 +11872,33 @@ function cotUnSet(cod, val){
   for(var i=0;i<COT_ITENS.length;i++){ if(COT_ITENS[i].cod===String(cod)){ COT_ITENS[i].un=val; break; } }
 }
 
+// ── Loja da coleta (cotação separada por loja) ──
+function _cotLojaCurto(cod){ try{ var n=lojaNome(cod)||cod; return String(n).split('—')[0].trim()||cod; }catch(e){ return cod; } }
+function _cotLojasDisp(){ return ((window.BRAND&&window.BRAND.lojasArr)||[]).filter(function(l){ return l&&l.codigo&&l.codigo!=='all'; }); }
+function cotSetLoja(cod){ COT_LOJA=String(cod||''); cotRenderLojaBar(); }
+function cotInitLoja(){ COT_LOJA=(lojaAtual && lojaAtual!=='all') ? lojaAtual : ''; cotRenderLojaBar(); }
+function cotRenderLojaBar(){
+  var bar=document.getElementById('cot-loja-bar'); if(!bar) return;
+  var arr=_cotLojasDisp();
+  if(arr.length<=1){
+    var cod=COT_LOJA||((arr[0]&&arr[0].codigo)||''); COT_LOJA=cod;
+    bar.innerHTML = cod ? ('<div style="display:flex;align-items:center;gap:7px;background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px;font-size:12.5px;color:#16267A"><i class="ti ti-building-store" style="font-size:16px"></i><span>Lista para: <b>'+_precoEsc(_cotLojaCurto(cod))+'</b></span></div>') : '';
+    return;
+  }
+  var chips=arr.map(function(l){ var on=(l.codigo===COT_LOJA);
+    return '<button onclick="cotSetLoja(\''+_precoEsc(l.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 12px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:12px;font-weight:600;cursor:pointer">'+_precoEsc(_cotLojaCurto(l.codigo))+'</button>';
+  }).join('');
+  var aviso = COT_LOJA ? '' : '<div style="font-size:11px;color:#B23C3C;margin-top:7px">Escolha a loja desta lista pra poder salvar/enviar.</div>';
+  bar.innerHTML='<div style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px">'
+    +'<div style="font-size:12px;color:#16267A;font-weight:600;margin-bottom:7px"><i class="ti ti-building-store" style="font-size:15px;vertical-align:-2px;margin-right:4px"></i>Lista para qual loja?</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'+chips+'</div>'+aviso+'</div>';
+}
+
 async function abrirCotacao(){
   show('s-cotacao');
   var bi=document.getElementById('cot-busca'); if(bi) bi.value='';
   (document.getElementById('cot-busca-res')||{}).innerHTML='';
-  cotRenderItens(); cotSub();
+  cotRenderItens(); cotSub(); cotInitLoja();
   if(!PRODUTOS.length){
     var c = await _precoGet('all').catch(function(){return null;});
     if(c && c.length){ PRODUTOS=c; } else { await precoSync(true); }
@@ -11984,13 +12015,14 @@ function cotScanAbrir(){
 }
 async function cotSalvar(){
   if(!COT_ITENS.length){ toast('Adicione pelo menos 1 item antes de salvar.'); return; }
+  if(!COT_LOJA){ toast('Escolha a loja desta lista antes de salvar.'); cotRenderLojaBar(); return; }
   var btn=document.getElementById('cot-btn-salvar'); var t=btn?btn.innerHTML:'';
   if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
   try{
     var obs=(document.getElementById('cot-obs').value||'').trim();
     var d;
-    if(_supaAtivo()){ var _cid=await _coletaSalvarCloud({id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS}); d={ok:true, id:_cid}; }
-    else { d=await _estPost({acao:'coleta_save', id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS}); }
+    if(_supaAtivo()){ var _cid=await _coletaSalvarCloud({id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS, loja:COT_LOJA}); d={ok:true, id:_cid}; }
+    else { d=await _estPost({acao:'coleta_save', id:COT_ID, usuario:(userAtual&&userAtual.usuario)||'', observacao:obs, itens:COT_ITENS, loja:COT_LOJA}); }
     if(!d.ok) throw new Error(d.erro||'falha');
     COT_ID = d.id || COT_ID;
     toast('✓ Coleta salva ('+COT_ITENS.length+' itens)');
@@ -12006,7 +12038,7 @@ function _cotNovaDo(){
   var o=document.getElementById('cot-obs'); if(o) o.value='';
   var b=document.getElementById('cot-busca'); if(b) b.value='';
   (document.getElementById('cot-busca-res')||{}).innerHTML='';
-  cotRenderItens(); cotSub();
+  cotRenderItens(); cotSub(); cotInitLoja();
   toast('Nova coleta iniciada');
 }
 function cotPDF(){
@@ -12043,14 +12075,18 @@ async function abrirColetas(){
 function colAtualizar(){ abrirColetas(); }
 function colRenderLista(){
   var el=document.getElementById('col-lista');
-  (document.getElementById('col-sub')||{}).textContent = COLETAS.length+' coleta(s) salva(s) · de todos';
-  if(!COLETAS.length){ el.innerHTML=_vazio({ico:'ti-bookmark',tit:'Nenhuma coleta salva ainda',sub:'As coletas que você salvar aparecem aqui.'}); return; }
+  var fl = (lojaAtual && lojaAtual!=='all') ? lojaAtual : '';
+  var lista = fl ? COLETAS.filter(function(c){ return !c.loja || c.loja===fl; }) : COLETAS;
+  (document.getElementById('col-sub')||{}).textContent = fl ? (lista.length+' coleta(s) · '+_cotLojaCurto(fl)) : (COLETAS.length+' coleta(s) · todas as lojas');
+  if(!lista.length){ el.innerHTML=_vazio({ico:'ti-bookmark',tit:'Nenhuma coleta nesta loja',sub:'As coletas salvas desta loja aparecem aqui.'}); return; }
   var h='';
-  for(var i=0;i<COLETAS.length;i++){ var c=COLETAS[i];
+  for(var i=0;i<lista.length;i++){ var c=lista[i];
     var quem=_precoEsc(c.usuario||'—'); var data=_precoEsc((c.data||'').slice(0,16)); var obs=_precoEsc(c.obs||'');
+    var lojaTag = c.loja ? ('<span style="font-size:10px;font-weight:700;color:#1B3A9E;background:#EAF0FB;border:1px solid #C9D6EC;border-radius:20px;padding:2px 8px;white-space:nowrap">'+_precoEsc(_cotLojaCurto(c.loja))+'</span>') : '';
     h+='<div class="row-card" style="display:block;cursor:pointer;margin-bottom:7px" onclick="colAbrir(\''+_precoEsc(c.id)+'\')">'
       +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-clipboard-list" style="color:#16267A;font-size:18px"></i>'
       +'<span style="flex:1;font-size:13.5px;font-weight:500;color:#1a1a1a">'+(obs||'Coleta sem observação')+'</span>'
+      + lojaTag
       +'<span style="font-size:12px;color:#16267A;font-weight:600;white-space:nowrap">'+c.n+' itens</span>'
       +'<i class="ti ti-chevron-right" style="color:#888780;font-size:18px"></i></div>'
       +'<div style="font-size:11px;color:#888780;margin-top:4px;margin-left:26px"><i class="ti ti-user" style="font-size:12px;vertical-align:-1px"></i> '+quem+' · '+data+'</div>'
