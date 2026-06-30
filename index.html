@@ -7991,25 +7991,21 @@ function exportarContasPDF(){
   var _linha=function(b){ return '<tr><td>'+_precoEsc(b.forn||'')+'</td><td>'+_precoEsc(b.doc||'')+'</td><td class="c">'+_precoEsc(b.venc||'')+'</td><td class="r">'+brlC(b.valor||0)+'</td><td class="c">'+_stTxt(b)+'</td></tr>'; };
   var _cab='<thead><tr><th>Fornecedor</th><th>Documento</th><th class="c">Vencimento</th><th class="r">Valor</th><th class="c">Status</th></tr></thead>';
   var _nomeLojaPDF=function(c){ return lojaNome(c, 'Sem loja', 'Sem loja'); };
+  // Agrupa por DIA de vencimento (estilo ADIPRON): boletos do dia + subtotal do dia,
+  // em ordem cronológica; no fim, TOTAL GERAL com a quantidade de boletos do período.
   var tabelaHtml='';
-  if(lojaAtual==='all'){
-    // D2: no Consolidado, agrupa os boletos por loja — subtotal de cada loja + total geral.
-    var grupos={}, ordem=[];
-    rows.forEach(function(b){ var k=b.loja||'l2'; if(!grupos[k]){ grupos[k]=[]; ordem.push(k); } grupos[k].push(b); });
-    var prio={l2:0,l1:1,bolos:2}; ordem.sort(function(a,b){ return (prio[a]==null?9:prio[a])-(prio[b]==null?9:prio[b]); });
-    ordem.forEach(function(k){
-      var g=grupos[k]; var sub=g.reduce(function(s,b){return s+(b.valor||0);},0);
-      var corpo=''; g.forEach(function(b){ corpo+=_linha(b); });
-      tabelaHtml+='<div class="grp"><div class="grp-tit">'+_precoEsc(_nomeLojaPDF(k))+' &middot; '+g.length+' boleto(s)</div>'
-        + '<table>'+_cab+'<tbody>'+corpo+'</tbody>'
-        + '<tfoot><tr><td colspan="3">Subtotal &middot; '+_precoEsc(_nomeLojaPDF(k))+'</td><td class="r">'+brlC(sub)+'</td><td></td></tr></tfoot></table></div>';
-    });
-    tabelaHtml+='<table class="geral"><tfoot><tr><td colspan="3">TOTAL GERAL</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot></table>';
-  } else {
-    var corpoU=''; rows.forEach(function(b){ corpoU+=_linha(b); });
-    tabelaHtml='<table>'+_cab+'<tbody>'+corpoU+'</tbody>'
-      + '<tfoot><tr><td colspan="3">TOTAL</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot></table>';
-  }
+  var _diaKey=function(v){ var p=String(v||'').split('/'); return (p.length>=3)?(p[2]+p[1]+p[0]):'99999999'; };
+  var grupos={}, ordem=[];
+  rows.forEach(function(b){ var k=String(b.venc||'—'); if(!grupos[k]){ grupos[k]=[]; ordem.push(k); } grupos[k].push(b); });
+  ordem.sort(function(a,b){ var ka=_diaKey(a), kb=_diaKey(b); return ka<kb?-1:(ka>kb?1:0); });
+  ordem.forEach(function(dia){
+    var g=grupos[dia]; var sub=g.reduce(function(s,b){return s+(b.valor||0);},0);
+    var corpo=''; g.forEach(function(b){ corpo+=_linha(b); });
+    tabelaHtml+='<div class="grp"><div class="grp-tit">Vencimento '+_precoEsc(dia)+' &middot; '+g.length+' boleto(s)</div>'
+      + '<table>'+_cab+'<tbody>'+corpo+'</tbody>'
+      + '<tfoot><tr><td colspan="3">Subtotal do dia '+_precoEsc(dia)+' &middot; '+g.length+' boleto(s)</td><td class="r">'+brlC(sub)+'</td><td></td></tr></tfoot></table></div>';
+  });
+  tabelaHtml+='<table class="geral"><tfoot><tr><td colspan="3">TOTAL GERAL &middot; '+rows.length+' boleto(s)</td><td class="r">'+brlC(total)+'</td><td></td></tr></tfoot></table>';
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Contas a Pagar — Ideal</title>'
     + '<style>'
     + '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
