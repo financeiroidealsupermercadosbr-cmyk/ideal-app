@@ -2163,6 +2163,11 @@ async function supaMeuLojas(){
 function aplicarLojas(arr){
   try {
     if(Array.isArray(arr) && arr.length){
+      // ordena: lojas "lN" em ordem numérica (l1, l2, ...) primeiro; demais (Bolos etc.) mantêm a ordem da nuvem, depois.
+      arr = arr.slice().map(function(l,i){ return {l:l,i:i}; }).sort(function(a,b){
+        function rank(o){ var m=String(o.l.codigo||'').match(/^l(\d+)$/i); return m ? parseInt(m[1],10) : (1000+o.i); }
+        return rank(a)-rank(b);
+      }).map(function(x){ return x.l; });
       window.BRAND.lojasArr = arr;
       var mapa = {};
       arr.forEach(function(l){ if(l && l.codigo) mapa[l.codigo] = l.nome || l.codigo; });
@@ -2194,7 +2199,7 @@ function montarSwitcherLojas(){
     var nm = l.nome||l.codigo; var lbl = (nm.split('—')[0]||nm).trim()||nm;
     return '<button class="loja-btn" data-loja="'+e(l.codigo)+'" onclick="trocarLoja(this,&#39;'+e(nm)+'&#39;,&#39;'+e(l.codigo)+'&#39;)">'+e(lbl)+'</button>';
   }).join('');
-  if(arr.length>1){ html += '<button class="loja-btn" data-loja="all" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;'+e(arr[0].codigo)+'&#39;)">Consolidado</button>'; }
+  if(arr.length>1){ html += '<button class="loja-btn" data-loja="all" onclick="trocarLoja(this,&#39;Consolidado&#39;,&#39;all&#39;)">Consolidado</button>'; }
   sel.innerHTML = html;
 }
 // Monta os cards de status de loja na Config a partir de BRAND.lojasArr (status = ativo).
