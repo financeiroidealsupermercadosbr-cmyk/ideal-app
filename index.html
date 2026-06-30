@@ -936,7 +936,10 @@ body:has(#s-login.active) .app{max-width:none}
 <!-- MODAL DAR BAIXA INDIVIDUAL -->
 <div class="modal-bg" id="modal-baixa">
   <div class="modal-card">
-    <div class="modal-title">Dar baixa no boleto</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div class="modal-title" style="margin:0">Dar baixa no boleto</div>
+      <button id="baixa-cfg-btn" onclick="abrirCadBancos()" title="Cadastrar bancos" aria-label="Cadastrar bancos" style="display:none;background:none;border:none;cursor:pointer;color:var(--azul);font-size:20px;line-height:1;padding:4px 6px;border-radius:8px"><i class="ti ti-dots-vertical"></i></button>
+    </div>
     <div class="modal-info" id="modal-info"></div>
     <div class="field-group"><label>Data do pagamento</label><input type="date" id="modal-data-pag"></div>
     <div class="field-group"><label>Banco usado</label>
@@ -946,6 +949,25 @@ body:has(#s-login.active) .app{max-width:none}
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
       <button class="btn-confirmar" id="btn-confirmar-baixa" onclick="confirmarBaixa()">✓ Confirmar baixa</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CADASTRO DE BANCOS (só gestor) -->
+<div class="modal-bg" id="modal-bancos-cad">
+  <div class="modal-card">
+    <div class="modal-title">Bancos de baixa</div>
+    <div style="font-size:12px;color:#888780;margin:-4px 0 10px">Lista que aparece em "Banco usado" ao dar baixa. Vale para todas as lojas.</div>
+    <div id="bancos-cad-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+    <div class="field-group"><label>Adicionar banco</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="bancos-cad-novo" placeholder="Ex.: Sicoob" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();cadBancoAdd();}">
+        <button onclick="cadBancoAdd()" style="padding:0 14px;border:1px solid var(--azul);background:var(--azul);color:#fff;border-radius:9px;font-weight:600;cursor:pointer;white-space:nowrap">Adicionar</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharCadBancos()">Fechar</button>
+      <button class="btn-confirmar" id="bancos-cad-salvar" onclick="cadBancosSalvar()">✓ Salvar</button>
     </div>
   </div>
 </div>
@@ -2078,6 +2100,7 @@ window.BRAND = window.BRAND || {
   logo_url: '',
   cor_principal: '',
   cor_destaque: '',
+  bancos: null, // bancos do campo "Banco usado" na baixa. null = fallback Tribanco/Bradesco/Itaú; populado pela nuvem (meus_bancos).
   lojas: { l1:'Loja 1 — Areal QS11', l2:'Loja 2 — Melhor QS8', bolos:'Ideal Bolos — Restaurante' },
   // Lista ordenada (código+nome+ativo). Default = Ideal (fallback). Populada pela nuvem em aplicarLojas().
   lojasArr: [ {codigo:'l1',nome:'Loja 1 — Areal QS11',ativo:true}, {codigo:'l2',nome:'Loja 2 — Melhor QS8',ativo:true}, {codigo:'bolos',nome:'Ideal Bolos — Restaurante',ativo:true} ]
@@ -2246,6 +2269,103 @@ function aplicarModulosCliente(){
     });
     if(typeof _menuRecalcSecoes==='function') _menuRecalcSecoes();
   } catch(_e){ /* gate é cosmético: nunca derruba o app */ }
+}
+// ══════════════════════════════════════════════════════
+// BANCOS DE BAIXA (cloud por cliente · só gestor edita · lista única do grupo)
+// ══════════════════════════════════════════════════════
+var _BANCOS_FALLBACK = ['Tribanco','Bradesco','Itaú'];
+function _bancosLista(){
+  var a = (window.BRAND && Array.isArray(window.BRAND.bancos) && window.BRAND.bancos.length) ? window.BRAND.bancos : _BANCOS_FALLBACK;
+  return a;
+}
+function _escBanco(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Popula os dois selects (#modal-banco e #massa-banco) com a lista atual, preservando a seleção.
+function montarSelectsBancos(){
+  var lista = _bancosLista();
+  ['modal-banco','massa-banco'].forEach(function(id){
+    var sel = document.getElementById(id); if(!sel) return;
+    var atual = sel.value;
+    sel.innerHTML = lista.map(function(b){ return '<option'+(b===atual?' selected':'')+'>'+_escBanco(b)+'</option>'; }).join('');
+  });
+}
+// Lê a lista do cliente logado (RPC meus_bancos → text[]).
+async function supaMeusBancos(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet();
+  if(!s || !s.access_token) return null;
+  try {
+    const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meus_bancos`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body: '{}'
+    }, 8000);
+    const arr = await res.json().catch(function(){ return null; });
+    if(!res.ok) return null;
+    if(Array.isArray(arr)) return arr.filter(function(x){ return typeof x==='string' && x.trim(); });
+    return null;
+  } catch(e){ return null; }
+}
+// Aplica a lista da nuvem ao BRAND e repopula os selects. Opcional: nunca derruba o app.
+function aplicarBancos(arr){
+  try {
+    if(Array.isArray(arr) && arr.length){ window.BRAND.bancos = arr.slice(); }
+    montarSelectsBancos();
+  } catch(_e){ /* bancos são opcionais */ }
+}
+// Grava a lista (RPC bancos_set, só gestor) e devolve a lista normalizada pela nuvem.
+async function _bancosSetCloud(lista){
+  if(!_supaAtivo()) throw new Error('nuvem indisponível');
+  const s = supaSessGet(); if(!s || !s.access_token) throw new Error('sem sessão');
+  const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/bancos_set`, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+    body: JSON.stringify({ p_bancos: lista })
+  }, 8000);
+  if(!res.ok){ var t=await res.text().catch(function(){return '';}); throw new Error(t||('HTTP '+res.status)); }
+  const arr = await res.json().catch(function(){ return null; });
+  return Array.isArray(arr) ? arr : lista;
+}
+// ── CADASTRO (modal de 3 pontinhos) ──
+var _bancosCadArr = [];
+function abrirCadBancos(){
+  if(typeof ehGestor==='function' && !ehGestor()){ toast('Só o gestor cadastra os bancos'); return; }
+  _bancosCadArr = _bancosLista().slice();
+  renderBancosCad();
+  var inp=document.getElementById('bancos-cad-novo'); if(inp) inp.value='';
+  document.getElementById('modal-bancos-cad').classList.add('open');
+}
+function fecharCadBancos(){ document.getElementById('modal-bancos-cad').classList.remove('open'); }
+function renderBancosCad(){
+  var box=document.getElementById('bancos-cad-lista'); if(!box) return;
+  if(!_bancosCadArr.length){ box.innerHTML='<div style="font-size:12px;color:#888780;padding:8px 2px">Nenhum banco cadastrado. Adicione abaixo.</div>'; return; }
+  box.innerHTML = _bancosCadArr.map(function(b,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f6f7fb;border:1px solid #e6e8f2;border-radius:9px;padding:8px 12px">'
+      + '<span style="font-size:13px;color:var(--azul);font-weight:600">'+_escBanco(b)+'</span>'
+      + '<button onclick="cadBancoRemove('+i+')" title="Remover" style="background:none;border:none;cursor:pointer;color:#B23C3C;font-size:18px;line-height:1;padding:2px 4px"><i class="ti ti-trash"></i></button>'
+      + '</div>';
+  }).join('');
+}
+function cadBancoAdd(){
+  var inp=document.getElementById('bancos-cad-novo'); if(!inp) return;
+  var v=String(inp.value||'').trim(); if(!v){ return; }
+  var existe=_bancosCadArr.some(function(b){ return String(b).toLowerCase()===v.toLowerCase(); });
+  if(existe){ toast('Esse banco já está na lista'); inp.value=''; return; }
+  _bancosCadArr.push(v); inp.value=''; renderBancosCad();
+}
+function cadBancoRemove(i){ _bancosCadArr.splice(i,1); renderBancosCad(); }
+async function cadBancosSalvar(){
+  if(typeof ehGestor==='function' && !ehGestor()){ toast('Só o gestor cadastra os bancos'); return; }
+  if(!_bancosCadArr.length){ toast('Adicione pelo menos um banco'); return; }
+  var btn=document.getElementById('bancos-cad-salvar'); var txt=btn?btn.textContent:''; if(btn){ btn.disabled=true; btn.textContent='Salvando...'; }
+  try{
+    var nova = await _bancosSetCloud(_bancosCadArr);
+    aplicarBancos(nova);
+    toast('✓ Bancos atualizados');
+    fecharCadBancos();
+  }catch(e){
+    console.error('cadBancosSalvar:', e); toast('⚠ '+((e&&e.message)||'Não consegui salvar.'));
+  }
+  if(btn){ btn.disabled=false; btn.textContent=txt; }
 }
 // Injeta a versão (única) no rodapé do login e na Config.
 (function _aplicarVersao_(){
@@ -7054,6 +7174,7 @@ async function fazerLogin() {
   try { aplicarBranding(await supaMeuBranding()); } catch(_e){ /* marca opcional */ }
   try { aplicarLojas(await supaMeuLojas()); } catch(_e){ /* lojas opcionais */ }
   try { MODULOS_CLIENTE = await supaMeusModulos(); } catch(_e){ MODULOS_CLIENTE = null; }
+  try { aplicarBancos(await supaMeusBancos()); } catch(_e){ /* bancos opcionais */ }
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   // destaca o botão de loja ativo pelo data-loja (seletor agora é dinâmico)
   var _lAlvo = (l==='all') ? 'all' : l;
@@ -9599,6 +9720,7 @@ function abrirModalBaixa(idx) {
   (document.getElementById('modal-data-pag')||{}).value = new Date().toISOString().split('T')[0];
   (document.getElementById('modal-obs')||{}).value='';
   document.getElementById('btn-confirmar-baixa').disabled=false;
+  try{ montarSelectsBancos(); var _cfg=document.getElementById('baixa-cfg-btn'); if(_cfg) _cfg.style.display=(typeof ehGestor==='function'&&ehGestor())?'inline-flex':'none'; }catch(_e){}
   document.getElementById('modal-baixa').classList.add('open');
 }
 
@@ -9821,7 +9943,7 @@ const iv = setInterval(()=>{
 setTimeout(function(){ try{ categoriasCarregar(); }catch(e){} }, 0);
 
 // Fechar modais clicando fora
-['modal-baixa','modal-massa','modal-grupo'].forEach(id=>{
+['modal-baixa','modal-massa','modal-grupo','modal-bancos-cad'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){
     if(e.target===this) this.classList.remove('open');
   });
