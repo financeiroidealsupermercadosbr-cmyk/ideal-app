@@ -1502,7 +1502,8 @@ body:has(#s-login.active) .app{max-width:none}
     <i class="ti ti-refresh" style="font-size:19px;cursor:pointer;color:var(--azul)" onclick="colAtualizar()" title="Atualizar"></i>
   </div>
   <div id="col-lista-view" style="padding:0 14px 90px">
-    <button class="btn-primary" style="margin-top:12px;background:#0F6E56" onclick="colCruzar()"><i class="ti ti-arrows-right-left"></i> Cruzar coletas (achar repetidos)</button>
+    <div id="col-loja-sel" style="margin-top:12px"></div>
+    <button class="btn-primary" style="margin-top:10px;background:#0F6E56" onclick="colCruzar()"><i class="ti ti-arrows-right-left"></i> Cruzar coletas (achar repetidos)</button>
     <div id="col-lista" style="margin-top:10px"><div class="loadrow"><span class="spin"></span> Carregando coletas…</div></div>
   </div>
   <div id="col-detalhe-view" style="display:none;padding:0 14px 90px">
@@ -11876,17 +11877,19 @@ function cotUnSet(cod, val){
 function _cotLojaCurto(cod){ try{ var n=lojaNome(cod)||cod; return String(n).split('—')[0].trim()||cod; }catch(e){ return cod; } }
 function _cotLojasDisp(){ return ((window.BRAND&&window.BRAND.lojasArr)||[]).filter(function(l){ return l&&l.codigo&&l.codigo!=='all'; }); }
 function cotSetLoja(cod){ COT_LOJA=String(cod||''); cotRenderLojaBar(); }
-function cotInitLoja(){ COT_LOJA=(lojaAtual && lojaAtual!=='all') ? lojaAtual : ''; cotRenderLojaBar(); }
+function cotInitLoja(){ COT_LOJA=(lojaAtual ? lojaAtual : ''); cotRenderLojaBar(); }
 function cotRenderLojaBar(){
   var bar=document.getElementById('cot-loja-bar'); if(!bar) return;
   var arr=_cotLojasDisp();
   if(arr.length<=1){
-    var cod=COT_LOJA||((arr[0]&&arr[0].codigo)||''); COT_LOJA=cod;
+    var cod=(COT_LOJA && COT_LOJA!=='all') ? COT_LOJA : ((arr[0]&&arr[0].codigo)||''); COT_LOJA=cod;
     bar.innerHTML = cod ? ('<div style="display:flex;align-items:center;gap:7px;background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px;font-size:12.5px;color:#16267A"><i class="ti ti-building-store" style="font-size:16px"></i><span>Lista para: <b>'+_precoEsc(_cotLojaCurto(cod))+'</b></span></div>') : '';
     return;
   }
-  var chips=arr.map(function(l){ var on=(l.codigo===COT_LOJA);
-    return '<button onclick="cotSetLoja(\''+_precoEsc(l.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 12px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:12px;font-weight:600;cursor:pointer">'+_precoEsc(_cotLojaCurto(l.codigo))+'</button>';
+  var opts=arr.map(function(l){ return {codigo:l.codigo, nome:_cotLojaCurto(l.codigo)}; });
+  opts.push({codigo:'all', nome:'Consolidado'});
+  var chips=opts.map(function(o){ var on=(o.codigo===COT_LOJA);
+    return '<button onclick="cotSetLoja(\''+_precoEsc(o.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 12px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:12px;font-weight:600;cursor:pointer">'+_precoEsc(o.nome)+'</button>';
   }).join('');
   var aviso = COT_LOJA ? '' : '<div style="font-size:11px;color:#B23C3C;margin-top:7px">Escolha a loja desta lista pra poder salvar/enviar.</div>';
   bar.innerHTML='<div style="background:#EEF1FB;border:1px solid #dfe3f5;border-radius:10px;padding:9px 12px">'
@@ -12049,6 +12052,7 @@ function cotPDF(){
 
 // ── Parte 2: coletas salvas (compartilhadas) + PDF ──
 let COLETAS = [], _colAtual = null;
+var COL_FILTRO_LOJA = 'all';   // filtro de loja na tela de Coletas salvas
 
 async function _colCarregar(){
   try { var _cc = await _coletasSupa(); if(_cc){ COLETAS=_cc; return _cc; } } catch(e){ console.warn('[coletas] nuvem falhou, caindo no Sheets', e); }
@@ -12067,22 +12071,37 @@ async function abrirColetas(){
   document.getElementById('col-lista-view').style.display='block';
   document.getElementById('col-detalhe-view').style.display='none';
   var _czv=document.getElementById('col-cruza-view'); if(_czv) _czv.style.display='none';
+  COL_FILTRO_LOJA = (lojaAtual && lojaAtual!=='all') ? lojaAtual : 'all';
+  colRenderLojaSel();
   (document.getElementById('col-lista')||{}).innerHTML='<div class="loadrow"><span class="spin"></span> Carregando coletas…</div>';
   (document.getElementById('col-sub')||{}).innerHTML='<span class="spin spin-sm"></span>';
   try{ await _colCarregar(); colRenderLista(); }
   catch(e){ console.error('abrirColetas',e); (document.getElementById('col-lista')||{}).innerHTML='<div class="row-sub" style="padding:6px 2px;color:#B23C3C">Não consegui carregar. Toque em ↻ ou verifique a internet.</div>'; }
 }
 function colAtualizar(){ abrirColetas(); }
+function colRenderLojaSel(){
+  var box=document.getElementById('col-loja-sel'); if(!box) return;
+  var arr=_cotLojasDisp();
+  if(!arr.length){ box.innerHTML=''; return; }
+  var opts=arr.map(function(l){ return {codigo:l.codigo, nome:_cotLojaCurto(l.codigo)}; });
+  opts.push({codigo:'all', nome:'Consolidado'});
+  box.innerHTML='<div style="display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto">'+opts.map(function(o){ var on=(o.codigo===COL_FILTRO_LOJA);
+    return '<button onclick="colSetFiltroLoja(\''+_precoEsc(o.codigo)+'\')" style="flex:0 0 auto;white-space:nowrap;padding:6px 12px;border-radius:9px;border:1px solid '+(on?'#1B3A9E':'#dfe3f5')+';background:'+(on?'#1B3A9E':'#fff')+';color:'+(on?'#fff':'#16267A')+';font-size:12px;font-weight:600;cursor:pointer">'+_precoEsc(o.nome)+'</button>';
+  }).join('')+'</div>';
+}
+function colSetFiltroLoja(cod){ COL_FILTRO_LOJA=String(cod||'all'); colRenderLojaSel(); colRenderLista(); }
 function colRenderLista(){
   var el=document.getElementById('col-lista');
-  var fl = (lojaAtual && lojaAtual!=='all') ? lojaAtual : '';
-  var lista = fl ? COLETAS.filter(function(c){ return !c.loja || c.loja===fl; }) : COLETAS;
-  (document.getElementById('col-sub')||{}).textContent = fl ? (lista.length+' coleta(s) · '+_cotLojaCurto(fl)) : (COLETAS.length+' coleta(s) · todas as lojas');
+  var fl = COL_FILTRO_LOJA||'all';
+  var lista = (fl==='all') ? COLETAS : COLETAS.filter(function(c){ return c.loja===fl || c.loja==='all'; });
+  var nomeF = (fl==='all') ? 'todas as lojas' : _cotLojaCurto(fl);
+  (document.getElementById('col-sub')||{}).textContent = lista.length+' coleta(s) · '+nomeF;
   if(!lista.length){ el.innerHTML=_vazio({ico:'ti-bookmark',tit:'Nenhuma coleta nesta loja',sub:'As coletas salvas desta loja aparecem aqui.'}); return; }
   var h='';
   for(var i=0;i<lista.length;i++){ var c=lista[i];
     var quem=_precoEsc(c.usuario||'—'); var data=_precoEsc((c.data||'').slice(0,16)); var obs=_precoEsc(c.obs||'');
-    var lojaTag = c.loja ? ('<span style="font-size:10px;font-weight:700;color:#1B3A9E;background:#EAF0FB;border:1px solid #C9D6EC;border-radius:20px;padding:2px 8px;white-space:nowrap">'+_precoEsc(_cotLojaCurto(c.loja))+'</span>') : '';
+    var tagTxt = (c.loja==='all') ? 'Consolidado' : (c.loja ? _cotLojaCurto(c.loja) : '');
+    var lojaTag = tagTxt ? ('<span style="font-size:10px;font-weight:700;color:#1B3A9E;background:#EAF0FB;border:1px solid #C9D6EC;border-radius:20px;padding:2px 8px;white-space:nowrap">'+_precoEsc(tagTxt)+'</span>') : '';
     h+='<div class="row-card" style="display:block;cursor:pointer;margin-bottom:7px" onclick="colAbrir(\''+_precoEsc(c.id)+'\')">'
       +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-clipboard-list" style="color:#16267A;font-size:18px"></i>'
       +'<span style="flex:1;font-size:13.5px;font-weight:500;color:#1a1a1a">'+(obs||'Coleta sem observação')+'</span>'
