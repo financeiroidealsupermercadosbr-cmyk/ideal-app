@@ -106,8 +106,9 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .sync-bar button{flex:0 0 auto;font-size:14px;line-height:1;padding:5px 8px;background:var(--azul-mid);color:#fff;border:none;border-radius:6px;cursor:pointer}
 .sync-bar button i{margin:0;font-size:14px;vertical-align:-2px}
 
-.loja-sel{display:flex;gap:8px;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #eee}
-.loja-btn{flex:1;padding:8px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#666;font-size:12px;cursor:pointer;text-align:center;font-family:Arial,sans-serif}
+.loja-sel{display:flex;flex-wrap:nowrap;gap:8px;padding:8px 12px;background:#f8f8f8;border-bottom:1px solid #eee;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.loja-sel::-webkit-scrollbar{display:none}
+.loja-btn{flex:0 0 auto;white-space:nowrap;padding:7px 14px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#666;font-size:12px;cursor:pointer;text-align:center;font-family:Arial,sans-serif}
 .loja-btn.active{background:var(--azul-mid);color:#fff;border-color:var(--azul-mid)}
 
 .nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:380px;display:flex;justify-content:space-around;background:#fff;border-top:1px solid rgba(0,0,0,0.10);padding:9px 4px 11px;z-index:60}
