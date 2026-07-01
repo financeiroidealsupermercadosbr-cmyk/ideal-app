@@ -1524,7 +1524,10 @@ body:has(#s-login.active) .app{max-width:none}
   <div id="col-cruza-view" style="display:none;padding:0 14px 90px">
     <div class="row-card" style="cursor:pointer;margin:12px 0" onclick="colCruzaVoltar()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label">Cruzamento de coletas</div><div class="row-sub" id="col-cruza-sub">—</div></div></div>
     <div id="col-cruza-itens"></div>
-    <button class="btn-primary" style="margin-top:14px;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> Exportar cruzamento em PDF</button>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-primary" style="margin-top:0;flex:1;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="colCruzaPDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      <button class="btn-primary" id="cruza-wpp" style="margin-top:0;flex:1.5;background:#25D366" onclick="compartilharCruzaWhatsApp()"><i class="ti ti-brand-whatsapp"></i> Enviar no WhatsApp</button>
+    </div>
   </div>
 </div>
 
@@ -1951,7 +1954,8 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn-primary" style="margin-top:0;flex:0 0 auto;width:auto;padding:0 14px;background:#fff;color:var(--azul);border:1px solid var(--azul)" onclick="orcSalvarAbrir()"><i class="ti ti-device-floppy"></i> Salvar</button>
-      <button class="btn-primary" style="margin-top:0;flex:1;background:#0F6E56" onclick="orcPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+      <button class="btn-primary" style="margin-top:0;flex:0 0 auto;width:auto;padding:0 14px;background:#A32D2D" onclick="orcPDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      <button class="btn-primary" id="orc-wpp" style="margin-top:0;flex:1;background:#25D366" onclick="compartilharOrcamentoWhatsApp()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>
     </div>
   </div>
 </div>
@@ -2003,7 +2007,10 @@ body:has(#s-login.active) .app{max-width:none}
   <div id="ck-detalhe" style="display:none;padding:14px 14px 100px">
     <div class="row-card" style="cursor:pointer;margin-bottom:10px" onclick="ckVoltarSalvos()"><i class="ti ti-arrow-left" style="color:var(--azul);font-size:18px;margin-right:9px"></i><div style="flex:1"><div class="row-label" id="ck-det-nome">Checklist</div><div class="row-sub" id="ck-det-sub">—</div></div></div>
     <div id="ck-det-itens"></div>
-    <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="ckPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-primary" style="margin-top:0;flex:1;background:#1B3A9E" onclick="ckPDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      <button class="btn-primary" id="ck-wpp" style="margin-top:0;flex:1.5;background:#25D366" onclick="compartilharChecklistWhatsApp()"><i class="ti ti-brand-whatsapp"></i> Enviar no WhatsApp</button>
+    </div>
   </div>
 </div>
 
@@ -2053,7 +2060,10 @@ body:has(#s-login.active) .app{max-width:none}
     </div>
     <div style="font-size:11.5px;color:#888780;margin:0 2px 8px">Período: <b id="fz-col-filtro">—</b></div>
     <div id="fz-col-lista"></div>
-    <button class="btn-primary" style="margin-top:14px;background:#0F6E56" onclick="fzExportarMenu()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-primary" style="margin-top:0;flex:1;background:#1B3A9E" onclick="fzExportarMenu()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+      <button class="btn-primary" id="fz-wpp" style="margin-top:0;flex:1.5;background:#25D366" onclick="compartilharFreezerWhatsApp()"><i class="ti ti-brand-whatsapp"></i> Enviar no WhatsApp</button>
+    </div>
   </div>
 
   <div id="fz-detalhe" style="display:none;padding:14px 14px 100px">
@@ -3120,6 +3130,48 @@ function fzTempRemover(id){
 }
 
 // ───── EXPORTAR PDF (filtrado ou tudo) ─────
+// Freezer: matriz datas × freezers (paisagem) via jsPDF, pro WhatsApp.
+function _fzPDFdoc(usarFiltro){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('Carregando gerador de PDF… tente de novo em 2s.'); return null; }
+  if(!_fzFreezers.length){ toast('Cadastre freezers primeiro'); return null; }
+  var NAVY=[27,58,158], LIGHT=[234,240,251];
+  var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'landscape'});
+  var pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
+  var marca=_brandNomeH(), loja=_fzNomeLoja();
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var temps = usarFiltro ? _fzTempsFiltrados() : _fzTemps.slice();
+  var periodoTxt = usarFiltro ? _fzFiltroLabel() : 'Todas as datas';
+  var cols=_fzFreezers.slice();
+  var setData={}; for(var i=0;i<temps.length;i++){ if(temps[i].data) setData[temps[i].data]=1; }
+  var datas=Object.keys(setData).sort();
+  var mapa={}; for(var j=0;j<temps.length;j++){ var t=temps[j]; var ch=t.data+'|'+t.freezerId; if(!mapa[ch]) mapa[ch]=[]; mapa[ch].push(t.temp); }
+  function drawPage(){
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]); doc.rect(0,0,pw,16,'F');
+    doc.setFillColor(255,196,0); doc.rect(0,16,pw,1.3,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Temperatura dos Freezers',10,8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(String(marca+'  '+loja),10,13);
+    doc.setTextColor(140,140,140); doc.setFontSize(7);
+    doc.text('Período: '+periodoTxt+'   ·   Gerado em '+agora+'  —  '+marca,10,ph-6);
+    doc.text('P\u00e1g. '+doc.internal.getCurrentPageInfo().pageNumber,pw-10,ph-6,{align:'right'});
+  }
+  var head=['Data']; for(var c=0;c<cols.length;c++){ head.push(String(cols[c].nome||'')); }
+  var body=[];
+  if(!datas.length){ body=[[{content:'Sem medições no período.',colSpan:cols.length+1,styles:{halign:'center',textColor:[150,150,150]}}]]; }
+  else datas.forEach(function(dd){ var row=[{content:_fzDataBR(dd),styles:{fontStyle:'bold',halign:'left'}}];
+    for(var cc=0;cc<cols.length;cc++){ var arr=mapa[dd+'|'+cols[cc].id]; row.push({content:(arr?arr.join(' / ')+'°':''),styles:{halign:'center'}}); }
+    body.push(row);
+  });
+  doc.autoTable({ head:[head], body:body, startY:22, margin:{top:22,left:8,right:8,bottom:12},
+    styles:{font:'helvetica',fontSize:8,cellPadding:1.5,overflow:'linebreak',halign:'center',lineColor:[220,220,220],lineWidth:0.1,textColor:[26,26,26]},
+    headStyles:{fillColor:LIGHT,textColor:NAVY,fontStyle:'bold',fontSize:7.5,halign:'center'},
+    columnStyles:{0:{cellWidth:22,fontStyle:'bold',halign:'left'}}, didDrawPage:drawPage });
+  return doc;
+}
+function compartilharFreezerWhatsApp(){
+  if(!_fzFreezers.length){ toast('Cadastre freezers primeiro'); return; }
+  var doc=_fzPDFdoc(true);
+  _compartilharDoc(doc, 'Freezers', 'Temperatura dos Freezers', 'Temperatura dos Freezers — '+_fzFiltroLabel()+' · '+_brandNomeH(), 'fz-wpp');
+}
 function fzExportarMenu(){
   var ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
@@ -3444,6 +3496,25 @@ function ckDetalhe(dd){
 function ckVoltarSalvos(){ document.getElementById('ck-detalhe').style.display='none'; ckTab('salvos'); }
 
 // ── PDF (formato do papel) ──
+// Checklist do gerente via jsPDF (pro WhatsApp).
+function _ckPDFdoc(){
+  var dd=_ckDetData;
+  var resp=_ckResp.filter(function(x){ return x.data===dd; });
+  var mapa={}, quem=''; for(var i=0;i<resp.length;i++){ mapa[resp[i].tarefaId]=resp[i]; if(resp[i].quem) quem=resp[i].quem; }
+  var body=_ckTarefas.map(function(t,k){ var r=mapa[t.id]||{};
+    var texto=String(t.texto||'')+(r.obs?('\nobs: '+r.obs):'');
+    return [ String(k+1), texto, {content:(r.resp==='SIM'?'X':''),styles:{halign:'center',fontStyle:'bold'}}, {content:(r.resp==='NAO'?'X':''),styles:{halign:'center',fontStyle:'bold'}}, '' ];
+  });
+  return _pdfDocAutotable({ titulo:'Checklist Diário Gerente',
+    sub:(_brandNomeH()+' · '+_ckNomeLoja()+'   —   '+_ckDataBR(dd)+(quem?('   ·   por '+quem):'')),
+    head:['#','Tarefas a serem desempenhadas','Sim','Não','Assinatura'], body:body,
+    colStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:'auto'},2:{cellWidth:14,halign:'center'},3:{cellWidth:14,halign:'center'},4:{cellWidth:42}} });
+}
+function compartilharChecklistWhatsApp(){
+  if(!_ckDetData){ toast('Abra um checklist antes de enviar.'); return; }
+  var doc=_ckPDFdoc();
+  _compartilharDoc(doc, 'Checklist', 'Checklist do Gerente', 'Checklist '+_ckDataBR(_ckDetData)+' · '+_brandNomeH(), 'ck-wpp');
+}
 function ckPDF(){
   var dd=_ckDetData; if(!dd){ toast('Abra um checklist'); return; }
   var resp=_ckResp.filter(function(x){ return x.data===dd; });
@@ -5773,6 +5844,36 @@ function _orcNovoDo(){
   var br=document.getElementById('orc-busca-res'); if(br) br.innerHTML='';
   orcRenderItens();
   toast('Novo orçamento');
+}
+// Orçamento via jsPDF (pro WhatsApp), respeitando ORC_CFG.
+function _orcPDFdoc(){
+  var showVar=!!(ORC_CFG && ORC_CFG.mostrarVarejo);
+  var head = showVar ? ['Produto','Qtd','Varejo','Praticado','Subtotal'] : ['Produto','Qtd','Praticado','Subtotal'];
+  var body=[], tot=0;
+  for(var i=0;i<ORC_ITENS.length;i++){ var it=ORC_ITENS[i]; var q=Number(it.qtd)||0; var v=Number(it.venda)||0; var sub=q*v; tot+=sub;
+    var nome=String(it.desc||'')+(it.manual?'  (manual)':'');
+    if(ORC_CFG.mostrarCaixa && (Number(it.cx)||0)>0 && (Number(it.undcx)||0)>0) nome+='  ('+it.cx+' cx × '+it.undcx+')';
+    if(ORC_CFG.mostrarCodigo && !it.manual && (it.barras||it.cod)) nome+='\ncód '+(it.barras||it.cod);
+    var atacAplic = !it.manual && q>=4 && (Number(it.atacado)||0)>0;
+    var prat=_precoBRL(v)+((ORC_CFG.mostrarTagAtacado && atacAplic)?'  (atacado)':'');
+    var row=[ nome, {content:String(q),styles:{halign:'center'}} ];
+    if(showVar) row.push({content:(it.manual?'—':_precoBRL(it.varejo)),styles:{halign:'right'}});
+    row.push({content:prat,styles:{halign:'right'}});
+    row.push({content:_precoBRL(sub),styles:{halign:'right'}});
+    body.push(row);
+  }
+  var span=showVar?4:3;
+  body.push([{content:'Total do orçamento',colSpan:span,styles:{fontStyle:'bold',fillColor:[238,240,246]}},{content:_precoBRL(tot),styles:{halign:'right',fontStyle:'bold',fillColor:[238,240,246]}}]);
+  var loja=(typeof _foNomeLoja==='function')?_foNomeLoja():'';
+  var cs = showVar
+    ? {0:{cellWidth:'auto'},1:{cellWidth:14,halign:'center'},2:{cellWidth:26,halign:'right'},3:{cellWidth:30,halign:'right'},4:{cellWidth:28,halign:'right'}}
+    : {0:{cellWidth:'auto'},1:{cellWidth:16,halign:'center'},2:{cellWidth:32,halign:'right'},3:{cellWidth:30,halign:'right'}};
+  return _pdfDocAutotable({ titulo:'Orçamento', sub:(_brandNomeH()+(loja?(' · '+loja):'')), head:head, body:body, colStyles:cs });
+}
+function compartilharOrcamentoWhatsApp(){
+  if(!ORC_ITENS.length){ toast('Adicione itens antes de enviar.'); return; }
+  var doc=_orcPDFdoc();
+  _compartilharDoc(doc, 'Orcamento', 'Orçamento', 'Orçamento · '+_brandNomeH(), 'orc-wpp');
 }
 function orcPDF(){
   if(!ORC_ITENS.length){ toast('Adicione itens antes de exportar.'); return; }
@@ -12652,6 +12753,51 @@ async function _colSalvarAgrupada(){
     }, {okText:'Abrir'});
   }catch(e){ console.error('_colSalvarAgrupada',e); toast('⚠ Não consegui salvar. Verifique a internet.'); }
   for(var b2=0;b2<btns.length;b2++){ if(btns[b2]) btns[b2].disabled=false; }
+}
+// Cruzamento de coletas via jsPDF (pro WhatsApp): repetidos + demais.
+function _cruzaPDFdoc(d){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('Carregando gerador de PDF… tente de novo em 2s.'); return null; }
+  var NAVY=[27,58,158], GOLD=[154,107,0], GOLDL=[255,248,230], LIGHT=[234,240,251];
+  var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  var pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
+  var marca=_brandNomeH();
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  function drawPage(){
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]); doc.rect(0,0,pw,16,'F');
+    doc.setFillColor(255,196,0); doc.rect(0,16,pw,1.3,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('Cruzamento de Coletas',10,8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(String(marca),10,13);
+    doc.setTextColor(140,140,140); doc.setFontSize(7);
+    doc.text('Gerado em '+agora+'  —  '+marca,10,ph-6);
+    doc.text('P\u00e1g. '+doc.internal.getCurrentPageInfo().pageNumber,pw-10,ph-6,{align:'right'});
+  }
+  var baseStyles={font:'helvetica',fontSize:8.5,cellPadding:2,overflow:'linebreak',lineColor:[230,230,230],lineWidth:0.1,textColor:[26,26,26]};
+  var margin={top:24,left:10,right:10,bottom:14};
+  doc.setTextColor(95,94,90); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Repetidos: '+d.rep.length+'    \u00b7    Produtos no total: '+(d.rep.length+d.uni.length), 10, 22);
+
+  var b1=[];
+  d.rep.forEach(function(p){
+    b1.push([{content:String(p.desc||'')+'    \u00b7    '+p.entries.length+' coletas'+(p.manual?'   (manual)':(p.cod?('   cód '+p.cod):'')), colSpan:3, styles:{fontStyle:'bold', fillColor:GOLDL, textColor:GOLD}}]);
+    p.entries.forEach(function(en){ b1.push([ String(en.usuario||'—'), {content:en.qtd+' '+(en.un||''),styles:{halign:'center'}}, {content:String(en.data||''),styles:{halign:'right'}} ]); });
+  });
+  if(!d.rep.length) b1=[[{content:'Nenhum produto repetido entre as coletas.',colSpan:3,styles:{halign:'center',textColor:[150,150,150]}}]];
+  doc.autoTable({ head:[['Repetidos em 2+ coletas ('+d.rep.length+')','Qtd','Data']], body:b1, startY:26, margin:margin, styles:baseStyles,
+    headStyles:{fillColor:GOLD,textColor:[255,255,255],fontStyle:'bold',fontSize:8.5,halign:'left'},
+    columnStyles:{0:{cellWidth:'auto'},1:{cellWidth:28,halign:'center'},2:{cellWidth:26,halign:'right'}}, didDrawPage:drawPage });
+
+  var b2=d.uni.map(function(q){ var en0=q.entries[0]||{}; return [ String(q.desc||''), String(en0.usuario||'—'), {content:(en0.qtd||'')+' '+(en0.un||''),styles:{halign:'center'}}, {content:String(en0.data||''),styles:{halign:'right'}} ]; });
+  if(!d.uni.length) b2=[[{content:'—',colSpan:4,styles:{halign:'center',textColor:[150,150,150]}}]];
+  doc.autoTable({ head:[['Demais produtos ('+d.uni.length+')','Quem coletou','Qtd','Data']], body:b2, startY:(doc.lastAutoTable.finalY+6), margin:margin, styles:baseStyles,
+    headStyles:{fillColor:LIGHT,textColor:NAVY,fontStyle:'bold',fontSize:8.5,halign:'left'},
+    columnStyles:{0:{cellWidth:'auto'},1:{cellWidth:38},2:{cellWidth:22,halign:'center'},3:{cellWidth:26,halign:'right'}}, didDrawPage:drawPage });
+  return doc;
+}
+function compartilharCruzaWhatsApp(){
+  var d=_colCruzarDados();
+  if(!d || (!d.rep.length && !d.uni.length)){ toast('Sem dados de cruzamento pra enviar.'); return; }
+  var doc=_cruzaPDFdoc(d);
+  _compartilharDoc(doc, 'Cruzamento', 'Cruzamento de Coletas', 'Cruzamento de Coletas · '+_brandNomeH(), 'cruza-wpp');
 }
 function colCruzaPDF(){ _colGerarPDFCruza(_colCruzarDados()); }
 
