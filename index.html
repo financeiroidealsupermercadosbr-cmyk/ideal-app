@@ -640,7 +640,8 @@ body:has(#s-login.active) .app{max-width:none}
 
       <div class="dre-foot">
         <div class="dre-fbtn" id="dre-btn-grupo" onclick="abrirModalGrupo()"><i class="ti ti-plus"></i>Novo grupo</div>
-        <div class="dre-fbtn" onclick="dreExportarPDF()"><i class="ti ti-file-type-pdf"></i>Exportar PDF</div>
+        <div class="dre-fbtn" onclick="dreExportarPDF()"><i class="ti ti-file-type-pdf"></i>PDF</div>
+        <div class="dre-fbtn" id="dre-wpp" onclick="compartilharDreWhatsApp()" style="background:#25D366;color:#fff;border-color:#25D366"><i class="ti ti-brand-whatsapp"></i>WhatsApp</div>
       </div>
     </div>
 
@@ -10056,6 +10057,79 @@ function renderSaidasGrafico(D){
 }
 // Puxa os MESMOS números da tela; respeita loja e período selecionados.
 // ══════════════════════════════════════════════════════
+// DRE via jsPDF (pro WhatsApp): cascata de 2 colunas + banner de resultado.
+// Obs: usa hífen "-" nos sinais (a fonte padrão do jsPDF não tem U+2212).
+function _drePDFdoc(){
+  if(!(window.jspdf && window.jspdf.jsPDF)){ toast('Carregando gerador de PDF… tente de novo em 2s.'); return null; }
+  var NAVY=[27,58,158], HEADBG=[244,247,252], TOTALBG=[230,241,251], SUBTXT=[95,94,90], GREEN=[15,110,86], RED=[163,45,45];
+  var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  var pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight();
+  var marca=_brandNomeH();
+  var nomeLoja=lojaNome(dreLoja, 'Todas as lojas (consolidado)', 'Loja 2 — Melhor QS8');
+  var periodo=dreLabelPeriodo();
+  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  var D=dreCalcular();
+  var rec=D.rec, impostos=D.imposto, cmv=D.cmv, despOp=D.despOp, despFin=D.despFin, recFin=D.recFin, recLiq=D.recLiq, margem=D.margem, grupos=D.grupos, resultado=D.resultado;
+  function pct(v){ return rec.bruta>0 ? (v/rec.bruta*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%' : '—'; }
+  var posit=resultado>=0;
+  function drawPage(){
+    doc.setFillColor(NAVY[0],NAVY[1],NAVY[2]); doc.rect(0,0,pw,16,'F');
+    doc.setFillColor(255,196,0); doc.rect(0,16,pw,1.3,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.text('DRE - Demonstrativo de Resultados',10,8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(String(marca),10,13);
+    doc.setTextColor(140,140,140); doc.setFontSize(7);
+    doc.text('Gerado em '+agora+'  -  '+marca,10,ph-6);
+    doc.text('P\u00e1g. '+doc.internal.getCurrentPageInfo().pageNumber,pw-10,ph-6,{align:'right'});
+  }
+  doc.setTextColor(60,60,60); doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.text(String(nomeLoja),10,22);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(95,94,90); doc.text('Período: '+periodo,pw-10,22,{align:'right'});
+
+  function rHead(l,v){ return [ {content:l,styles:{fontStyle:'bold',fillColor:HEADBG,textColor:NAVY}}, {content:v,styles:{halign:'right',fontStyle:'bold',fillColor:HEADBG,textColor:NAVY}} ]; }
+  function rSub(l,v){ return [ {content:l,styles:{textColor:SUBTXT,fontSize:8,cellPadding:{left:8,top:1.6,bottom:1.6,right:2}}}, {content:v,styles:{halign:'right',textColor:SUBTXT,fontSize:8}} ]; }
+  function rPlain(l,v,vc){ return [ {content:l}, {content:v,styles:{halign:'right',textColor:(vc||[26,26,26])}} ]; }
+  function rTotal(l,v){ return [ {content:l,styles:{fontStyle:'bold',fillColor:TOTALBG,textColor:NAVY}}, {content:v,styles:{halign:'right',fontStyle:'bold',fillColor:TOTALBG,textColor:NAVY}} ]; }
+
+  var body=[];
+  body.push(rHead('(+) Receita bruta', brlC(rec.bruta)+'  ·  100%'));
+  body.push(rSub('Dinheiro (à vista)', brlC(rec.dinheiro)));
+  body.push(rSub('Cartão débito', brlC(rec.debito)));
+  body.push(rSub('Cartão crédito', brlC(rec.credito)));
+  body.push(rSub('PIX', brlC(rec.pix)));
+  if(rec.alimentacao>0.005) body.push(rSub('Alimentação (vale)', brlC(rec.alimentacao)));
+  if(rec.refeicao>0.005) body.push(rSub('Refeição', brlC(rec.refeicao)));
+  if(rec.valefunc>0.005) body.push(rSub('Vale funcionários', brlC(rec.valefunc)));
+  if(rec.outros>0.005) body.push(rSub('Outros', brlC(rec.outros)));
+  body.push(rPlain('(-) Deduções e impostos', impostos>0?('- '+brlC(impostos)+'  ·  '+pct(impostos)):'R$ 0,00'));
+  body.push(rTotal('(=) Receita líquida', brlC(recLiq)));
+  body.push(rPlain('(-) Custo das mercadorias (CMV)', cmv>0?('- '+brlC(cmv)+'  ·  '+pct(cmv)):'R$ 0,00'));
+  body.push(rTotal('(=) Margem bruta', brlC(margem)+'  ·  margem '+pct(margem)));
+  body.push(rPlain('(-) Despesas operacionais', despOp>0?('- '+brlC(despOp)):'R$ 0,00'));
+  D.subCats.filter(function(kv){ return D.sub[kv[0]]>0; }).forEach(function(kv){ body.push(rSub(kv[1], brlC(D.sub[kv[0]]))); });
+  body.push(rPlain('(+) Receitas financeiras', recFin>0?brlC(recFin):'— (entram depois)'));
+  body.push(rPlain('(-) Despesas financeiras', despFin>0?('- '+brlC(despFin)):'R$ 0,00'));
+  if(D.perdas>0) body.push(rPlain('(-) Perdas (avarias)', '- '+brlC(D.perdas)+'  ·  '+pct(D.perdas)));
+  if(grupos.length){ body.push([{content:'Grupos manuais',colSpan:2,styles:{fontStyle:'bold',fillColor:HEADBG,textColor:NAVY}}]);
+    grupos.forEach(function(g){ var cor=g.sinal==='+'?GREEN:RED; body.push([ {content:(g.sinal==='+'?'(+)':'(-)')+' '+g.nome,styles:{textColor:NAVY,fontSize:8.5}}, {content:(g.sinal==='+'?'+ ':'- ')+brlC(g.valor),styles:{halign:'right',textColor:cor,fontSize:8.5}} ]); });
+  }
+
+  doc.autoTable({ body:body, startY:26, margin:{top:24,left:10,right:10,bottom:14},
+    styles:{font:'helvetica',fontSize:9,cellPadding:2.2,overflow:'linebreak',lineColor:[238,238,238],lineWidth:0.1,textColor:[26,26,26]},
+    columnStyles:{0:{cellWidth:'auto'},1:{cellWidth:52,halign:'right'}}, didDrawPage:drawPage });
+
+  var y=doc.lastAutoTable.finalY+6;
+  if(y > ph-30){ doc.addPage(); drawPage(); y=24; }
+  var corR=posit?GREEN:RED;
+  doc.setFillColor(corR[0],corR[1],corR[2]); doc.roundedRect(10,y,pw-20,20,2.5,2.5,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text('(=) Resultado',15,y+8.5);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.text((posit?'lucro no período':'prejuízo no período')+'  ·  margem '+pct(resultado),15,y+14.5);
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text(brlC(resultado),pw-15,y+12.5,{align:'right'});
+  return doc;
+}
+function compartilharDreWhatsApp(){
+  var doc=_drePDFdoc(); if(!doc) return;
+  var nomeLoja=lojaNome(dreLoja, 'Todas as lojas (consolidado)', 'Loja 2 — Melhor QS8');
+  _compartilharDoc(doc, 'DRE', 'DRE — Demonstrativo de Resultados', 'DRE '+dreLabelPeriodo()+' · '+nomeLoja+' · '+_brandNomeH(), 'dre-wpp');
+}
 function dreExportarPDF(){
   const nomeLoja = lojaNome(dreLoja, 'Todas as lojas (consolidado)', 'Loja 2 — Melhor QS8');
   const periodo  = dreLabelPeriodo();
