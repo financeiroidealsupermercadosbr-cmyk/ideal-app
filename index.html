@@ -2612,6 +2612,7 @@ var _termAlertaDispensado = false;
 var TERM_MUDOS = (function(){ try{ return JSON.parse(localStorage.getItem('ideal_term_mudos')||'{}')||{}; }catch(e){ return {}; } })();
 function _termMudo(id){ return !!TERM_MUDOS[String(id).toLowerCase()]; }
 function _termMudoSalvar(){ try{ localStorage.setItem('ideal_term_mudos', JSON.stringify(TERM_MUDOS)); }catch(e){} }
+function _termMudosLista(){ var a=[]; for(var kk in TERM_MUDOS){ if(TERM_MUDOS[kk]) a.push(kk); } return a; }
 function _termMudoToggle(id){
   var k=String(id).toLowerCase();
   if(TERM_MUDOS[k]) delete TERM_MUDOS[k]; else TERM_MUDOS[k]=1;
@@ -2619,6 +2620,43 @@ function _termMudoToggle(id){
   toast(TERM_MUDOS[k] ? ('🔕 '+String(id).toUpperCase()+' silenciado') : ('🔔 '+String(id).toUpperCase()+' reativado'));
   try{ terminaisAtualizar(); }catch(e){}
   try{ terminaisCheckSilencioso(); }catch(e){}
+  _termMudosSalvarCloud();   // sincroniza pra todos os aparelhos
+}
+// Lê a lista silenciada do cliente logado (RPC meus_terminais_mudos → text[]).
+async function supaMeusTerminaisMudos(){
+  if(!_supaAtivo()) return null;
+  const s = supaSessGet(); if(!s || !s.access_token) return null;
+  try{
+    const res = await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/meus_terminais_mudos`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body:'{}'
+    }, 8000);
+    if(!res.ok) return null;
+    const arr = await res.json().catch(function(){ return null; });
+    return Array.isArray(arr) ? arr.filter(function(x){ return typeof x==='string' && x.trim(); }) : null;
+  }catch(e){ return null; }
+}
+// Aplica a lista da nuvem (autoritativa). Se a nuvem estiver vazia mas houver
+// silenciados locais, migra os locais pra nuvem uma vez (não perde o que já tinha).
+function _aplicarTermMudos(arr){
+  if(!Array.isArray(arr)) return;                 // nuvem indisponível: mantém cache local
+  if(arr.length===0 && _termMudosLista().length){ _termMudosSalvarCloud(); try{ terminaisCheckSilencioso(); }catch(e){} return; }
+  var novo={}; for(var i=0;i<arr.length;i++){ var k=String(arr[i]||'').toLowerCase().trim(); if(k) novo[k]=1; }
+  TERM_MUDOS=novo; _termMudoSalvar();
+  try{ terminaisCheckSilencioso(); }catch(e){}
+}
+// Grava a lista na nuvem (RPC terminais_mudos_set, gestor/gerente). Fire-and-forget.
+async function _termMudosSalvarCloud(){
+  if(!_supaAtivo()) return;
+  const s = supaSessGet(); if(!s || !s.access_token) return;
+  try{
+    await _supaFetchT(`${SUPA_URL}/rest/v1/rpc/terminais_mudos_set`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'apikey':SUPA_ANON, 'Authorization':'Bearer '+s.access_token },
+      body: JSON.stringify({ p_ids: _termMudosLista() })
+    }, 8000);
+  }catch(e){ /* offline: fica no cache local e sincroniza no próximo toggle/boot */ }
 }
 
 // Os terminais BP (busca-preço) só existem na loja do Ideal. Além disso,
@@ -6665,14 +6703,50 @@ function cwFechar(){
 }
 function cwReabrir(){
   if(!_cwAtual) return;
-  appPrompt('Reabrir por quantas horas a partir de agora?\n(ex.: 24 = até amanhã a esta hora)', '24', function(v){
-    var hrs=parseFloat(String(v||'').replace(',','.'));
-    if(!hrs || hrs<=0){ toast('Informe um número de horas válido.'); return; }
-    var novoFim=Date.now()+Math.round(hrs*3600000);
-    appConfirm('Reabrir "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores poderão responder até '+_cwFmtEp(novoFim)+'.', async function(){
-      try{ var j=await _estPost({acao:'cotweb_reabrir', cotId:_cwAtual.id, fimEp:novoFim}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Cotação reaberta até '+_cwFmtEp(novoFim)); cwAbrir(_cwAtual.id); }catch(e){ toast('⚠ Não consegui reabrir'); }
-    }, {okText:'Reabrir'});
-  }, {okText:'Continuar'});
+  var ds=['dom','seg','ter','qua','qui','sex','sáb'];
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,60,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:16px;max-width:344px;width:100%;padding:18px 18px 16px;box-shadow:0 14px 48px rgba(0,0,0,.28)';
+  card.innerHTML=
+     '<div style="font-size:15.5px;font-weight:700;color:#16267A;margin-bottom:3px"><i class="ti ti-lock-open" style="color:#0F6E56"></i> Reabrir cotação</div>'
+    +'<div style="font-size:12px;color:#5F5E5A;margin-bottom:15px">Escolha até quando os fornecedores podem responder.</div>'
+    +'<div style="font-size:10.5px;font-weight:700;letter-spacing:.4px;color:#9a988f;margin-bottom:7px">DIA</div>'
+    +'<div id="rb-dias" style="display:flex;gap:6px;margin-bottom:15px">'
+      +'<span class="rb-chip" data-d="0">Hoje</span>'
+      +'<span class="rb-chip on" data-d="1">Amanhã</span>'
+      +'<span class="rb-chip" data-d="2">Depois</span>'
+    +'</div>'
+    +'<div style="font-size:10.5px;font-weight:700;letter-spacing:.4px;color:#9a988f;margin-bottom:7px">HORÁRIO DE FECHAMENTO</div>'
+    +'<input id="rb-hora" type="time" value="18:00" step="300" style="width:100%;padding:13px;border:1px solid #D3D1C7;border-radius:11px;font-size:17px;box-sizing:border-box;color:#16267A;font-weight:700;text-align:center">'
+    +'<div id="rb-prev" style="font-size:13px;font-weight:600;margin-top:13px;text-align:center;background:#F3FAF6;border:1px solid #cfe0d6;border-radius:10px;padding:9px"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:15px">'
+      +'<button id="rb-no" style="flex:1;background:#fff;color:#5F5E5A;border:1px solid #D3D1C7;border-radius:11px;height:45px;font-size:14px;cursor:pointer">Cancelar</button>'
+      +'<button id="rb-yes" style="flex:1.5;background:#0F6E56;color:#fff;border:none;border-radius:11px;height:45px;font-size:14px;font-weight:700;cursor:pointer">Reabrir</button>'
+    +'</div>';
+  var st=document.createElement('style');
+  st.textContent='.rb-chip{flex:1;text-align:center;padding:10px 0;border:1px solid #D5E2F7;border-radius:11px;font-size:13px;color:#16267A;cursor:pointer;background:#fff;font-weight:500;transition:.15s}.rb-chip.on{background:#16267A;color:#fff;border-color:#16267A}';
+  card.appendChild(st);
+  ov.appendChild(card); document.body.appendChild(ov);
+  var diaSel=1;
+  function alvo(){ var hv=String((card.querySelector('#rb-hora')||{}).value||'18:00').split(':'); var d=new Date(); d.setDate(d.getDate()+diaSel); d.setHours(parseInt(hv[0],10)||0, parseInt(hv[1],10)||0, 0, 0); return d; }
+  function upd(){ var d=alvo(); var pv=card.querySelector('#rb-prev'); var p=function(n){return ('0'+n).slice(-2);};
+    var txt='Fecha: '+ds[d.getDay()]+' '+p(d.getDate())+'/'+p(d.getMonth()+1)+' às '+p(d.getHours())+':'+p(d.getMinutes());
+    if(d.getTime()<=Date.now()){ pv.style.color='#C53434'; pv.style.background='#FDECEC'; pv.style.borderColor='#f0d6d6'; pv.textContent='⚠ '+txt+' — já passou'; }
+    else { pv.style.color='#0F6E56'; pv.style.background='#F3FAF6'; pv.style.borderColor='#cfe0d6'; pv.textContent=txt; } }
+  card.querySelectorAll('.rb-chip').forEach(function(c){ c.addEventListener('click',function(){ card.querySelectorAll('.rb-chip').forEach(function(x){x.classList.remove('on');}); c.classList.add('on'); diaSel=parseInt(c.getAttribute('data-d'),10)||0; upd(); }); });
+  var hi=card.querySelector('#rb-hora'); hi.addEventListener('input',upd); hi.addEventListener('change',upd);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  card.querySelector('#rb-no').onclick=close;
+  card.querySelector('#rb-yes').onclick=async function(){
+    var d=alvo(); if(d.getTime()<=Date.now()){ toast('Escolha um horário no futuro.'); return; }
+    var novoFim=d.getTime(); var btn=card.querySelector('#rb-yes'); btn.disabled=true; btn.textContent='Reabrindo…';
+    try{ var j=await _estPost({acao:'cotweb_reabrir', cotId:_cwAtual.id, fimEp:novoFim}); if(!j.ok) throw new Error(j.erro||'falha');
+      close(); toast('Cotação reaberta até '+_cwFmtEp(novoFim)); cwAbrir(_cwAtual.id);
+    }catch(e){ btn.disabled=false; btn.textContent='Reabrir'; toast('⚠ Não consegui reabrir'); }
+  };
+  upd();
 }
 async function cwAbrirCriar(){
   if(!_colAtual || !_colAtual.itens || !_colAtual.itens.length){ toast('Abra uma coleta com itens primeiro.'); return; }
@@ -7260,6 +7334,7 @@ async function fazerLogin() {
   try { aplicarLojas(await supaMeuLojas()); } catch(_e){ /* lojas opcionais */ }
   try { MODULOS_CLIENTE = await supaMeusModulos(); } catch(_e){ MODULOS_CLIENTE = null; }
   try { aplicarBancos(await supaMeusBancos()); } catch(_e){ /* bancos opcionais */ }
+  try { _aplicarTermMudos(await supaMeusTerminaisMudos()); } catch(_e){ /* mutes opcionais */ }
   // sincroniza o DESTAQUE do seletor de loja e a DRE com a loja escolhida no login
   // destaca o botão de loja ativo pelo data-loja (seletor agora é dinâmico)
   var _lAlvo = (l==='all') ? 'all' : l;
