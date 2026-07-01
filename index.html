@@ -6484,7 +6484,7 @@ function cwRenderResultado(){
   h+='</div>';
   if(naoCotados.length){
     h+='<div style="display:flex;align-items:center;gap:8px;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:#A32D2D;flex:1">Não cotados ('+naoCotados.length+')</span>'
-      +'<button onclick="cwPdfNaoCotados()" style="padding:7px 12px;border:1px solid #A32D2D;background:#fff;color:#A32D2D;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-printer"></i> Exportar</button></div>';
+      +'<button id="cw-wpp-nc" onclick="cwPdfNaoCotados()" style="padding:7px 12px;border:none;background:#12805c;color:#fff;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-brand-whatsapp"></i> Enviar</button></div>';
     h+='<div style="font-size:11px;color:#9a988f;margin:0 2px 6px">Ninguém deu preço (marcaram "não tenho" ou não responderam).</div>';
     for(var n=0;n<naoCotados.length;n++){ var ni=naoCotados[n];
       h+='<div style="border:0.5px solid #f0d6d6;background:#FDF6F6;border-radius:10px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
@@ -6506,11 +6506,11 @@ function cwRenderResultado(){
       cards+='<div style="border:1px solid #cfe0d6;background:#F3FAF6;border-radius:11px;padding:10px;margin-bottom:8px">'
         +'<div style="display:flex;align-items:center;gap:8px"><i class="ti ti-trophy" style="color:#0F6E56;font-size:17px"></i><span style="flex:1;font-size:13px;font-weight:700;color:#0F6E56">'+_precoEsc(nm)+'</span><span style="font-size:11px;color:#5F5E5A">'+lst.length+' itens · '+_precoBRL(sub)+'</span></div>'
         +lhtml
-        +'<button onclick="cwPdfForn('+g+')" style="margin-top:9px;width:100%;padding:9px;border:1px solid #0F6E56;background:#fff;color:#0F6E56;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="ti ti-file-type-pdf"></i> Imprimir / enviar pra este</button>'
+        +'<button id="cw-wpp-forn-'+g+'" onclick="cwPdfForn('+g+')" style="margin-top:9px;width:100%;padding:9px;border:none;background:#12805c;color:#fff;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer"><i class="ti ti-brand-whatsapp"></i> Enviar pra este fornecedor</button>'
         +'</div>';
     }
     h+='<div style="display:flex;align-items:center;gap:8px;margin:16px 2px 8px"><span style="font-size:13px;font-weight:700;color:#16267A;flex:1">Ganhos por fornecedor</span>'
-      +'<button onclick="cwPdfTodos()" style="padding:7px 12px;border:1px solid #16267A;background:#fff;color:#16267A;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-printer"></i> Exportar todos</button></div>';
+      +'<button id="cw-wpp-todos" onclick="cwPdfTodos()" style="padding:7px 12px;border:none;background:#12805c;color:#fff;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-brand-whatsapp"></i> Enviar todos</button></div>';
     h+=_cwGraficoGanhos(ganhosArr);
     h+=cards;
   }
@@ -6547,8 +6547,56 @@ function _cwPrintPedido(titulo, secoes){
     +'</div></div><scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt></body></html>';
   _cwAbrePrint(html);
 }
-function cwPdfTodos(){ if(!_cwResult||!_cwResult.ganhosArr.length){ toast('Sem vencedores pra exportar.'); return; } _cwPrintPedido((_cwResult.titulo||'Cotação')+' — todos os vencedores', _cwResult.ganhosArr); }
-function cwPdfForn(idx){ if(!_cwResult||!_cwResult.ganhosArr[idx]) return; _cwPrintPedido(_cwResult.titulo||'Cotação', [_cwResult.ganhosArr[idx]]); }
+function _cwSlug(s){ return String(s||'forn').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24)||'forn'; }
+function _cwFornDoc(sec, tituloCot){
+  var body=[], tot=0;
+  for(var i=0;i<sec.itens.length;i++){ var it=sec.itens[i]; var q=Number(it.qtd)||0; var subt=it.preco*q; tot+=subt;
+    body.push([ String(it.desc||''),
+      {content:q+' '+(it.un||'UN'), styles:{halign:'center'}},
+      {content:_precoBRL(it.preco), styles:{halign:'right'}},
+      {content:_precoBRL(subt), styles:{halign:'right'}} ]);
+  }
+  body.push([{content:'TOTAL — '+(sec.nome||''), colSpan:3, styles:{fontStyle:'bold', fillColor:[230,241,251]}}, {content:_precoBRL(tot), styles:{halign:'right', fontStyle:'bold', fillColor:[230,241,251]}}]);
+  return _pdfDocAutotable({ titulo:'Pedido — '+(sec.nome||'Fornecedor'), sub:(tituloCot||_brandNomeH()),
+    head:['Produto','Qtd','Preço unit.','Subtotal'], body:body,
+    colStyles:{0:{cellWidth:'auto'}, 1:{cellWidth:20,halign:'center'}, 2:{cellWidth:26,halign:'right'}, 3:{cellWidth:28,halign:'right'}} });
+}
+function _cwTodosDoc(arr, tituloCot){
+  var body=[], grand=0;
+  for(var s=0;s<arr.length;s++){ var sec=arr[s]; var tot=0;
+    body.push([{content:(sec.nome||'')+'  ·  '+sec.itens.length+' itens', colSpan:3, styles:{fontStyle:'bold', fillColor:[27,58,158], textColor:[255,255,255]}}, {content:_precoBRL(sec.subtotal||0), styles:{halign:'right', fontStyle:'bold', fillColor:[27,58,158], textColor:[255,255,255]}}]);
+    for(var i=0;i<sec.itens.length;i++){ var it=sec.itens[i]; var q=Number(it.qtd)||0; var subt=it.preco*q; tot+=subt;
+      body.push([ String(it.desc||''),
+        {content:q+' '+(it.un||'UN'), styles:{halign:'center'}},
+        {content:_precoBRL(it.preco), styles:{halign:'right'}},
+        {content:_precoBRL(subt), styles:{halign:'right'}} ]);
+    }
+    grand+=tot;
+  }
+  body.push([{content:'TOTAL GERAL', colSpan:3, styles:{fontStyle:'bold', fillColor:[230,241,251]}}, {content:_precoBRL(grand), styles:{halign:'right', fontStyle:'bold', fillColor:[230,241,251]}}]);
+  return _pdfDocAutotable({ titulo:'Vencedores por fornecedor', sub:(tituloCot||_brandNomeH()),
+    head:['Produto','Qtd','Preço unit.','Subtotal'], body:body,
+    colStyles:{0:{cellWidth:'auto'}, 1:{cellWidth:20,halign:'center'}, 2:{cellWidth:26,halign:'right'}, 3:{cellWidth:28,halign:'right'}} });
+}
+function _cwNaoCotadosDoc(arr, tituloCot){
+  var body=arr.map(function(it,i){ return [ String(i+1), String(it.desc||''),
+    {content:String(Number(it.qtd)||0), styles:{halign:'center'}},
+    {content:String(it.un||'UN'), styles:{halign:'center'}} ]; });
+  return _pdfDocAutotable({ titulo:'Itens não cotados', sub:(tituloCot||_brandNomeH()),
+    head:['#','Item','Qtd','Un'], body:body,
+    colStyles:{0:{cellWidth:10,halign:'center'}, 1:{cellWidth:'auto'}, 2:{cellWidth:18,halign:'center'}, 3:{cellWidth:16,halign:'center'}} });
+}
+function cwPdfTodos(){
+  if(!_cwResult || !_cwResult.ganhosArr.length){ toast('Sem vencedores pra enviar.'); return; }
+  var doc=_cwTodosDoc(_cwResult.ganhosArr, _cwResult.titulo||'Cotação');
+  _compartilharDoc(doc, 'Vencedores', 'Vencedores da cotação', 'Vencedores por fornecedor — '+(_cwResult.titulo||'')+' · '+_brandNomeH(), 'cw-wpp-todos');
+}
+function cwPdfForn(idx){
+  if(!_cwResult || !_cwResult.ganhosArr[idx]){ toast('Fornecedor não encontrado.'); return; }
+  var sec=_cwResult.ganhosArr[idx];
+  var doc=_cwFornDoc(sec, _cwResult.titulo||'Cotação');
+  _compartilharDoc(doc, 'Pedido-'+_cwSlug(sec.nome), 'Pedido — '+(sec.nome||''), 'Pedido de compra — '+(sec.nome||'')+' · '+_brandNomeH(), 'cw-wpp-forn-'+idx);
+}
 function _cwToggleCotados(){
   var el=document.getElementById('cwr-cotados-list'); var tg=document.getElementById('cwr-cot-toggle'); if(!el) return;
   var hide=el.style.display!=='none'; el.style.display=hide?'none':'block';
@@ -6557,21 +6605,8 @@ function _cwToggleCotados(){
 function cwPdfNaoCotados(){
   var arr=(_cwResult&&_cwResult.naoCotados)||[];
   if(!arr.length){ toast('Não há itens não cotados.'); return; }
-  var titulo=(_cwResult&&_cwResult.titulo)||'Cotação';
-  var agora=new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  var linhas='';
-  for(var i=0;i<arr.length;i++){ var it=arr[i];
-    linhas+='<tr><td class="n">'+(i+1)+'</td><td>'+_cwEscP(it.desc)+(it.barras?('<div class="cod">c&oacute;d. barras '+_cwEscP(it.barras)+'</div>'):'')+'</td><td class="c">'+(Number(it.qtd)||0)+'</td><td class="c">'+_cwEscP(it.un||'UN')+'</td></tr>';
-  }
-  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>N&atilde;o cotados</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Arial,Helvetica,sans-serif;color:#16267A;background:#f0f2f5;padding:20px}.sheet{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08)}.hd{background:#A32D2D;color:#fff;padding:16px 20px}.hd h1{font-size:18px}.hd .sub{font-size:12px;opacity:.9;margin-top:2px}.stripe{height:4px;background:#FFC400}.body{padding:14px 20px 20px}.meta{font-size:12px;color:#5F5E5A;padding:4px 2px 12px;border-bottom:1px solid #eee;line-height:1.7}table{width:100%;border-collapse:collapse;margin-top:10px}th{font-size:10px;text-transform:uppercase;color:#5F5E5A;text-align:left;padding:5px 4px;border-bottom:1px solid #ccd}td{padding:7px 4px;font-size:12.5px;border-bottom:1px solid #f1f1f1;color:#1a1a1a}td.c,th.c{text-align:center;white-space:nowrap}td.n,th.n{color:#9a988f;width:26px;text-align:center}.cod{font-size:10px;color:#9a988f;margin-top:2px}.foot{font-size:10px;color:#888780;text-align:center;margin-top:16px;line-height:1.6}.bar{display:flex;gap:10px;justify-content:center;margin:18px 0 4px}.bar button{font:inherit;font-size:13px;cursor:pointer;border:none;border-radius:8px;padding:11px 18px}.b1{background:#1B3A9E;color:#fff}.b2{background:#E6F1FB;color:#16267A}@media print{.noprint{display:none!important}body{padding:0;background:#fff}.sheet{max-width:none;box-shadow:none;border-radius:0}}</style></head><body><div class="sheet">'
-    +'<div class="hd"><h1>Itens n&atilde;o cotados</h1><div class="sub">'+_brandNomeH()+'</div></div><div class="stripe"></div>'
-    +'<div class="body"><div class="meta"><b>'+_cwEscP(titulo)+'</b><br>Gerado em '+agora+'<br>'+arr.length+' item(ns) sem pre&ccedil;o</div>'
-    +'<table><thead><tr><th class="n">#</th><th>Item</th><th class="c">Qtd</th><th class="c">Un</th></tr></thead><tbody>'+linhas+'</tbody></table>'
-    +'<div class="foot">Itens que nenhum fornecedor cotou (marcaram &ldquo;n&atilde;o tenho&rdquo; ou n&atilde;o responderam). Documento gerado pelo app &mdash; '+_brandNomeH()+'.</div>'
-    +'<div class="bar noprint"><button class="b1" onclick="window.print()">Imprimir / Salvar PDF</button><button class="b2" onclick="window.close()">Fechar</button></div>'
-    +'</div></div><scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}},350);});</scr'+'ipt></body></html>';
-  _cwAbrePrint(html);
+  var doc=_cwNaoCotadosDoc(arr, _cwResult.titulo||'Cotação');
+  _compartilharDoc(doc, 'Nao-cotados', 'Itens não cotados', 'Itens não cotados — '+(_cwResult.titulo||'')+' · '+_brandNomeH(), 'cw-wpp-nc');
 }
 function _cwGraficoGanhos(arr){
   if(!arr || !arr.length) return '';
