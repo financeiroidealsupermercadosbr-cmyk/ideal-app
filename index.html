@@ -2577,15 +2577,19 @@ async function terminaisAtualizar(){
       var min = (seg==null) ? null : Math.floor(seg/60);
       var on = (min!=null && min < TERM_OFFLINE_MIN);
       if(on) online++;
+      var mudo = _termMudo(t.id);
       var cor = on ? '#1FA85A' : '#C53434';
       var txt = on ? 'Online' : 'Offline';
       var visto = (seg==null) ? 'sem registro' : (seg < 60 ? 'agora mesmo' : ('há '+min+' min'));
-      return '<div class="row-card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px">'
+      var idJs = String(t.id).replace(/'/g,"\\'");
+      return '<div class="row-card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px'+(mudo?';opacity:.72':'')+'">'
         + '<span style="width:13px;height:13px;border-radius:50%;background:'+cor+';flex:0 0 auto;box-shadow:0 0 0 3px '+cor+'22"></span>'
-        + '<div style="flex:1">'
-        +   '<div class="row-label">'+_termEsc(String(t.id).toUpperCase())+' · <span style="color:'+cor+';font-weight:600">'+txt+'</span></div>'
+        + '<div style="flex:1;min-width:0">'
+        +   '<div class="row-label">'+_termEsc(String(t.id).toUpperCase())+' · <span style="color:'+cor+';font-weight:600">'+txt+'</span>'+(mudo?' <span style="font-size:10.5px;color:#9a988f;font-weight:600">· 🔕 silenciado</span>':'')+'</div>'
         +   '<div class="row-sub">Visto '+visto+(t.info?(' · '+_termEsc(t.info)):'')+'</div>'
-        + '</div></div>';
+        + '</div>'
+        + '<button onclick="_termMudoToggle(\''+idJs+'\')" title="'+(mudo?'Reativar alerta':'Silenciar alerta deste terminal')+'" style="background:none;border:none;cursor:pointer;color:'+(mudo?'#C53434':'#9a988f')+';font-size:20px;flex:0 0 auto;padding:4px;line-height:1"><i class="ti '+(mudo?'ti-bell-off':'ti-bell')+'"></i></button>'
+        + '</div>';
     }).join('');
     box.innerHTML = html;
     if(sub) sub.textContent = online+' de '+lista.length+' online';
@@ -2602,6 +2606,20 @@ var TERM_ALERTA_MIN = 15;        // só alerta quem está 15+ min sem sinal
 var _vigiaTimer = null;
 var _termEstado = {};            // id -> 'on' | 'off' (estado já avisado)
 var _termAlertaDispensado = false;
+
+// ── Silenciar alerta por terminal (persiste no aparelho) ──
+// Ex.: BP3 que você já sabe que está parado — para de avisar até você reativar.
+var TERM_MUDOS = (function(){ try{ return JSON.parse(localStorage.getItem('ideal_term_mudos')||'{}')||{}; }catch(e){ return {}; } })();
+function _termMudo(id){ return !!TERM_MUDOS[String(id).toLowerCase()]; }
+function _termMudoSalvar(){ try{ localStorage.setItem('ideal_term_mudos', JSON.stringify(TERM_MUDOS)); }catch(e){} }
+function _termMudoToggle(id){
+  var k=String(id).toLowerCase();
+  if(TERM_MUDOS[k]) delete TERM_MUDOS[k]; else TERM_MUDOS[k]=1;
+  _termMudoSalvar();
+  toast(TERM_MUDOS[k] ? ('🔕 '+String(id).toUpperCase()+' silenciado') : ('🔔 '+String(id).toUpperCase()+' reativado'));
+  try{ terminaisAtualizar(); }catch(e){}
+  try{ terminaisCheckSilencioso(); }catch(e){}
+}
 
 // Os terminais BP (busca-preço) só existem na loja do Ideal. Além disso,
 // só Gestor/Master e Gerentes do Ideal devem ver o alerta de queda.
@@ -2641,11 +2659,13 @@ async function terminaisCheckSilencioso(){
       var id = String(t.id).toUpperCase();
       var antes = _termEstado[t.id];
       if(caiu){
-        offline.push(id);
-        if(antes !== 'off'){ toast('⚠️ Terminal '+id+' está offline'); _termAlertaDispensado = false; }
+        if(!_termMudo(t.id)){
+          offline.push(id);
+          if(antes !== 'off'){ toast('⚠️ Terminal '+id+' está offline'); _termAlertaDispensado = false; }
+        }
         _termEstado[t.id] = 'off';
       } else {
-        if(antes === 'off'){ toast('✓ Terminal '+id+' voltou'); }
+        if(antes === 'off' && !_termMudo(t.id)){ toast('✓ Terminal '+id+' voltou'); }
         _termEstado[t.id] = 'on';
       }
     }
@@ -6395,7 +6415,10 @@ function cwRenderPainel(){
   var _st=String(c.status).toUpperCase();
   if(_st==='AGENDADA'){ h+='<div class="row-sub" style="padding:10px 2px;text-align:center;color:#1B3A9E">⏳ Programada — abre em '+_cwFmtEp(c.inicioEp)+'.</div>'; }
   if(_st!=='FECHADA'){ h+='<button class="btn-primary" style="margin-top:14px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwFechar()"><i class="ti ti-lock"></i> Fechar cotação agora</button>'; }
-  else { h+='<div class="row-sub" style="padding:12px 2px;text-align:center">Cotação fechada — fornecedores não respondem mais.</div>'; }
+  else {
+    h+='<div class="row-sub" style="padding:12px 2px 8px;text-align:center">Cotação fechada — fornecedores não respondem mais.</div>';
+    h+='<button class="btn-primary" style="margin-top:0;background:#0F6E56" onclick="cwReabrir()"><i class="ti ti-lock-open"></i> Reabrir cotação</button>';
+  }
   h+='<button class="btn-primary" style="margin-top:10px;background:#16267A" onclick="cwVerResultado()"><i class="ti ti-table"></i> Ver resultado</button>';
   h+='<button class="btn-primary" style="margin-top:10px;background:#fff;color:#A32D2D;border:1px solid #A32D2D" onclick="cwExcluir()"><i class="ti ti-trash"></i> Excluir cotação</button>';
   (document.getElementById('cw-painel')||{}).innerHTML=h;
@@ -6639,6 +6662,17 @@ function cwFechar(){
   appConfirm('Fechar a cotação "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores não vão mais conseguir responder.', async function(){
     try{ var j=await _estPost({acao:'cotweb_fechar', cotId:_cwAtual.id, status:'FECHADA'}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Cotação fechada'); cwAbrir(_cwAtual.id); }catch(e){ toast('⚠ Não consegui fechar'); }
   }, {okText:'Fechar', danger:true});
+}
+function cwReabrir(){
+  if(!_cwAtual) return;
+  appPrompt('Reabrir por quantas horas a partir de agora?\n(ex.: 24 = até amanhã a esta hora)', '24', function(v){
+    var hrs=parseFloat(String(v||'').replace(',','.'));
+    if(!hrs || hrs<=0){ toast('Informe um número de horas válido.'); return; }
+    var novoFim=Date.now()+Math.round(hrs*3600000);
+    appConfirm('Reabrir "'+(_cwAtual.titulo||'')+'"?\nOs fornecedores poderão responder até '+_cwFmtEp(novoFim)+'.', async function(){
+      try{ var j=await _estPost({acao:'cotweb_reabrir', cotId:_cwAtual.id, fimEp:novoFim}); if(!j.ok) throw new Error(j.erro||'falha'); toast('Cotação reaberta até '+_cwFmtEp(novoFim)); cwAbrir(_cwAtual.id); }catch(e){ toast('⚠ Não consegui reabrir'); }
+    }, {okText:'Reabrir'});
+  }, {okText:'Continuar'});
 }
 async function cwAbrirCriar(){
   if(!_colAtual || !_colAtual.itens || !_colAtual.itens.length){ toast('Abra uma coleta com itens primeiro.'); return; }
@@ -10470,6 +10504,12 @@ async function _estPostCloud(payload){
     var _rcf = await supaFetch('/rest/v1/rpc/cot_status', { method:'POST',
       body:JSON.stringify({ p_id_ext:payload.cotId, p_status:(payload.status||'FECHADA') }) });
     if(!_rcf.ok) throw new Error('cotweb_fechar '+_rcf.status);
+    return { ok:true };
+  }
+  if(acao==='cotweb_reabrir'){
+    var _rcrb = await supaFetch('/rest/v1/rpc/cot_status', { method:'POST',
+      body:JSON.stringify({ p_id_ext:payload.cotId, p_status:'ABERTA', p_fim_ep:(Number(payload.fimEp)||0) }) });
+    if(!_rcrb.ok) throw new Error('cotweb_reabrir '+_rcrb.status);
     return { ok:true };
   }
   if(acao==='cotweb_list'){
