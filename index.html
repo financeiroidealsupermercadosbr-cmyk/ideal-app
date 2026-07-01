@@ -701,6 +701,7 @@ body:has(#s-login.active) .app{max-width:none}
           <span class="flt-chip" data-group="per" data-per="ontem">Ontem</span>
           <span class="flt-chip" data-group="per" data-per="semana">Esta semana</span>
           <span class="flt-chip on" data-group="per" data-per="mes">Este mês</span>
+          <span class="flt-chip" data-group="per" data-per="mespassado">Mês passado</span>
           <span class="flt-chip" data-group="per" data-per="ano">Este ano</span>
         </div>
         <div class="flt-cal-wrap">
@@ -7715,6 +7716,29 @@ function rotuloOrigem(datas){ // ["dd/mm",...] -> "de 30/05, 31/05 e 01/06"
 // ══════════════════════════════════════════════════════
 // DASHBOARD DE VENDAS (comparação vs ontem + gráfico 7 dias)
 // ══════════════════════════════════════════════════════
+// ── Período do painel: null = mês atual (padrão). Definido pelo botão "Filtrar". ──
+var PNL_RANGE = null;
+function _pnlRange(){
+  if(PNL_RANGE && PNL_RANGE.de && PNL_RANGE.ate){
+    var a=new Date(PNL_RANGE.de), b=new Date(PNL_RANGE.ate);
+    a.setHours(0,0,0,0); b.setHours(23,59,59,999);
+    return { de:a, ate:b };
+  }
+  var ag=new Date();
+  return { de:new Date(ag.getFullYear(),ag.getMonth(),1,0,0,0,0),
+           ate:new Date(ag.getFullYear(),ag.getMonth(),ag.getDate(),23,59,59,999) };
+}
+function _pnlPerLabel(){
+  if(!PNL_RANGE) return 'mês';
+  var rg=_pnlRange(), de=rg.de, ate=rg.ate;
+  var meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var ultDia=new Date(de.getFullYear(),de.getMonth()+1,0).getDate();
+  var mesInteiro = de.getDate()===1 && ate.getDate()===ultDia
+     && de.getMonth()===ate.getMonth() && de.getFullYear()===ate.getFullYear();
+  if(mesInteiro) return meses[de.getMonth()]+'/'+String(de.getFullYear()).slice(2);
+  var f=function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0'); };
+  return f(de)===f(ate) ? f(de) : (f(de)+'–'+f(ate));
+}
 function renderEmpresas() {
   const chart = document.getElementById('p-emp');
   if (!chart) return;
@@ -7726,12 +7750,11 @@ function renderEmpresas() {
 
   if (window.EH_IDEAL !== false) {
     // GRUPO IDEAL: Loja 2 é a única com fonte de dados hoje (comportamento original)
-    const ag = new Date();
-    const mm = ag.getMonth(), yy = ag.getFullYear();
+    const _rg = _pnlRange();
     let totL2 = 0;
     dadosVendas.forEach(function (r) {
       const d = parseDataBR(r.data);
-      if (d && d.getMonth() === mm && d.getFullYear() === yy) totL2 += Number(r.total) || 0;
+      if (d && d >= _rg.de && d <= _rg.ate) totL2 += Number(r.total) || 0;
     });
     emp = [
       { nome: 'Loja 1', val: 0,     cor: '#1B3A9E', dados: false },
@@ -7754,7 +7777,7 @@ function renderEmpresas() {
     noteText = '';
   }
   if (card)  card.style.display  = '';
-  if (label) label.style.display = '';
+  if (label){ label.style.display = ''; label.innerHTML = '<i class="ti ti-building-store"></i> Faturamento por empresa &middot; ' + _pnlPerLabel(); }
   if (noteEl){ noteEl.textContent = noteText; if(noteEl.parentElement) noteEl.parentElement.style.display = noteText ? '' : 'none'; }
 
   const maxv = Math.max.apply(null, emp.map(function (e) { return e.val; }));
@@ -10125,6 +10148,7 @@ function initFiltro(){
     else if(modo==='ontem'){ const o=new Date(hoje); o.setDate(o.getDate()-1); lbl.textContent='Ontem · '+fmtDM(o); }
     else if(modo==='semana'){ lbl.textContent='Esta semana'; }
     else if(modo==='mes'){ lbl.textContent=meses[hoje.getMonth()]+' '+hoje.getFullYear(); }
+    else if(modo==='mespassado'){ var _p=new Date(hoje.getFullYear(),hoje.getMonth()-1,1); lbl.textContent=meses[_p.getMonth()]+' '+_p.getFullYear(); }
     else if(modo==='ano'){ lbl.textContent=String(hoje.getFullYear()); }
     else if(modo==='range' && rStart && rEnd){ lbl.textContent=fmtDM(rStart)+' – '+fmtDM(rEnd); }
     else if(modo==='range' && rStart){ lbl.textContent=fmtDM(rStart)+' – …'; }
@@ -10136,6 +10160,11 @@ function initFiltro(){
   });
   document.getElementById('flt-apply').addEventListener('click',function(){
     panel.classList.remove('open'); chev.className='ti ti-chevron-down';
+    // aplica o período escolhido (atalho ou calendário) ao "Faturamento por empresa"
+    if(rStart){ PNL_RANGE = { de:new Date(rStart), ate:new Date(rEnd||rStart) }; }
+    else { PNL_RANGE = null; }
+    try{ renderEmpresas(); }catch(e){}
+    atualizarLabel();
   });
 
   document.querySelectorAll('#flt-panel .flt-chip, #flt-panel .flt-pill').forEach(function(ch){
@@ -10145,12 +10174,12 @@ function initFiltro(){
       ch.classList.add('on');
       if(g==='per'){
         modo=ch.getAttribute('data-per');
-        if(modo==='hoje'){ rStart=new Date(hoje); rEnd=new Date(hoje); }
-        else if(modo==='ontem'){ const o=new Date(hoje); o.setDate(o.getDate()-1); rStart=new Date(o); rEnd=new Date(o); }
-        else if(modo==='semana'){ const s=new Date(hoje); s.setDate(s.getDate()-s.getDay()); rStart=s; rEnd=new Date(hoje); }
-        else if(modo==='mes'){ rStart=new Date(hoje.getFullYear(),hoje.getMonth(),1); rEnd=new Date(hoje); }
-        else if(modo==='ano'){ rStart=new Date(hoje.getFullYear(),0,1); rEnd=new Date(hoje); }
-        calY=hoje.getFullYear(); calM=hoje.getMonth();
+        if(modo==='hoje'){ rStart=new Date(hoje); rEnd=new Date(hoje); calY=hoje.getFullYear(); calM=hoje.getMonth(); }
+        else if(modo==='ontem'){ const o=new Date(hoje); o.setDate(o.getDate()-1); rStart=new Date(o); rEnd=new Date(o); calY=hoje.getFullYear(); calM=hoje.getMonth(); }
+        else if(modo==='semana'){ const s=new Date(hoje); s.setDate(s.getDate()-s.getDay()); rStart=s; rEnd=new Date(hoje); calY=hoje.getFullYear(); calM=hoje.getMonth(); }
+        else if(modo==='mes'){ rStart=new Date(hoje.getFullYear(),hoje.getMonth(),1); rEnd=new Date(hoje); calY=hoje.getFullYear(); calM=hoje.getMonth(); }
+        else if(modo==='mespassado'){ var _p=new Date(hoje.getFullYear(),hoje.getMonth()-1,1); rStart=new Date(_p.getFullYear(),_p.getMonth(),1); rEnd=new Date(_p.getFullYear(),_p.getMonth()+1,0); calY=_p.getFullYear(); calM=_p.getMonth(); }
+        else if(modo==='ano'){ rStart=new Date(hoje.getFullYear(),0,1); rEnd=new Date(hoje); calY=hoje.getFullYear(); calM=hoje.getMonth(); }
         renderCal(); atualizarLabel();
       }
     });
