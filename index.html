@@ -312,6 +312,7 @@ body{background:#f0f2f5;display:flex;justify-content:center;padding:10px;min-hei
 .ec-val{font-size:11px;font-weight:500;color:var(--azul);margin-bottom:4px;white-space:nowrap}
 .ec-val.off{color:#b8b6ae;font-weight:400}
 .ec-bar{width:32px;border-radius:4px 4px 0 0;background:var(--azul-mid);transition:height .7s ease;height:0}
+.ec-bargroup{display:flex;align-items:flex-end;justify-content:center;gap:5px}
 .ec-lab{font-size:11px;color:#888780;margin-top:6px}
 .ec-note{display:flex;align-items:center;gap:6px;margin-top:4px;padding-left:34px;font-size:11px;color:#b8b6ae}
 .flt-periodo{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:11px 12px;border:1px solid rgba(var(--azul-rgb),0.15);cursor:pointer;margin-bottom:14px}
@@ -716,8 +717,8 @@ body:has(#s-login.active) .app{max-width:none}
         <span class="flt-label">Comparar com</span>
         <div class="flt-chiprow">
           <span class="flt-chip" data-group="cmp" data-cmp="mes">Mês anterior</span>
-          <span class="flt-chip on" data-group="cmp" data-cmp="ano">Ano anterior</span>
-          <span class="flt-chip" data-group="cmp" data-cmp="nao">Não comparar</span>
+          <span class="flt-chip" data-group="cmp" data-cmp="ano">Ano anterior</span>
+          <span class="flt-chip on" data-group="cmp" data-cmp="nao">Não comparar</span>
         </div>
         <div class="flt-apply" id="flt-apply">Filtrar</div>
       </div>
@@ -7739,6 +7740,20 @@ function _pnlPerLabel(){
   var f=function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0'); };
   return f(de)===f(ate) ? f(de) : (f(de)+'–'+f(ate));
 }
+// ── Comparação: 'nao' | 'mes' | 'ano'. Desloca o MESMO intervalo pra trás. ──
+var PNL_CMP = 'nao';
+function _pnlRangeCmp(){
+  if(!PNL_CMP || PNL_CMP==='nao') return null;
+  var rg=_pnlRange(), de=rg.de, ate=rg.ate;
+  if(PNL_CMP==='mes'){
+    return { de:new Date(de.getFullYear(),de.getMonth()-1,de.getDate(),0,0,0,0),
+             ate:new Date(ate.getFullYear(),ate.getMonth()-1,ate.getDate(),23,59,59,999),
+             lbl:'mês passado' };
+  }
+  return { de:new Date(de.getFullYear()-1,de.getMonth(),de.getDate(),0,0,0,0),
+           ate:new Date(ate.getFullYear()-1,ate.getMonth(),ate.getDate(),23,59,59,999),
+           lbl:'ano passado' };
+}
 function renderEmpresas() {
   const chart = document.getElementById('p-emp');
   if (!chart) return;
@@ -7756,12 +7771,25 @@ function renderEmpresas() {
       const d = parseDataBR(r.data);
       if (d && d >= _rg.de && d <= _rg.ate) totL2 += Number(r.total) || 0;
     });
+    // comparação: soma o MESMO intervalo deslocado pra trás (mês/ano)
+    var _rgc = _pnlRangeCmp(), totL2cmp = null;
+    if(_rgc){
+      totL2cmp = 0;
+      dadosVendas.forEach(function (r) {
+        var d = parseDataBR(r.data);
+        if (d && d >= _rgc.de && d <= _rgc.ate) totL2cmp += Number(r.total) || 0;
+      });
+    }
     emp = [
       { nome: 'Loja 1', val: 0,     cor: '#1B3A9E', dados: false },
-      { nome: 'Loja 2', val: totL2, cor: '#1B3A9E', dados: true  },
+      { nome: 'Loja 2', val: totL2, cor: '#1B3A9E', dados: true, cmp: totL2cmp },
       { nome: 'Bolos',  val: 0,     cor: '#FFC400', dados: false }
     ];
-    noteText = 'Loja 1 e Bolos: em implantação';
+    noteText = _rgc
+      ? ('<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#1B3A9E;margin-right:3px;vertical-align:middle"></span>atual'
+        + '<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#FFC400;margin:0 3px 0 9px;vertical-align:middle"></span>' + _rgc.lbl
+        + ' · fazia ' + (totL2cmp>0 ? brl(totL2cmp) : 'R$ 0,00'))
+      : 'Loja 1 e Bolos: em implantação';
   } else {
     // CLIENTE: usa as lojas dele. Sem loja => esconde o cartão inteiro.
     if (!lojasArr.length) {
@@ -7778,9 +7806,11 @@ function renderEmpresas() {
   }
   if (card)  card.style.display  = '';
   if (label){ label.style.display = ''; label.innerHTML = '<i class="ti ti-building-store"></i> Faturamento por empresa &middot; ' + _pnlPerLabel(); }
-  if (noteEl){ noteEl.textContent = noteText; if(noteEl.parentElement) noteEl.parentElement.style.display = noteText ? '' : 'none'; }
+  if (noteEl){ noteEl.innerHTML = noteText; if(noteEl.parentElement) noteEl.parentElement.style.display = noteText ? '' : 'none'; }
 
-  const maxv = Math.max.apply(null, emp.map(function (e) { return e.val; }));
+  const _allVals = [];
+  emp.forEach(function (e) { _allVals.push(e.val); if (e.cmp != null && e.cmp > 0) _allVals.push(e.cmp); });
+  const maxv = Math.max.apply(null, _allVals);
   const topo = niceCeil(maxv > 0 ? maxv : 1);
   const lines = [[20, topo], [53, topo * 0.75], [85, topo * 0.5], [118, topo * 0.25], [150, 0]];
   const linesHtml = lines.map(function (L) {
@@ -7791,9 +7821,27 @@ function renderEmpresas() {
     const h = tem ? Math.max(4, Math.round((e.val / topo) * 130)) : 3;
     const cor = tem ? e.cor : '#d3d1c7';
     const valTxt = tem ? brl(e.val) : '—';
+    var deltaHtml = '';
+    if (tem && e.cmp != null) {
+      if (e.cmp > 0) {
+        var pc = Math.round(((e.val - e.cmp) / e.cmp) * 100);
+        var up = pc >= 0;
+        deltaHtml = '<span style="display:block;font-size:10px;font-weight:700;line-height:1;margin:-2px 0 3px;color:' + (up ? '#12805c' : '#c0392b') + '">' + (up ? '▲' : '▼') + ' ' + Math.abs(pc) + '%</span>';
+      } else if (e.val > 0) {
+        deltaHtml = '<span style="display:block;font-size:10px;font-weight:700;line-height:1;margin:-2px 0 3px;color:#12805c">novo</span>';
+      }
+    }
+    const temCmp = tem && e.cmp != null && e.cmp > 0;
+    const hCmp = temCmp ? Math.max(4, Math.round((e.cmp / topo) * 130)) : 0;
+    const barW = temCmp ? 22 : 32;
+    var barsInner = '<div class="ec-bar" data-h="' + h + '" style="width:' + barW + 'px;background:' + cor + '"></div>';
+    if (temCmp) {
+      barsInner += '<div class="ec-bar ec-bar-cmp" data-h="' + hCmp + '" style="width:' + barW + 'px;background:#FFC400"></div>';
+    }
     return '<div class="ec-col" data-real="' + (tem ? '1' : '0') + '" data-cor="' + e.cor + '">'
          + '<span class="ec-val' + (tem ? '' : ' off') + '">' + valTxt + '</span>'
-         + '<div class="ec-bar" data-h="' + h + '" style="background:' + cor + '"></div>'
+         + deltaHtml
+         + '<div class="ec-bargroup">' + barsInner + '</div>'
          + '<span class="ec-lab">' + e.nome + '</span></div>';
   }).join('');
   chart.innerHTML = linesHtml + '<div class="ec-bars">' + barsHtml + '</div>';
@@ -7810,7 +7858,7 @@ function renderEmpresas() {
         x.querySelector('.ec-bar').style.background = real ? x.getAttribute('data-cor') : '#d3d1c7';
       });
       if (c.getAttribute('data-real') === '1') {
-        c.querySelector('.ec-bar').style.background = '#FFC400';
+        c.querySelector('.ec-bar').style.background = '#5B79D6';
       }
     });
   });
@@ -10163,6 +10211,8 @@ function initFiltro(){
     // aplica o período escolhido (atalho ou calendário) ao "Faturamento por empresa"
     if(rStart){ PNL_RANGE = { de:new Date(rStart), ate:new Date(rEnd||rStart) }; }
     else { PNL_RANGE = null; }
+    var _cmpOn = document.querySelector('#flt-panel [data-group="cmp"].on');
+    PNL_CMP = _cmpOn ? _cmpOn.getAttribute('data-cmp') : 'nao';
     try{ renderEmpresas(); }catch(e){}
     atualizarLabel();
   });
