@@ -2240,7 +2240,7 @@ function montarSelectLojas(){
   var atual = sel.value;
   var arr = (window.BRAND && window.BRAND.lojasArr) || [];
   var html = arr.map(function(l){ return '<option value="'+l.codigo+'">'+ (l.nome||l.codigo) +'</option>'; }).join('');
-  html += '<option value="all">Todas as lojas</option>';
+  if(arr.length>1){ html += '<option value="all">Todas as lojas</option>'; }  // "Todas" só faz sentido com 2+ lojas
   sel.innerHTML = html;
   if(atual){ sel.value = atual; } // preserva a seleção se ainda existir
 }
@@ -2248,7 +2248,7 @@ function montarSelectLojas(){
 function montarSwitcherLojas(){
   var sel = document.getElementById('loja-sel'); if(!sel) return;
   var arr = (window.BRAND && window.BRAND.lojasArr) || [];
-  if(!arr.length){ sel.innerHTML=''; sel.style.display='none'; return; }
+  if(arr.length<=1){ sel.innerHTML=''; sel.style.display='none'; return; }  // 0 ou 1 loja: sem barra (nome fica no cabeçalho)
   sel.style.display='';
   function e(s){ return String(s||'').replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   var html = arr.map(function(l){
